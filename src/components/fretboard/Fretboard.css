@@ -1,0 +1,12 @@
+.fretboard-scroll {
+  width: 100%;
+  height: 100%;
+  overflow-x: auto;     /* horizontal scroll */
+  overflow-y: hidden;   /* no vertical scroll */
+  white-space: nowrap;  /* prevents wrapping */
+  position: relative;
+}
+
+.fretboard-zoom {
+  display: inline-block; /* required so zoomed content expands width */
+}
