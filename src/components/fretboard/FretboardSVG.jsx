@@ -1,10 +1,13 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
  import "./Fretboard.css";
  import dc from "../../globals.js"
- import  ChordForm  from "../../harmony/harmony-manager.js"
- import {Chord}  from "../../harmony/harmony-manager.js"
  import ChordDictionary from "../../harmony/cd-manager.js"
  import {CDManager} from "../../harmony/cd-manager.js"
+  import  ChordForm  from "../../harmony/harmony-manager.js"
+ import {Chord}  from "../../harmony/harmony-manager.js"
+ import Note from "../../harmony/note.js"
+
+import "bootstrap/dist/js/bootstrap.bundle.min.js";
 
 // import "../../css/Fretboard.css";
 
@@ -70,6 +73,7 @@ function midiFromFilename(filename) {
 
 
 export default function GuitarFretboardSVG({
+  activeCFId=null,
   numStrings = 6,
   tuning = STANDARD_TUNING,
   numFrets = 17,
@@ -321,6 +325,13 @@ function playChordStrum(name, direction = "down") {
   function getChordFrets(name) {
   return CHORDS[name];
 }
+
+let cf=null
+if( activeCFId ) {
+  const hm = dc.HARMONY_MANAGER
+   cf = hm.chordformWithId(activeCFId)
+   console.log("found active activeCFId in FretboardSVG: ", activeCFId, "cf: ", cf)
+  } else{   console.log("no active chordform in FretboardSVG: ")}
 
 
 
@@ -616,19 +627,19 @@ function playChordStrum(name, direction = "down") {
 
 {
 
-openMarkers && activeChord && (
+openMarkers && activeCFId && (
      
   <g className="open-muted-markers">
     {/* {console.log("activeChord: ", activeChord)} */}
     {/* {console.log("typeof activeChord: ", typeof(activeChord))} */}
     {
  
-    activeChord.map((note, i) => {
+    cf.notes.map((note, i) => {
       const x = getFretX(0) - 40; // left of the nut
        const y = stringSpacing * (numStrings - i);
       // const y = stringY(note.string);
 
-      if (note === 0 ) {
+      if (note.fret === 0 ) {
         return (
           <text
             key={i}
@@ -643,7 +654,7 @@ openMarkers && activeChord && (
         );
       }
 
-      if (note === null ) {
+      if (note.fret === null ) {
         return (
           <text
             key={i}
@@ -716,13 +727,13 @@ openMarkers && activeChord && (
           const chordFrets = activeChord ? CHORDS[activeChord] : null;
 
           // Highlight open or muted strings when a chord is active
-{openMarkers && activeChord && (
+{openMarkers && activeCFId && (
   <g className="open-muted-markers">
-    {activeChord.map((note, i) => {
+    {cf.map((note, i) => {
       const x = getFretX(0) - 40;
       // const y = stringY(note.string);
 
-      if (note === 0) {
+      if (note.fret === 0) {
         return (
           <text key={i} x={x} y={y + 5} fontSize={20} fill="white" textAnchor="middle">
             O
@@ -834,9 +845,14 @@ openMarkers && activeChord && (
                       const x = (left + right) / 2;
                       const chordFrets = getChordFrets(activeChord);
                      // const isChordNote = chordFrets && chordFrets[stringIndex] === fret;  
-const isChordNote =
-  activeChord &&
-  activeChord[stringIndex] === fret;
+
+   let isChordNote = false  
+   if( cf)   {         
+    const note = cf.notes.filter((note)=>{ return note.stringNumber == stringIndex+1 && note.fret==fret})            
+      isChordNote =  activeCFId &&  note.length;
+      if( isChordNote){ console.log("chord form to render: ", cf)}
+      // console.log("note in svg render: ", note, "isChordNote: ",isChordNote)
+          }
 
   // console.log("activeChord: ", activeChord)
                   //  console.log("fret", fret, "left", left, "right", getFretX(fret), "clamped", right);
@@ -865,10 +881,10 @@ const isChordNote =
                           <circle
                             cx={x}
                             cy={y}
-                            r={showChord &&  isChordNote ? 20 : 12}
-                            fill={showChord && isChordNote ? "rgba(255, 221, 0, 0.35)" : "rgba(185, 203, 27, 0.89)"}
-                            stroke={showChord &&  isChordNote ? "#ff0" : "#333"}
-                            strokeWidth={showChord &&  isChordNote ? 3 : 1}
+                            r={ isChordNote ? 20 : 12}
+                            fill={isChordNote ? "rgba(255, 221, 0, 0.35)" : "rgba(185, 203, 27, 0.89)"}
+                            stroke={ isChordNote ? "#ff0" : "#333"}
+                            strokeWidth={ isChordNote ? 3 : 1}
                           />
                           {showNoteNamesUI && (
                             <text

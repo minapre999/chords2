@@ -1,26 +1,4 @@
 
-export async function initCsrf() {
-  await fetch("http://localhost:8000/set-csrf/", {
-    credentials: "include"
-  });
-}
-
-
-function getCSRFToken() {
-
-  const name = "csrftoken=";
-  const cookies = document.cookie.split(";");
-
-  for (let cookie of cookies) {
-    cookie = cookie.trim();
-    if (cookie.startsWith(name)) {
-      return cookie.substring(name.length);
-    }
-  }
-  return "";
-}
-
-
 
 // Declare variables in a separate .js file and export them. 
 // Import the file in components—all imports will reference the same variable instance, 
@@ -50,32 +28,41 @@ export class  DCManager {
     this.#globals.debug = {
           debugging : true,
       }
+      this.#globals.CSRF_TOKEN = null
   }
 
 
 
-async initialize() {
-       // Fetch CSRF token
-    initCsrf()
-    this.#globals.CSRF_TOKEN = getCSRFToken()
 
-    // Load harmony dictionary
-    
-        // const HarmonyManager = module.default; // use this if HarmonyManager is the default export only
-        const module = await import("./harmony/harmony-manager.js");
-        const { HarmonyManager } = module;
+ async  initCsrf() {
+  return await fetch("http://localhost:8000/set-csrf/", {
+    credentials: "include"
+  })
 
-        const hm = new HarmonyManager();
-        await hm.load_harmonies();
-
-        this.HARMONY_MANAGER = hm;
+}
 
 
-      return true;                 // ⭐ signal completion
-     // Load tuning
-    // this.TUNING = await fetch("/api/tuning").then(r => r.json());
-    // Any other global setup
+
+
+  
+ async getCSRF_TOKEN() {
+  if( this.#globals.CSRF_TOKEN != null) return this.#globals.CSRF_TOKEN
+  await this.initCsrf() // write csrf to cookie
+  // get csrf from cookie
+  const name = "csrftoken=";
+  const cookies = document.cookie.split(";");
+
+  for (let cookie of cookies) {
+    cookie = cookie.trim();
+    if (cookie.startsWith(name)) {
+      this.#globals.CSRF_TOKEN = cookie.substring(name.length);
+      return this.#globals.CSRF_TOKEN
+    }
   }
+  return null
+}
+
+
 
 
 get profileLog() {return this.#globals.profile.profile_log}
@@ -156,8 +143,7 @@ set SOUND_MANAGER(x) {  this.#globals.SOUND_MANAGER = x}
 get SETTINGS_MANAGER() { return this.#globals.SETTINGS_MANAGER}
 set SETTINGS_MANAGER(x) {  this.#globals.SETTINGS_MANAGER = x}
 
-get CSRF_TOKEN()  {return  this.#globals.CSRF_TOKEN }  // '{{ csrf_token }}'
-  
+
 
 
 

@@ -286,7 +286,7 @@ const base12_notes = [
     ]
    
 
-  const transpose_lookup = {
+  export const transpose_lookup = {
       C : 0,
       B : -1,
       "Bb" :  -2,
@@ -593,7 +593,7 @@ String.prototype.fromBase12 = function(  ) {
     const nn = this.toString()
     const octave = nn[0]
     const letter = nn[1]
-    filtered = base12_notes.filter(function( note ){
+    const filtered = base12_notes.filter(function( note ){
         if( note.base12 == letter ) { return true }
         else return false
         })
@@ -611,7 +611,7 @@ String.prototype.toBase12 = function( ) {
     if( octave === '') { octave = 3 }
     let letter = this.toString().replace(/[0-9]/g, '') // remove numbers
     letter =  letter.charAt(0).toUpperCase() + letter.slice(1) // make first character uppercase
-    filtered = base12_notes.filter(function( note ){
+    const filtered = base12_notes.filter(function( note ){
         if( note.level1 == letter ) { return true }
         else return false
         })

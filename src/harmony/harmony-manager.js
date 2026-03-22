@@ -1,9 +1,12 @@
 
 import dc from '../globals.js'
 import Dexie from "dexie"
+import Note from "./note.js"
 import  installStringPrototypes  from "./core.js";
-
+import {transpose_lookup}  from "./core.js";
 installStringPrototypes();   
+
+
 
 
 /* 
@@ -35,9 +38,13 @@ constructor() {
     this._comments
     this._id
     }    
+
+
 init() {
         
     }
+
+
 // parent() - for the jstree interface
 get parent(){ return "#" }
 get text() { return this._text }
@@ -66,7 +73,7 @@ numberOfChords() {
 export class HarmonyManager {
 constructor() {
     
-        this._dict;
+        this._dict = null;
     }
 
     
@@ -82,6 +89,10 @@ get chordforms() { return this.dict.chordforms  }
 harmonyWithId(my_id) {
   return this.harmonies.find(h => h.id === my_id);
 }
+
+
+
+
 
 
 
@@ -119,8 +130,7 @@ chordformsWithChordId(my_id) {
 
 
 chordWithId(my_id) {
-  console.log("HarmonyManager chordWithId: ", my_id)
-  console.log("this.dict: ", this.dict)
+ 
   return this.dict.chords.find(c => c.id === my_id);
 }
 
@@ -169,28 +179,27 @@ get availableFS() {
 async ajax_retrieve() {
   console.log("ajax_retrieve for harmony data on the server ...");
 
-  const token = dc.CSRF_TOKEN;
+  const token = await dc.getCSRF_TOKEN() 
   console.log("ajax-harmonies token:", token);
-
   const url = "http://127.0.0.1:8000/ajax-harmonies/";
+  await fetch(url, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": token
+        },
+        body: JSON.stringify({
+          harmony_dict_id: 1
+        })
+      })
+      .then((response)=>{
+          console.log("ajax_retrieve returning data:", response.harmony_dict);
+         return response.harmony_dict;
+      })
 
-  const prom = await fetch(url, {
-    method: "POST",
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      "X-CSRFToken": token
-    },
-    body: JSON.stringify({
-      harmony_dict_id: 1
-    })
-  });
-
-  const response = await prom.json();
-
-  //console.log("ajax_retrieve returning data:", response.harmony_dict);
-
-  return response.harmony_dict;
+console.log("ajax_retrieve: something went wrong ... returning null")
+return null
 }
 
 
@@ -207,6 +216,8 @@ data from the server, the first thing here will be to check this
     */
 
 async load_harmonies() {
+ if( this._dict != null) return null
+  
   return new Promise(async (resolve, reject) => {
     try {
       const exists = await Dexie.exists("DropChords");
@@ -291,6 +302,7 @@ async load_harmonies() {
 
       resolve();   // ⭐ IMPORTANT
     } catch (err) {
+      console.log("harmony_manager load_harmonies error")
       reject(err);
     }
   });
@@ -298,14 +310,13 @@ async load_harmonies() {
 
 
 
-
 } // HarmonyManager
 
 
 
+dc.HARMONY_MANAGER = new HarmonyManager()
 
-
-dc.HARMONY_MANAGER = new HarmonyManager().load_harmonies()
+// dc.HARMONY_MANAGER = new HarmonyManager().load_harmonies()
 
 
 
@@ -541,7 +552,7 @@ get stringset() {
 }
 
 get form(){ return this._form }
-set form(f){ this._form = s }
+set form(f){ this._form = f }   // ✅ fixed: use f, not s
 get form_ss () { return this.form + ":" + this.stringset }
 get form_s () { return this.form + ":" + this.string }
 get strings(){ return this._strings }
@@ -556,6 +567,8 @@ set enharmonic_bias(bias) {
     if( bias == "#") 
         this._root = this._root.enharmonicSharp()
     else if( bias == "b" ) { this._root = this._root.enharmonicFlat() }
+    // invalidate cache when bias changes
+    this._r_notes_cache = undefined;
 }
 
 // V2:  url is much simply - the chordform id and the root /id/root
@@ -585,9 +598,8 @@ set root(root) {
     this._root = this._root.enharmonicFlat();
   }
 
-  // Invalidate and rebuild cache
+  // Invalidate cache ONLY – no recomputation here
   this._r_notes_cache = undefined;
-  this.notes;
 }
 
 
@@ -637,7 +649,7 @@ get namesWithInversion() {
 // getNotes() {
 get notes() {
   try {
-    if (this.root === undefined) {
+    if (this._root === undefined) {   // ✅ use _root to avoid calling getter
       throw `ChordForm:getNotes: root is not defined.
              ${this.id}, ${this.chord.name} form: ${this.form} stringset: ${this.stringset} inversion: ${this.inversion}`;
     }
@@ -654,11 +666,11 @@ get notes() {
         finger: s.finger,
         stringNumber: s.string,
         interval: s.interval
-      })
+      }, dc.FRETBOARD_MANAGER)
     );
 
     // Root-based transpose
-    const transpose_st = transpose_lookup[this.root];
+    const transpose_st = transpose_lookup[this._root];  // ✅ use _root
 
     let lowFret = Infinity;
 
@@ -862,12 +874,8 @@ isAlteredDominant() { return this.chord.isAlteredDominant() === "min"  }
 isMajor() {  return this.chord.isMajor()  === "maj"  }
 isMinor() { return this.chord.isMinor() === "min"  }
 
-
-
-
-
-
 } // ChordForm
+
 
 
 

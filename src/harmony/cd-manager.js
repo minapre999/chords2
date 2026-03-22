@@ -1,5 +1,6 @@
 "use strict";
 import jQuery from 'jquery';
+import dc from '../globals.js'
 
 export class ChordGroup {
     constructor(  ) {
@@ -904,7 +905,7 @@ export default class ChordDictionary {
                     interval: s.interval,
                     finger: s.finger, // updated to array of fingering
                     stringNumber: s.string,
-                    })
+                    }, dc.FRETBOARD_MANAGER)
                 chord._c_notes.push(note);
                 })
         

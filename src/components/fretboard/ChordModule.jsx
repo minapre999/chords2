@@ -101,6 +101,7 @@ export default function ChordModule() {
   const [showNoteNamesUI, setShowNoteNamesUI] = useState(true);
   const [zoom, setZoom] = useState(1);
 const [displayMode, setDisplayMode] = useState("singleInversion") // dislay one at a time or all at once
+const [activeCFId, setActiveCFId] = useState(1)
   // Headstock persistence
   const [showHeadstockUI, setShowHeadstockUI] = useState(() => {
     const saved = localStorage.getItem("showHeadstockUI");
@@ -126,44 +127,75 @@ const [displayMode, setDisplayMode] = useState("singleInversion") // dislay one 
 
   
 
-
-
-  useEffect(() => {
+ useEffect(() => {
     async function init() {
-      await dc.initialize();   // ⭐ wait for harmony data
+      console.log("ChordModule load_harmonies")
+      await dc.HARMONY_MANAGER.load_harmonies();
+      console.log("ChordModule ready")
       setReady(true);
     }
     init();
   }, []);
 
+
+
+
+   // -------------------------
+  // SAFE COMPUTATION OF cf
+  // (must be BEFORE conditional return)
+  // -------------------------
+  let cf = null;
+let formLabel = "";
+let strCF = "";
+
+
+  if (ready) {
+    let chord = dc.HARMONY_MANAGER.chordWithId(1);
+    let chordforms = chord.getChordforms({ root: "C", form: "D2", string: "1" });
+    cf = chordforms[0];
+
+    console.log("cf: ", cf)
+
+    // Map form → label
+    const formLabels = {
+      D2: "Drop 2",
+      D3: "Drop 3",
+      D4: "Drop 2+4",
+    };
+
+    // Get the label safely
+    const formKey = cf.form;
+     formLabel = formLabels[formKey] || formKey;
+
+    // Build the final string
+     strCF = `${formLabel}, strings ${cf.stringset}, inversion ${cf.inversion}`;
+
+console.log("strCF: ", strCF)
+
+  }
+
+  // -------------------------
+  // EFFECT THAT USES cf
+  // (hooks must be before return)
+  // -------------------------
+  useEffect(() => {
+    if (cf?.id !== undefined) {
+      console.log("ChordModule Setting activeCFId: ", cf.id)
+      setActiveCFId(cf.id);
+    }
+  }, [cf]);
+
+  // -------------------------
+  // CONDITIONAL RETURN
+  // -------------------------
   if (!ready) {
     return <div>Loading chords…</div>;
   }
 
-
-
-
-
- 
-
-
-
-console.log("ChordModule dc.HARMONY_MANAGER: ", dc.HARMONY_MANAGER)
-console.log("dc.HARMONY_MANAGER._dict: ", dc.HARMONY_MANAGER._dict)
-console.log("dc.HARMONY_MANAGER.chordWithId( 1): ", dc.HARMONY_MANAGER.chordWithId( 1))
-
-let activeChordformIndex = 0 
-let highFret = false
-let chord = dc.HARMONY_MANAGER.chordWithId( 1)// maj7
-// let chordforms = chord.getChordforms({root: "C", form: "D2", string:  "1"})
-// let cf = chordforms[activeChordformIndex]
-// const [activeCFId, setActiveCFId] = useState(cf.id)
-
- 
-//         // load all inversions for the chord - default to drop2 and top string
-// let root = "C"
-
-
+  // -------------------------
+  // NOW SAFE TO USE cf
+  // -------------------------
+  // console.log("ChordModule checking harmony is loaded", cf);
 
 
   return (
@@ -186,6 +218,7 @@ let chord = dc.HARMONY_MANAGER.chordWithId( 1)// maj7
 <div id="content">
 
     <GuitarFretboardSVG
+      activeCFId={activeCFId}
       width={1800}
       height={220}
       fretboardColor={fretboardColor}
@@ -201,7 +234,20 @@ let chord = dc.HARMONY_MANAGER.chordWithId( 1)// maj7
     />
 
 
-<ChordInfo />
+   <div className="mb-4">&nbsp;</div>
+
+    <div>
+    {cf.root}
+    <span
+      dangerouslySetInnerHTML={{
+        __html: cf.chord.harmony.symbols[0]
+      }}
+    />
+  </div>
+  <div />
+  <div>{strCF}</div>
+
+
     {/* {showPanel && (
       <Picker
         options={pickerOptions}
