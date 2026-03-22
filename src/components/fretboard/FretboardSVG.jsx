@@ -10,6 +10,9 @@ import StringLane from "./StringLane.jsx"
 import FretboardSurface from "./FretboardSurface.jsx"
 import VibrationOverlay from "./VibrationOverlay.jsx"
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
+import { playNote } from "../../sound/PlayNote.js";
+
+
 
 // import "../../css/Fretboard.css";
 
@@ -109,32 +112,6 @@ openMarkers,
   
 
 
-
-  const audioCtxRef = useRef(null);
-  const sampleBuffersRef = useRef({});
-
- 
-
-  useEffect(() => {
-    if (!audioCtxRef.current) {
-      audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
-    }
-  }, []);
-
-  useEffect(() => {
-    const audioCtx = audioCtxRef.current;
-    SAMPLE_FILES.forEach(async (file) => {
-      const midi = midiFromFilename(file);
-      if (midi == null) return;
-
-      const response = await fetch("samples/" + file);
-      const arrayBuffer = await response.arrayBuffer();
-      const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
-
-      sampleBuffersRef.current[midi] = audioBuffer;
-    });
-  }, []);
-
   const normalizedTuning = useMemo(() => {
     let t = tuning.slice();
     if (t.length < numStrings) {
@@ -177,148 +154,17 @@ const getFretX = (fretIndex) => nutX + fretSpacing * fretIndex;
   const getMidiNumber = (stringIndex, fretIndex) =>
     normalizedTuning[stringIndex] + fretIndex;
 
-  function getClosestSample(midi) {
-    const available = Object.keys(sampleBuffersRef.current)
-      .map(n => parseInt(n, 10))
-      .sort((a, b) => Math.abs(a - midi) - Math.abs(b - midi));
-
-    return available[0];
-  }
-
-  const playNote = (midi) => {
-    
-    const audioCtx = audioCtxRef.current;
-    if (!audioCtx) return;
-
-    if (audioCtx.state !== "running") audioCtx.resume();
-
-    const closest = getClosestSample(midi);
-    const buffer = sampleBuffersRef.current[closest];
-    if (!buffer) return;
-
-    const source = audioCtx.createBufferSource();
-    source.buffer = buffer;
-
-    const semitones = midi - closest;
-    source.playbackRate.value = Math.pow(2, semitones / 12);
-
-    const gain = audioCtx.createGain();
-    gain.gain.setValueAtTime(1, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 2);
-
-    source.connect(gain);
-    gain.connect(audioCtx.destination);
-    console.log(`playNote midi: ${midi}  semitones: ${semitones}, closest: ${semitones}`)
-
-    source.start();
-  };
-
-
-  function playNoteAtTime(midi, startTime) {
-  const audioCtx = audioCtxRef.current;
-  if (!audioCtx) return;
-
-  if (audioCtx.state !== "running") audioCtx.resume();
-
-  const closest = getClosestSample(midi);
-  const buffer = sampleBuffersRef.current[closest];
-  if (!buffer) return;
-
-  const source = audioCtx.createBufferSource();
-  source.buffer = buffer;
-
-  const semitones = midi - closest;
-  source.playbackRate.value = Math.pow(2, semitones / 12);
-
-  const gain = audioCtx.createGain();
-
-  // ⭐ Use the SAME startTime for the envelope
-  gain.gain.setValueAtTime(1, startTime);
-  gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 2);
-
-  source.connect(gain);
-  gain.connect(audioCtx.destination);
-
-  source.start(startTime);
-}
-
-// function playChord(name) {
-//   const shape = CHORDS[name];
-//   shape.forEach((fret, stringIndex) => {
-//     if (fret !== null) {
-//       playNote(stringIndex, fret);
-//     }
-//   });
-// }
-
-
-
-function playChord(chord) {
   
-  const audioCtx = audioCtxRef.current;
-  if (!audioCtx) return;
-
-  const shape = chord
-  // activeChord = shape
-  const startTime = audioCtx.currentTime + 0.02; // small scheduling buffer
-
-  // 1. Create all sources FIRST
-  const voices = shape.map((fret, stringIndex) => {
-    if (fret === null) return null;
-
-    const midi = tuning[stringIndex] + fret;
-
-    const closest = getClosestSample(midi);
-    const buffer = sampleBuffersRef.current[closest];
-    if (!buffer) return null;
-
-    const source = audioCtx.createBufferSource();
-    source.buffer = buffer;
-
-    const semitones = midi - closest;
-    source.playbackRate.value = Math.pow(2, semitones / 12);
-
-    const gain = audioCtx.createGain();
-    gain.gain.setValueAtTime(1, startTime);
-    gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 2);
-
-    source.connect(gain);
-    gain.connect(audioCtx.destination);
-
-    return source;
-  });
-
-  // 2. Start ALL sources in a separate pass
-  voices.forEach((source) => {
-    if (source) source.start(startTime);
-  });
-}
 
 
 
 
-
-
-function playChordStrum(name, direction = "down") {
-  const shape = CHORDS[name];
-  const order =
-    direction === "down"
-      ? [...shape.keys()]            // 0 → 5
-      : [...shape.keys()].reverse(); // 5 → 0
-
-  order.forEach((stringIndex, i) => {
-    const fret = shape[stringIndex];
-    if (fret !== null) {
-      const midi = tuning[stringIndex] + fret;
-      setTimeout(() => playNote(midi), i * 40);
-    }
-  });
-}
 
 
 
 
   const handleNoteClick = (stringIndex, fretIndex) => {
+   
     const midi = getMidiNumber(stringIndex, fretIndex);
     playNote(midi);
 
@@ -333,10 +179,8 @@ function playChordStrum(name, direction = "down") {
   };
 
 
-  function getChordFrets(name) {
-  return CHORDS[name];
-}
 
+  
 let cf=null
 if( activeCFUI ) {
   const hm = dc.HARMONY_MANAGER

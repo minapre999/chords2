@@ -1,3 +1,6 @@
+
+import { playNote } from "../../sound/PlayNote.js";
+
 export default function StringLane({
   stringIndex,
   openMidi,
