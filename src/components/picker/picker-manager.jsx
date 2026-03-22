@@ -42,25 +42,29 @@ function PianoPanel({
   { note: "B", class: "white-key b" },
 ];
 
-
-  return (
+console.log("rendering piano with chordRootUI: " , chordRootUI)
+ return (
+  chordRootUI && (
     <>
-     
-       <div className="keyboard">
-          {KEYS.map(k => (
-            <div
-              key={k.note}
-              className={`key ${k.class}`}
-              onClick={() => setChordRootUI(k.note)}
-            >
-              <span>{k.note}</span>
-            </div>
-          ))}
-    </div>
+      <div className="title-bar">
+        <div className="title">Root</div>
+      </div>
 
-    
+      <div className="keyboard">
+        {KEYS.map(k => (
+          <div
+            key={k.note}
+            className={`key ${k.class} ${chordRootUI === k.note ? "selected" : ""}`}
+            onClick={() => setChordRootUI(k.note)}
+          >
+            <span>{k.note}</span>
+          </div>
+        ))}
+      </div>
     </>
-  );
+  )
+);
+
 }
 
 
@@ -82,15 +86,9 @@ function QualityPanel({
   };
 
   const chords = dc.HARMONY_MANAGER.chords
-  const major = chords.filter(function (ch) {
-                return ch.isMajor() == true
-            })
-  const dominant = chords.filter(function (ch) {
-                return ch.isDominant() == true
-            })
-  const minor = chords.filter(function (ch) {
-                return ch.isMinor() === true
-            })
+  const major = chords.filter( (ch)=>ch.isMajor() )
+  const dominant = chords.filter( (ch)=> ch.isDominant() )
+  const minor = chords.filter( (ch)=>ch.isMinor() )
 
 
   return (

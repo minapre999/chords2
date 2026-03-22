@@ -12,77 +12,54 @@ import ReactDOM from "react-dom/client";
 
 
 
-function ChordInfo() {
+function ChordInfo({
+    activeCFUI,
+      setActiveCFUI,
+      chordRootUI,
+      setChordRootUI
+}) {
+  if(!activeCFUI | chordRootUI) return( <></> )
 
 
+  let cf = dc.HARMONY_MANAGER.chordformWithId(activeCFUI);
+  cf.root=chordRootUI
+  let chord = dc.HARMONY_MANAGER.chordformWithId( activeCFUI );
+    // let chordforms = chord.getChordforms({ root: "C", form: "D2", string: "1" });
+  chord.root=chordRootUI
 
-  
+    // console.log("cf: ", cf)
 
-  return (
-    <>
-     
-        <div class="cc-main">
-  <div class="current-chord-info fretboard-info">
-            
-    <div class="chord"> 
-     
+    // Map form → label
+    const formLabels = {
+      D2: "Drop 2",
+      D3: "Drop 3",
+      D4: "Drop 2+4",
+    };
 
-      <div>
-      <span class="root">C</span><span class="quality">maj<sup>7</sup></span>
-     
-   
-    </div> {/*<!-- current-chord-info --> */} 
+    // Get the label safely
+    const formKey = cf.form;
+    const formLabel = formLabels[formKey] || formKey;
+    // Build the final string
+     const strCF = `${formLabel}, strings ${cf.stringset}, inversion ${cf.inversion}`;
 
-    <div class="form-stringset">Drop 2, strings 2:5, inversion 1</div>
+// console.log("ChordInfo Chord root: ", chordRootUI, "strCF: ", strCF)
 
-  </div> {/*<!-- chord --> */} 
+  return ( chordRootUI && activeCFUI && (
+        <>
+            <div className="mb-4">&nbsp;</div>
 
-         
-
-            {/* <div class="edit-hide">
-            <div class="equivalent-chords" style="display: none;">
-              <div class="eq-chord-title">Equivalent to:</div>
-              <div class="eq-chord eq-chord-1"> <span class="root"></span><span class="quality"></span></div>
-              <div class="eq-chord eq-chord-2"> <span class="root"></span><span class="quality"></span></div>
-              <div class="eq-chord eq-chord-3"> <span class="root"></span><span class="quality"></span></div>
-              <div class="eq-chord eq-chord-4"> <span class="root"></span><span class="quality"></span></div>
-              <div class="eq-chord eq-chord-5"> <span class="root"></span><span class="quality"></span></div>
-              <div class="eq-chord eq-chord-6"> <span class="root"></span><span class="quality"></span></div>
-              <div class="eq-chord eq-chord-7"> <span class="root"></span><span class="quality"></span></div>
-              <div class="eq-chord eq-chord-8"> <span class="root"></span><span class="quality"></span></div>
-              <div class="eq-chord eq-chord-9"> <span class="root"></span><span class="quality"></span></div>
-              <div class="eq-chord eq-chord-10"> <span class="root"></span><span class="quality"></span></div>
-              <div class="eq-chord eq-chord-11"> <span class="root"></span><span class="quality"></span></div>
-              <div class="eq-chord eq-chord-12"> <span class="root"></span><span class="quality"></span></div>
-            </div>
-          </div> */}
-
-      </div> {/*<!-- <!-- current-chord-info  --> */} 
-
-       
-      <div class="button-wrapper d-flex flex-row">
-
-        {/* <!-- instrument dropdown  -->  */}
-      {/* <div class="instrument-dropdown dropdown">
-        <button class="btn btn-sm btn-secondary dropdown-toggle" type="button" id="instrument-dropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">guitar-acoustic</button>
-        <div class="dropdown-menu" aria-labelledby="instrument-dropdown"><a class="dropdown-item instrument" data-value="guitar-nylon" href="#">guitar-nylon</a><a class="dropdown-item instrument" data-value="guitar-electric" href="#">guitar-electric</a><a class="dropdown-item instrument" data-value="guitar-acoustic" href="#">guitar-acoustic</a><a class="dropdown-item instrument" data-value="piano" href="#">piano</a><a class="dropdown-item instrument" data-value="bass-electric" href="#">bass-electric</a><a class="dropdown-item instrument" data-value="organ" href="#">organ</a></div>
-      </div>  */}
-      
-
-      <div class="">
-      
-  </div> 
-
-
-  </div> {/*<!-- cc-main  --> */}
-
-   
-
-    
-
-</div>
-    
-    </>
+            <div>
+            {cf.root}
+            <span
+              dangerouslySetInnerHTML={{
+                __html: cf.chord.harmony.symbols[0]
+              }}
+            />
+          </div>
+          <div />
+          <div>{strCF}</div>
+      </>
+      )
   );
 }
 
@@ -157,7 +134,7 @@ let strCF = "";
     let chordforms = chord.getChordforms({ root: "C", form: "D2", string: "1" });
     cf = chordforms[0];
 
-    console.log("cf: ", cf)
+    // console.log("cf: ", cf)
 
     // Map form → label
     const formLabels = {
@@ -173,7 +150,7 @@ let strCF = "";
     // Build the final string
      strCF = `${formLabel}, strings ${cf.stringset}, inversion ${cf.inversion}`;
 
-console.log("strCF: ", strCF)
+// console.log("strCF: ", strCF)
 
   }
 
@@ -224,6 +201,8 @@ console.log("strCF: ", strCF)
       setShowOpenStringsUI={setShowOpenStringsUI}
       showHeadstockUI={showHeadstockUI}
       setShowHeadstockUI={setShowHeadstockUI}
+      showInlaysUI={showInlaysUI}
+      setShowInlaysUI={setShowInlaysUI}
 
     />
 
@@ -246,22 +225,16 @@ console.log("strCF: ", strCF)
       showAllNotesUI={showAllNotesUI}
       showOpenStringsUI={showOpenStringsUI}
       showHeadstockUI={showHeadstockUI}
+      showInlaysUI={showInlaysUI}
     />
 
 
-   <div className="mb-4">&nbsp;</div>
-
-    <div>
-    {cf.root}
-    <span
-      dangerouslySetInnerHTML={{
-        __html: cf.chord.harmony.symbols[0]
-      }}
+    <ChordInfo 
+      activeCFUI={activeCFUI}
+      setActiveCFUI={setActiveCFUI}
+      chordRootUI={chordRootUI}
+      setChordRootUI={setChordRootUI}
     />
-  </div>
-  <div />
-  <div>{strCF}</div>
-
 
     {/* {showPanel && (
       <Picker

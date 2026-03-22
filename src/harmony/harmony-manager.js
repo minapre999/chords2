@@ -585,7 +585,7 @@ get url() {
 get root()  { return this._root }
 
 set root(root) {
-    console.log("root: ", root)
+    // console.log("root: ", root)
   if (this._root === root) return;
 
   // Assign raw root

@@ -20,7 +20,7 @@ export default function Toolbar({
 }) {
 
 
- console.log("Toolbar chordRootUI: ", chordRootUI)
+//  console.log("Toolbar chordRootUI: ", chordRootUI)
 
 
   
@@ -124,7 +124,8 @@ const CHORDS = {
         <input
           type="checkbox"
           checked={showInlaysUI}
-          onChange={(e) => setShowInlaysUI(e.target.checked)}
+          onChange={(e) => {console.log("toolbox inlays"); 
+            setShowInlaysUI(e.target.checked)}}
         />
         Inlays
       </label>

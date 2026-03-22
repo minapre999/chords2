@@ -747,34 +747,6 @@ function playChordStrum(name, direction = "down") {
 
 
 
-
-              {/* STRINGS AND NOTES */}
-
-
-              <defs>
-            {/* Diagonal winding pattern */}
-            <pattern id="woundPattern" patternUnits="userSpaceOnUse" width="6" height="6">
-              <rect width="6" height="6" fill="white" />
-              <line x1="0" y1="6" x2="6" y2="0" stroke="black" strokeWidth="1" />
-            </pattern>
-
-            {/* Mask using the pattern */}
-            <mask id="woundMask">
-              <rect width="100%" height="100%" fill="url(#woundPattern)" />
-            </mask>
-
-            {/* Metallic sheen */}
-            <linearGradient id="stringSheen" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="10%" stopColor="rgba(0,0,0,0.1)" />
-              <stop offset="15%" stopColor="rgba(255,255,255,0.25)" />
-              <stop offset="30%" stopColor="rgba(255,255,255,0.8)" />
-              <stop offset="45%" stopColor="rgba(255,255,255,0.25)" />
-              <stop offset="90%" stopColor="rgba(0,0,0,0.6)" />
-            </linearGradient>
-          </defs>
-
-
-
           {normalizedTuning.map((openMidi, stringIndex) => {
 
           const y = stringSpacing * (numStrings - stringIndex);
@@ -883,6 +855,11 @@ if (activeChord) {
                     }
                     
                     {Array.from({ length: numFrets }).map((_, fretIndex) => {
+
+                   
+
+
+
                       const fret = fretIndex + 1;
                       const midi = openMidi + fret;
                       const noteName = noteNameFromMidi(midi, { preferSharps });

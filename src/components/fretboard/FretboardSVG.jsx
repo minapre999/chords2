@@ -6,7 +6,9 @@ import React, { useState, useEffect, useRef, useMemo } from "react";
   import  ChordForm  from "../../harmony/harmony-manager.js"
  import {Chord}  from "../../harmony/harmony-manager.js"
  import Note from "../../harmony/note.js"
-
+import StringLane from "./StringLane.jsx"
+import FretboardSurface from "./FretboardSurface.jsx"
+import VibrationOverlay from "./VibrationOverlay.jsx"
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
 
 // import "../../css/Fretboard.css";
@@ -148,18 +150,25 @@ openMarkers,
   const effectiveHeadstockWidth = showHeadstockUI ? headstockWidth : 0;
   const nutX = 35;
 
-  const scaleWidth = width - nutX - 20;
-  const fretSpacing = scaleWidth / (numFrets + 1);
+  // const scaleWidth = width - nutX - 20;
+  // const fretSpacing = scaleWidth / (numFrets + 1);
   const stringSpacing = height / (numStrings + 1);
+//  const getFretX = (fret) => nutX + fretSpacing * fret;
+  const stringY = (string) => stringSpacing * (string+1);
+
+  const scaleWidth = width - nutX;   // must be positive
+const fretSpacing = scaleWidth / numFrets;
+
+const getFretX = (fretIndex) => nutX + fretSpacing * fretIndex;
+
+
 
   const gaugeMap = [4,5,6,7,8.4,10];
   const getStringWidth = (i) => gaugeMap[Math.min(gaugeMap.length - 1, i)];
 
   const inlayFrets = [3, 5, 7, 9, 12, 15, 17, 19];
 
-  const getFretX = (fret) => nutX + fretSpacing * fret;
-  const stringY = (string) => stringSpacing * (string+1);
-
+ 
   const getVibrationAmplitude = (stringIndex) => {
     const amplitudes = [6, 5, 4, 3, 2, 1];
     return amplitudes[stringIndex] ?? 2;
@@ -332,7 +341,7 @@ let cf=null
 if( activeCFUI ) {
   const hm = dc.HARMONY_MANAGER
    cf = hm.chordformWithId(activeCFUI)
-   console.log("chordRootUI: ", chordRootUI)
+  //  console.log("chordRootUI: ", chordRootUI)
    cf.root = chordRootUI
 }
   //  console.log("found active activeCFUI in FretboardSVG: ", activeCFUI, "cf: ", cf)
@@ -340,586 +349,182 @@ if( activeCFUI ) {
 
 
 
-  return (
+ return (
   <div style={{ width: "100%", position: "relative" }}>
-
-   
-
-   {/* FULL-WIDTH FRETBOARD CONTAINER */}
-<div
- className="fretboard-scroll" 
-  style={{
-    width: "100%",
-    display: "flex",
-    justifyContent: "center",
-    position: "relative",
-  }}
-  onWheel={(e) => {
-    if (!e.ctrlKey) return;
-    e.preventDefault();
-    setZoom((z) => {
-      const delta = e.deltaY > 0 ? -0.1 : 0.1;
-      return Math.min(3, Math.max(0.5, z + delta));
-    });
-  }}
-  
->
-
-
-
-
- {/* NEW WRAPPER */}
-  <div
-    style={{
-      position: "relative",
-      width: width * zoom + headstockWidth * zoom + 20, // total width
-      height: height * zoom,
-    }}
-  >
-
- 
-  {/* HEADSTOCK */}
-  <div
-    style={{
-      position: "absolute",
-      //left: 0,
-      left: -(headstockWidth + 20) * zoom,
-      top: 0,
-      width: headstockWidth * zoom,
-      height: height * zoom,
-      transform: `scale(${zoom})`,
-      transformOrigin: "top left",
-      pointerEvents: "none",
-      zIndex: 10,
-    }}
-  >
-    {showHeadstockUI && (
-      <svg width={headstockWidth} height={height}>
-      <defs>
-            <linearGradient id="headstockGradient" x1="0" y1="0" x2="1" y2="0">
+    {/* SCROLL WRAPPER */}
+    <div
+      className="fretboard-scroll"
+      style={{
+        width: "100%",
+        display: "flex",
+        justifyContent: "center",
+        position: "relative",
+      }}
+      onWheel={(e) => {
+        if (!e.ctrlKey) return;
+        e.preventDefault();
+        setZoom((z) => {
+          const delta = e.deltaY > 0 ? -0.1 : 0.1;
+          return Math.min(3, Math.max(0.5, z + delta));
+        });
+      }}
+    >
+      {/* MAIN WRAPPER (headstock + fretboard) */}
+      <div
+        style={{
+          position: "relative",
+          width: width * zoom + headstockWidth * zoom + 20,
+          height: height * zoom,
+        }}
+      >
+        {/* HEADSTOCK */}
+        <div
+          style={{
+            position: "absolute",
+            left: -(headstockWidth + 20) * zoom,
+            top: 0,
+            width: headstockWidth * zoom,
+            height: height * zoom,
+            transform: `scale(${zoom})`,
+            transformOrigin: "top left",
+            pointerEvents: "none",
+            zIndex: 10,
+          }}
+        >
+          {showHeadstockUI && (
+            <svg width={headstockWidth} height={height}>
+              <defs>
+                <linearGradient id="headstockGradient" x1="0" y1="0" x2="1" y2="0">
                   <stop offset="0%" stopColor="#5b3a1f" />
                   <stop offset="100%" stopColor="#3b2413" />
                 </linearGradient>
-      </defs>
-              {showHeadstockUI && (
-                <g transform={`translate(${headstockWidth} 0) scale(-1, 1)`}>
-                  <path
-                    d={`
-                      M 0 ${height * 0.2}
-                      L ${headstockWidth * 0.7} ${height * 0.1}
-                      L ${headstockWidth} ${height * 0.25}
-                      L ${headstockWidth} ${height * 0.75}
-                      L ${headstockWidth * 0.7} ${height * 0.9}
-                      L 0 ${height * 0.8}
-                      Z
-                    `}
-                    fill="url(#headstockGradient)"
-                    stroke="#1b0f08"
-                    strokeWidth="2"
-                  />
-
-                  {Array.from({ length: numStrings }).map((_, i) => {
-                    const isBassSide = i >= numStrings / 2;
-                    const sideIndex = isBassSide ? i - numStrings / 2 : i;
-                    const baseY = isBassSide ? height * 0.7 : height * 0.3;
-                    const y = baseY + sideIndex * 18;
-                    const x = headstockWidth * 0.85;
-
-                    return (
-                      <g key={i}>
-                        <circle cx={x} cy={y} r={5} fill="#a38c8c" stroke="#a59a9a" strokeWidth="1" />
-                        <rect x={x - 1} y={y - 10} width={2} height={10} fill="#b0b0b0" />
-                      </g>
-                    );
-                  })}
-                </g>
-              )}
-            </svg>
-    )}
-        </div>
-
- {/* BACKGROUND WRAPPER — NO ZOOM HERE */}
-  <div
-    style={{
-      width: width,
-      height: height,
-
-      backgroundSize: "cover",
-      backgroundRepeat: "no-repeat",
- 
-    
-
-      width: width * zoom,
-    height: height * zoom,
-  
-    position: "relative",
-    overflow: "visible",
-    zIndex: 2,   // ← higher (or remove entirely)
-
-
-     // marginLeft: (headstockWidth + 20) * zoom, // aligns nut with headstock
-    }}
-  >
-
-    {/* OUTER ZOOM WRAPPER */}
-    <div
-      style={{
-        width: width,
-        height: height,
-        position: "relative",
-      }}
-    >
-
-      {/* INNER ZOOM WRAPPER — ONLY PLACE WHERE ZOOM HAPPENS */}
-      <div
-        style={{
-          transform: `scale(${zoom})`,
-          transformOrigin: "0 0",
-          width: width,
-          height: height,
-          position: "absolute",
-          top: 0,
-          left: 0,
-        }}
-      >
-
-            {/* === VIBRATION OVERLAY === */}
-            {vibratingString !== null && (
-              <svg
-                width={width}
-                height={height}
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  pointerEvents: "none",
-                  overflow: "visible",
-                  zIndex: 10,
-                }}
-              >
-                <g>
-                  {(() => {
-                    const y = stringY(vibratingString);
-                    const amp = getVibrationAmplitude(vibratingString);
-
-                    return (
-                      <line
-                        x1="0"
-                        y1={y}
-                        x2={width}
-                        y2={y}
-                        stroke="#ffffff88"
-                        strokeWidth={getStringWidth(vibratingString)}
-                        strokeLinecap="round"
-                      >
-                        <animateTransform
-                          attributeName="transform"
-                          type="translate"
-                          values={`
-                            0 0;
-                            0 -${amp};
-                            0 ${amp};
-                            0 -${amp * 0.6};
-                            0 ${amp * 0.6};
-                            0 -${amp * 0.3};
-                            0 ${amp * 0.3};
-                            0 0
-                          `}
-                          dur="0.35s"
-                          repeatCount="1"
-                        />
-                      </line>
-                    );
-                  })()}
-                </g>
-              </svg>
-            )}
-
-            {/* === MAIN SVG === */}
-
-          
-
-
-            <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
-              <defs>
-                {/* {fretboardImage && ( */}
-
-            <pattern
-                id="rosewoodPattern"
-                patternUnits="userSpaceOnUse"
-                width="75"
-                height="192"
-              >
-                <image
-                  href="/images/rosewood5.png"
-                  width="75"
-                  height="192"
-                  preserveAspectRatio="none"
-                />
-              </pattern>        
               </defs>
 
-            
+              <g transform={`translate(${headstockWidth} 0) scale(-1, 1)`}>
+                <path
+                  d={`
+                    M 0 ${height * 0.2}
+                    L ${headstockWidth * 0.7} ${height * 0.1}
+                    L ${headstockWidth} ${height * 0.25}
+                    L ${headstockWidth} ${height * 0.75}
+                    L ${headstockWidth * 0.7} ${height * 0.9}
+                    L 0 ${height * 0.8}
+                    Z
+                  `}
+                  fill="url(#headstockGradient)"
+                  stroke="#1b0f08"
+                  strokeWidth="2"
+                />
 
-              {/* Fretboard */}
-
-
-              <rect
-             x="0"
-            y="0"
-            width="1800"
-            height="220"
-            fill="url(#rosewoodPattern)"
-              />
-
-              {/* Nut */}
-              <rect
-                x={nutX}
-                y={0}
-                width={16}
-                height={height}
-                fill="#f0f0f0"
-                stroke="#999"
-                strokeWidth="1.5"
-              />
-
-              {/* Frets */}
-              {Array.from({ length: numFrets  }).map((_, i) => {
-                const x = getFretX(i + 1);
-                return (
-                  <line
-                    key={i}
-                    x1={x}
-                    y1={0}
-                    x2={x}
-                    y2={height}
-                    stroke="#cfcfcf"
-                    strokeWidth={8}
-                  />
-                );
-              })}
-
-              {/* Inlays */}
-              {showInlaysUI &&
-                inlayFrets.map((fret) => {
-                  if (fret > numFrets) return null;
-                  const isDouble = fret === 12;
-                  const x = (getFretX(fret) + getFretX(fret - 1)) / 2;
-                  const r = 6;
-
-                  if (isDouble) {
-                    return (
-                      <g key={fret}>
-                        <circle cx={x} cy={height * 0.35} r={r} fill="#f5f5f5" stroke="#999" />
-                        <circle cx={x} cy={height * 0.65} r={r} fill="#f5f5f5" stroke="#999" />
-                      </g>
-                    );
-                  }
+                {Array.from({ length: numStrings }).map((_, i) => {
+                  const isBassSide = i >= numStrings / 2;
+                  const sideIndex = isBassSide ? i - numStrings / 2 : i;
+                  const baseY = isBassSide ? height * 0.7 : height * 0.3;
+                  const y = baseY + sideIndex * 18;
+                  const x = headstockWidth * 0.85;
 
                   return (
-                    <circle
-                      key={fret}
-                      cx={x}
-                      cy={height / 2}
-                      r={r}
-                      fill="#f5f5f5"
-                      stroke="#999"
-                    />
+                    <g key={i}>
+                      <circle cx={x} cy={y} r={5} fill="#a38c8c" stroke="#a59a9a" strokeWidth="1" />
+                      <rect x={x - 1} y={y - 10} width={2} height={10} fill="#b0b0b0" />
+                    </g>
                   );
                 })}
-
-
-
-{
-
-openMarkers && activeCFUI && (
-     
-  <g className="open-muted-markers">
-    {/* {console.log("activeChord: ", activeChord)} */}
-    {/* {console.log("typeof activeChord: ", typeof(activeChord))} */}
-    {
- 
-    cf.notes.map((note, i) => {
-      const x = getFretX(0) - 40; // left of the nut
-       const y = stringY(stringIndex);
-      // const y = stringY(note.string);
-
-      if (note.fret === 0 ) {
-        return (
-          <text
-            key={i}
-            x={x}
-            y={y + 5}
-            fontSize={20}
-            fill="white"
-            textAnchor="middle"
-          >
-            O
-          </text>
-        );
-      }
-
-      if (note.fret === null ) {
-        return (
-          <text
-            key={i}
-            x={x}
-            y={y + 5}
-            fontSize={20}
-            fill="white"
-            textAnchor="middle"
-          >
-            X
-          </text>
-        );
-      }
-
-      return null; // fretted → no marker
-    })}
-  </g>
-)}
-
-
-
-
-              {/* STRINGS AND NOTES */}
-
-              <defs>
-                <filter id="stringShadow" x="-50%" y="-50%" width="200%" height="200%">
-                  <feDropShadow
-                    dx="0"
-                    dy="2"
-                    stdDeviation="1.5"
-                    floodColor="black"
-                    floodOpacity="0.35"
-                  />
-                </filter>
-              </defs>
-
-
-
-              <defs>
-            {/* Diagonal winding pattern */}
-            <pattern id="woundPattern" patternUnits="userSpaceOnUse" width="6" height="6">
-              <rect width="6" height="6" fill="white" />
-              <line x1="0" y1="6" x2="6" y2="0" stroke="black" strokeWidth="1" />
-            </pattern>
-
-            {/* Mask using the pattern */}
-            <mask id="woundMask">
-              <rect width="100%" height="100%" fill="url(#woundPattern)" />
-            </mask>
-
-            {/* Metallic sheen */}
-            <linearGradient id="stringSheen" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="10%" stopColor="rgba(0,0,0,0.1)" />
-              <stop offset="15%" stopColor="rgba(255,255,255,0.25)" />
-              <stop offset="30%" stopColor="rgba(255,255,255,0.8)" />
-              <stop offset="45%" stopColor="rgba(255,255,255,0.25)" />
-              <stop offset="90%" stopColor="rgba(0,0,0,0.6)" />
-            </linearGradient>
-          </defs>
-
-
-
-          {normalizedTuning.map((openMidi, stringIndex) => {
-
-          const y = stringY(stringIndex)
-          const stringThickness = getStringWidth(stringIndex);
-          const openNoteName = noteNameFromMidi(openMidi, { preferSharps });
-          const isWound = stringIndex > 2; // 0,1,2 = wound; 3+ = plain
-          const strokeCol = stringIndex > 2 ? bassStringColorUI : stringColorUI;
-          const chordFrets = activeChord ? CHORDS[activeChord] : null;
-
-          // Highlight open or muted strings when a chord is active
-{openMarkers && activeCFUI && (
-  <g className="open-muted-markers">
-    {cf.map((note, i) => {
-      const x = getFretX(0) - 40;
-      // const y = stringY(note.string);
-
-      if (note.fret === 0) {
-        return (
-          <text key={i} x={x} y={y + 5} fontSize={20} fill="white" textAnchor="middle">
-            O
-          </text>
-        );
-      }
-
-      if (note === null) {
-        return (
-          <text key={i} x={x} y={y + 5} fontSize={20} fill="white" textAnchor="middle">
-            X
-          </text>
-        );
-      }
-
-      return null;
-    })}
-  </g>
-)}
-
-  
-
-
-          //console.log("String index: stringIndex")
-          return (
-             <g key={stringIndex}>
-                    
-                    {/* String line */}
-
-           {/* Base string with optional winding */}
-      <rect
-        x={0}
-        y={y - stringThickness / 2}
-        width={width}
-        height={stringThickness}
-        fill={strokeCol}
-        {...(isWound ? { mask: "url(#woundMask)" } : {})}
-      />
-
-      {/* Sheen on top, no mask */}
-      <rect
-        x={0}
-        y={y - stringThickness / 2}
-        width={width}
-        height={stringThickness}
-        fill="url(#stringSheen)"
-      />
-
- {/* String shadow  */}
-      {/* <line
-  x1={0}
-  y1={stringY(stringIndex)+ 8} 
-  x2={width}
-  y2={stringY(stringIndex)+8}
-  stroke="#ccc"
-  strokeWidth={stringThickness}
-  filter="url(#stringShadow)"
-/> */}
-
-
-
-                  
-                    {/* Open string */}
-
-                    
-                    {showOpenStringsUI && (
-                      <g
-                        onClick={() =>
-                          interactive && handleNoteClick(stringIndex, 0)
-                        }
-                        style={{
-                          cursor: interactive ? "pointer" : "default",
-                          pointerEvents: "auto",
-                        }}
-                      >
-                        <circle cx={nutX - 18} cy={y} r={10} fill="#fff" stroke="#333" />
-                        {showNoteNamesUI && (
-                          <text
-                            x={nutX - 18}
-                            y={y + 4}
-                            fontSize={10}
-                            textAnchor="middle"
-                            fill="#000"
-                          >
-                            {openNoteName}
-                          </text>
-                        )}
-                      </g>
-                    )}
-
-                    {/* Fretted notes */}
-
-                    
-                    {/* {console.log("numFrets =", numFrets)
-                    } */}
-                    
-                    {Array.from({ length: numFrets }).map((_, fretIndex) => {
-                      const fret = fretIndex + 1;
-                      const midi = openMidi + fret;
-                      const noteName = noteNameFromMidi(midi, { preferSharps });
-                      // const x = (getFretX(fret) + getFretX(fret - 1)) / 2;
-                      const left = getFretX(fret - 1);
-                      const right = Math.min(getFretX(fret), width);
-                      const x = (left + right) / 2;
-                      const chordFrets = getChordFrets(activeChord);
-                     // const isChordNote = chordFrets && chordFrets[stringIndex] === fret;  
-
-   let isChordNote = false  
-   if( cf)   {    
-    // console.log("cf in svg render: ", cf)     
-    const note = cf.notes.filter((note)=>{ return note.stringNumber == stringIndex+1 && note.fret==fret})            
-      isChordNote =  activeCFUI &&  note.length;
-      if( isChordNote){ console.log("chord form to render: ",)}
-      // console.log("note in svg render: ", note, "isChordNote: ",isChordNote)
-          }
-
-  // console.log("activeChord: ", activeChord)
-                  //  console.log("fret", fret, "left", left, "right", getFretX(fret), "clamped", right);
-
-          // console.log("ITERATING FRET", fret);
-// console.log("FRET", fret, "left", left, "right", right, "x", x);
-                      return (
-                        <g
-                          key={fretIndex}
-                          onClick={() =>
-                            interactive && handleNoteClick(stringIndex, fretIndex + 1)
-                          }
-                          style={{ cursor: interactive ? "pointer" : "default" }}
-                        >
-                           {/* // DEBUG: draw a vertical red line at the computed X */}
-                    {/* <line
-                      x1={x}
-                      y1={0}
-                      x2={x}
-                      y2={1000}
-                      stroke="red"
-                      strokeWidth={1}
-                    /> */}
-
-                       {/* bigger circle for chord note + highlight + thicker outline*/}
-                       {(showAllNotesUI || isChordNote) && (
-                          <circle
-                            cx={x}
-                            cy={y}
-                            r={ isChordNote ? 20 : 12}
-                            fill={isChordNote ? "rgba(255, 221, 0, 0.35)" : "rgba(185, 203, 27, 0.89)"}
-                            stroke={ isChordNote ? "#ff0" : "#333"}
-                            strokeWidth={ isChordNote ? 3 : 1}
-                          />
-                       )}
-                          {(showAllNotesUI || isChordNote) && (
-                            <text
-                              x={x}
-                              y={y + 4}
-                              fontSize={10}
-                              textAnchor="middle"
-                              fill="#fff"
-                            >
-                              {noteName}
-                            </text>
-                          )}
-                        </g>
-                      );
-                    })}
-                  </g>
-                );
-              })}
+              </g>
             </svg>
+          )}
+        </div>
 
-            {selected && (
-              <div style={{ marginTop: 8, fontSize: 14 }}>
-                Selected: string {selected.stringIndex + 1}, fret {selected.fretIndex} →{" "}
-                {selected.noteName}
-              </div>
-            )}
+        {/* BACKGROUND WRAPPER */}
+        <div
+          style={{
+            width: width * zoom,
+            height: height * zoom,
+            position: "relative",
+            overflow: "visible",
+            zIndex: 2,
+          }}
+        >
+          {/* OUTER ZOOM WRAPPER */}
+          <div style={{ width, height, position: "relative" }}>
+            {/* INNER ZOOM WRAPPER */}
+            <div
+              style={{
+                transform: `scale(${zoom})`,
+                transformOrigin: "0 0",
+                width,
+                height,
+                position: "absolute",
+                top: 0,
+                left: 0,
+              }}
+            >
+              {/* === VIBRATION OVERLAY === */}
+               <VibrationOverlay
+                  vibratingString={vibratingString}
+                  width={width}
+                  height={height}
+                  stringY={stringY}
+                  getStringWidth={getStringWidth}
+                  getVibrationAmplitude={getVibrationAmplitude}
+                />
+
+
+              {/* === MAIN SVG === */}
+              <svg width={width} height={height}>
+                <FretboardSurface
+                  width={width}
+                  height={height}
+                  numFrets={numFrets}
+                  nutX={nutX}
+                  getFretX={getFretX}
+                  showInlaysUI={showInlaysUI}
+                  inlayFrets={inlayFrets}
+                />
+
+                {/* STRING + NOTE LAYERS */}
+               
+
+                {normalizedTuning.map((openMidi, stringIndex) => (
+                  <StringLane
+                    key={stringIndex}
+                    stringIndex={stringIndex}
+                    openMidi={openMidi}
+                    cf={cf}
+                    showOpenStringsUI={showOpenStringsUI}
+                    showNoteNamesUI={showNoteNamesUI}
+                    openMarkers={openMarkers}
+                    activeCFUI={activeCFUI}
+                    interactive={interactive}
+                    handleNoteClick={handleNoteClick}
+                    preferSharps={preferSharps}
+                    width={width}
+                    numFrets={numFrets}
+                    nutX={nutX}
+                    getFretX={getFretX}
+                    stringY={stringY}
+                    getStringWidth={getStringWidth}
+                    noteNameFromMidi={noteNameFromMidi}
+                    showAllNotesUI={showAllNotesUI}
+                    fretSpacing={fretSpacing}
+                  />
+                ))}
+              </svg>
+
+              {selected && (
+                <div style={{ marginTop: 8, fontSize: 14 }}>
+                  Selected: string {selected.stringIndex + 1}, fret {selected.fretIndex} →{" "}
+                  {selected.noteName}
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </div> {/* end of background wrapper */}
+      </div>
     </div>
   </div>
-   </div>
 );
+          // ← FIXED — no extra </div>
+
 
 }
