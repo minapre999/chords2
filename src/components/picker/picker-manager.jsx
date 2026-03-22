@@ -11,7 +11,10 @@ function PianoPanel({
   activeSubPanelUI,
   setActiveSubPanelUI,
   message,
-  onKeyClick
+  onKeyClick,
+  chordRootUI,
+  setChordRootUI
+
 }) {
 
   const spId = "piano-sp";
@@ -24,33 +27,37 @@ function PianoPanel({
 
   };
 
+  const KEYS = [
+  { note: "C", class: "white-key c" },
+  { note: "C#", class: "black-key c_sharp" },
+  { note: "D", class: "white-key d" },
+  { note: "D#", class: "black-key d_sharp" },
+  { note: "E", class: "white-key e" },
+  { note: "F", class: "white-key f" },
+  { note: "F#", class: "black-key f_sharp" },
+  { note: "G", class: "white-key g" },
+  { note: "G#", class: "black-key g_sharp" },
+  { note: "A", class: "white-key a" },
+  { note: "A#", class: "black-key a_sharp" },
+  { note: "B", class: "white-key b" },
+];
+
+
   return (
     <>
      
-        <div id={spId} className={spClass}>
-          <div className="title-bar" onClick={ToggleSubPanel}>
-            <div className="title">Root</div>
-          </div>
-
- {activeSubPanelUI === spId && (
-          <div className="root-picker-container picker-container">
-            <div className="keyboard">
-              <div className="key white-key c selected"><span>C</span></div>
-              <div className="key black-key c_sharp"><span>C#</span></div>
-              <div className="key white-key d"><span>D</span></div>
-              <div className="key black-key d_sharp"><span>D#</span></div>
-              <div className="key white-key e"><span>E</span></div>
-              <div className="key white-key f"><span>F</span></div>
-              <div className="key black-key f_sharp"><span>F#</span></div>
-              <div className="key white-key g"><span>G</span></div>
-              <div className="key black-key g_sharp"><span>G#</span></div>
-              <div className="key white-key a"><span>A</span></div>
-              <div className="key black-key a_sharp"><span>A#</span></div>
-              <div className="key white-key b"><span>B</span></div>
+       <div className="keyboard">
+          {KEYS.map(k => (
+            <div
+              key={k.note}
+              className={`key ${k.class}`}
+              onClick={() => setChordRootUI(k.note)}
+            >
+              <span>{k.note}</span>
             </div>
-          </div>
-            )}
-        </div>
+          ))}
+    </div>
+
     
     </>
   );
@@ -233,30 +240,56 @@ function InversionPanel({
 
 
 
-function PickerContent({ activeSubPanelUI, setActiveSubPanelUI }) {
+function PickerContent({ 
+  activeSubPanelUI, 
+  setActiveSubPanelUI,
+  activeCFUI,
+  setActiveCFUI,
+  chordRootUI,
+  setChordRootUI,
+
+ }) {
   return (
     <div className="pm-container">
       <PianoPanel
         activeSubPanelUI={activeSubPanelUI}
         setActiveSubPanelUI={setActiveSubPanelUI}
+        chordRootUI={chordRootUI}
+        setChordRootUI={setChordRootUI}
       />
       <QualityPanel 
         activeSubPanelUI={activeSubPanelUI}
-        setActiveSubPanelUI={setActiveSubPanelUI}/>
+        setActiveSubPanelUI={setActiveSubPanelUI}
+        activeCFUI={activeCFUI}
+        setActiveCFUI ={setActiveCFUI}
+        />
+         
       <FormSSPanel 
         activeSubPanelUI={activeSubPanelUI}
-        setActiveSubPanelUI={setActiveSubPanelUI}/>
+        setActiveSubPanelUI={setActiveSubPanelUI}
+       activeCFUI={activeCFUI}
+        setActiveCFUI ={setActiveCFUI}        />
       <InversionPanel 
         activeSubPanelUI={activeSubPanelUI}
-        setActiveSubPanelUI={setActiveSubPanelUI}/>
+        setActiveSubPanelUI={setActiveSubPanelUI}
+       activeCFUI={activeCFUI}
+        setActiveCFUI ={setActiveCFUI}        />
     </div>
   );
 }
 
 // need a react component for the useStates
-export default function OpenPicker() {
+export default function OpenPicker({
+  activeCFUI,
+ setActiveCFUI,
+  chordRootUI,
+  setChordRootUI 
+}) {
   const [activeSubPanelUI, setActiveSubPanelUI] = useState("piano-sp");
   const panelRootRef = useRef(null);
+
+
+//  console.log("OpenPicker chordRootUI: ", chordRootUI)
 
   const openPanel = () => {
     CreatePanel().then(root => {
@@ -266,6 +299,11 @@ export default function OpenPicker() {
         <PickerContent
           activeSubPanelUI={activeSubPanelUI}
           setActiveSubPanelUI={setActiveSubPanelUI}
+          activeCFUI={activeCFUI}
+          setActiveCFUI={setActiveCFUI}
+          chordRootUI={chordRootUI}
+          setChordRootUI={setChordRootUI}
+ 
         />
       );
     });
@@ -278,6 +316,11 @@ export default function OpenPicker() {
         <PickerContent
           activeSubPanelUI={activeSubPanelUI}
           setActiveSubPanelUI={setActiveSubPanelUI}
+          activeCFUI={activeCFUI}
+          setActiveCFUI={setActiveCFUI}
+          chordRootUI={chordRootUI}
+          setChordRootUI={setChordRootUI}
+          
         />
       );
     }
@@ -300,55 +343,23 @@ function CreatePanel() {
       theme: "default",
       position: { my: "center", at: "center", offsetX: -112 },
       headerTitle: "Chord",
-         resizeit: false,            // optional, prevents user resizing
-      // contentSize: "400 250",
+      resizeit: false,            // optional, prevents user resizing
       contentSize: { width: 400, height: 'auto' }, // initial width fixed
-  // contentSize: "auto",        // ⭐ auto height
       content: container,
-    panelCSS: {
-            zIndex: 9999 // Your desired z-index
-        },
+      panelCSS: {
+              zIndex: 9999 // Your desired z-index
+          },
       callback: panel => {
         const root = ReactDOM.createRoot(container);
         panel.classList.add("pick-master")
-    //      if (typeof panel.setStatus === "function") {
-    //   panel.setStatus("ontop");
-    // }
-      console.log("panel z-index:", getComputedStyle(panel).zIndex);
-     panel.style.zIndex = 999999;
-       console.log("panel z-index after set:", getComputedStyle(panel).zIndex);
+
+      // console.log("panel z-index:", getComputedStyle(panel).zIndex);
+        panel.style.zIndex = 999999;
+      //  console.log("panel z-index after set:", getComputedStyle(panel).zIndex);
         window.__pickerRoot = root;
         resolve(root);   // ⭐ important
 
-        // const contentEl = panel.content;
-
-      //  function adjustHeight() {
-      //     const contentHeight = contentEl.scrollHeight;
-      //     const headerHeight = panel.header.offsetHeight;
-      //     const newHeight = contentHeight + headerHeight;
-
-      //     panel.resize({
-      //       height: newHeight   // ⭐ only height changes
-      //     });
-      //   }
-
-          // Initial adjust AFTER React renders
-        // setTimeout(adjustHeight, 0);
-
-
-      // Adjust when subpanels toggle
-        // document.body.addEventListener("click", e => {
-        //   if (!e.target.closest(".subpanel .title-bar")) return;
-        //   setTimeout(adjustHeight, 0);
-        // });
-
-        // Optional: adjust on window resize
-        // window.addEventListener("resize", () => {
-        //   setTimeout(adjustHeight, 0);
-        // });
-
-
-
+     
       }
     });
   });

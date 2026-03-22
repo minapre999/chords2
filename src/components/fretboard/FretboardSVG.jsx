@@ -37,8 +37,8 @@ function noteNameFromMidi(midi, { preferSharps = true } = {}) {
   return names[idx];
 }
 
-const STANDARD_TUNING = [40, 45, 50, 55, 59, 64];
-//const STANDARD_TUNING  = [64, 59, 55, 50, 45, 40];
+// const STANDARD_TUNING = [40, 45, 50, 55, 59, 64];
+const STANDARD_TUNING  = [64, 59, 55, 50, 45, 40];
 const SAMPLE_FILES = [
   "A2.wav", "A3.wav", "A4.wav",
   "C3.wav", "C4.wav", "C5.wav", "C6.wav",
@@ -73,11 +73,12 @@ function midiFromFilename(filename) {
 
 
 export default function GuitarFretboardSVG({
-  activeCFId=null,
+  activeCFUI=null,
+  chordRootUI="C",
   numStrings = 6,
   tuning = STANDARD_TUNING,
   numFrets = 17,
-  showNoteNames = true,
+
   preferSharps = true,
   interactive = true,
   onNoteClick,
@@ -93,6 +94,7 @@ export default function GuitarFretboardSVG({
     showChord,
 showOpenStringsUI,
 showNoteNamesUI,
+  showAllNotesUI=false,
 setOpenMarkers,
 openMarkers,
 }) {
@@ -150,13 +152,13 @@ openMarkers,
   const fretSpacing = scaleWidth / (numFrets + 1);
   const stringSpacing = height / (numStrings + 1);
 
-  const gaugeMap = [10, 8.4, 7, 6, 5, 4];
+  const gaugeMap = [4,5,6,7,8.4,10];
   const getStringWidth = (i) => gaugeMap[Math.min(gaugeMap.length - 1, i)];
 
   const inlayFrets = [3, 5, 7, 9, 12, 15, 17, 19];
 
   const getFretX = (fret) => nutX + fretSpacing * fret;
-  const stringY = (string) => stringSpacing * (numStrings - string);
+  const stringY = (string) => stringSpacing * (string+1);
 
   const getVibrationAmplitude = (stringIndex) => {
     const amplitudes = [6, 5, 4, 3, 2, 1];
@@ -327,11 +329,14 @@ function playChordStrum(name, direction = "down") {
 }
 
 let cf=null
-if( activeCFId ) {
+if( activeCFUI ) {
   const hm = dc.HARMONY_MANAGER
-   cf = hm.chordformWithId(activeCFId)
-   console.log("found active activeCFId in FretboardSVG: ", activeCFId, "cf: ", cf)
-  } else{   console.log("no active chordform in FretboardSVG: ")}
+   cf = hm.chordformWithId(activeCFUI)
+   console.log("chordRootUI: ", chordRootUI)
+   cf.root = chordRootUI
+}
+  //  console.log("found active activeCFUI in FretboardSVG: ", activeCFUI, "cf: ", cf)
+  // } else{   console.log("no active chordform in FretboardSVG: ")}
 
 
 
@@ -422,7 +427,7 @@ if( activeCFId ) {
 
                     return (
                       <g key={i}>
-                        <circle cx={x} cy={y} r={5} fill="#d9d9d9" stroke="#555" strokeWidth="1" />
+                        <circle cx={x} cy={y} r={5} fill="#a38c8c" stroke="#a59a9a" strokeWidth="1" />
                         <rect x={x - 1} y={y - 10} width={2} height={10} fill="#b0b0b0" />
                       </g>
                     );
@@ -494,7 +499,7 @@ if( activeCFId ) {
               >
                 <g>
                   {(() => {
-                    const y = stringSpacing * (numStrings - vibratingString);
+                    const y = stringY(vibratingString);
                     const amp = getVibrationAmplitude(vibratingString);
 
                     return (
@@ -627,7 +632,7 @@ if( activeCFId ) {
 
 {
 
-openMarkers && activeCFId && (
+openMarkers && activeCFUI && (
      
   <g className="open-muted-markers">
     {/* {console.log("activeChord: ", activeChord)} */}
@@ -636,7 +641,7 @@ openMarkers && activeCFId && (
  
     cf.notes.map((note, i) => {
       const x = getFretX(0) - 40; // left of the nut
-       const y = stringSpacing * (numStrings - i);
+       const y = stringY(stringIndex);
       // const y = stringY(note.string);
 
       if (note.fret === 0 ) {
@@ -719,15 +724,15 @@ openMarkers && activeCFId && (
 
           {normalizedTuning.map((openMidi, stringIndex) => {
 
-          const y = stringSpacing * (numStrings - stringIndex);
+          const y = stringY(stringIndex)
           const stringThickness = getStringWidth(stringIndex);
           const openNoteName = noteNameFromMidi(openMidi, { preferSharps });
-          const isWound = stringIndex <= 2; // 0,1,2 = wound; 3+ = plain
-          const strokeCol = stringIndex <= 2 ? bassStringColorUI : stringColorUI;
+          const isWound = stringIndex > 2; // 0,1,2 = wound; 3+ = plain
+          const strokeCol = stringIndex > 2 ? bassStringColorUI : stringColorUI;
           const chordFrets = activeChord ? CHORDS[activeChord] : null;
 
           // Highlight open or muted strings when a chord is active
-{openMarkers && activeCFId && (
+{openMarkers && activeCFUI && (
   <g className="open-muted-markers">
     {cf.map((note, i) => {
       const x = getFretX(0) - 40;
@@ -755,11 +760,6 @@ openMarkers && activeCFId && (
 )}
 
   
-
- 
-
-
-
 
 
           //console.log("String index: stringIndex")
@@ -847,10 +847,11 @@ openMarkers && activeCFId && (
                      // const isChordNote = chordFrets && chordFrets[stringIndex] === fret;  
 
    let isChordNote = false  
-   if( cf)   {         
+   if( cf)   {    
+    // console.log("cf in svg render: ", cf)     
     const note = cf.notes.filter((note)=>{ return note.stringNumber == stringIndex+1 && note.fret==fret})            
-      isChordNote =  activeCFId &&  note.length;
-      if( isChordNote){ console.log("chord form to render: ", cf)}
+      isChordNote =  activeCFUI &&  note.length;
+      if( isChordNote){ console.log("chord form to render: ",)}
       // console.log("note in svg render: ", note, "isChordNote: ",isChordNote)
           }
 
@@ -878,6 +879,7 @@ openMarkers && activeCFId && (
                     /> */}
 
                        {/* bigger circle for chord note + highlight + thicker outline*/}
+                       {(showAllNotesUI || isChordNote) && (
                           <circle
                             cx={x}
                             cy={y}
@@ -886,7 +888,8 @@ openMarkers && activeCFId && (
                             stroke={ isChordNote ? "#ff0" : "#333"}
                             strokeWidth={ isChordNote ? 3 : 1}
                           />
-                          {showNoteNamesUI && (
+                       )}
+                          {(showAllNotesUI || isChordNote) && (
                             <text
                               x={x}
                               y={y + 4}

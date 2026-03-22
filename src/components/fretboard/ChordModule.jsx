@@ -98,10 +98,13 @@ export default function ChordModule() {
   const [bassStringColorUI, setBassStringColorUI] = useState("#d4af37");
   const [showOpenStringsUI, setShowOpenStringsUI] = useState(true);
   const [openMarkers, setOpenMarkers] = useState(true);
+  const [showAllNotesUI, setShowAllNotesUI] = useState(false);
   const [showNoteNamesUI, setShowNoteNamesUI] = useState(true);
   const [zoom, setZoom] = useState(1);
 const [displayMode, setDisplayMode] = useState("singleInversion") // dislay one at a time or all at once
-const [activeCFId, setActiveCFId] = useState(1)
+const [activeCFUI, setActiveCFUI] = useState(1)
+const [chordRootUI, setChordRootUI] = useState("C")
+
   // Headstock persistence
   const [showHeadstockUI, setShowHeadstockUI] = useState(() => {
     const saved = localStorage.getItem("showHeadstockUI");
@@ -180,8 +183,8 @@ console.log("strCF: ", strCF)
   // -------------------------
   useEffect(() => {
     if (cf?.id !== undefined) {
-      console.log("ChordModule Setting activeCFId: ", cf.id)
-      setActiveCFId(cf.id);
+      console.log("ChordModule Setting activeCFUI: ", cf.id)
+      setActiveCFUI(cf.id);
     }
   }, [cf]);
 
@@ -202,23 +205,33 @@ console.log("strCF: ", strCF)
   <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
  
     <Toolbar
+      activeCFUI={activeCFUI}
+      setActiveCFUI={setActiveCFUI}
+      chordRootUI={chordRootUI}
+      setChordRootUI={setChordRootUI}
       // onOpenPanel={() => setShowPanel(true)}
       stringColorUI={stringColorUI}
       setStringColorUI={setStringColorUI}
+      bassStringColorUI={bassStringColorUI}
+      setBassStringColorUI={setBassStringColorUI}
       zoom={zoom}
       setZoom={setZoom}
       showNoteNamesUI={showNoteNamesUI}
       setShowNoteNamesUI={setShowNoteNamesUI}
+      showAllNotesUI={showAllNotesUI}
+      setShowAllNotesUI={setShowAllNotesUI}
       showOpenStringsUI={showOpenStringsUI}
       setShowOpenStringsUI={setShowOpenStringsUI}
       showHeadstockUI={showHeadstockUI}
       setShowHeadstockUI={setShowHeadstockUI}
+
     />
 
 <div id="content">
 
     <GuitarFretboardSVG
-      activeCFId={activeCFId}
+      activeCFUI={activeCFUI}
+      chordRootUI={chordRootUI}
       width={1800}
       height={220}
       fretboardColor={fretboardColor}
@@ -226,9 +239,11 @@ console.log("strCF: ", strCF)
       fretboardImage={fretboardImage}
       // onOpenPanel={() => setShowPanel(true)}
       stringColorUI={stringColorUI}
+       bassStringColorUI={bassStringColorUI}
       zoom={zoom}
       setZoom={setZoom}
       showNoteNamesUI={showNoteNamesUI}
+      showAllNotesUI={showAllNotesUI}
       showOpenStringsUI={showOpenStringsUI}
       showHeadstockUI={showHeadstockUI}
     />
