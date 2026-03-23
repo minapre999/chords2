@@ -155,7 +155,7 @@ const [showOpenStringsUI, setShowOpenStringsUI] = useState(true);
     return available[0];
   }
 
-  const playNote = (midi) => {
+  const PlayNote = (midi) => {
     
     const audioCtx = audioCtxRef.current;
     if (!audioCtx) return;
@@ -178,13 +178,13 @@ const [showOpenStringsUI, setShowOpenStringsUI] = useState(true);
 
     source.connect(gain);
     gain.connect(audioCtx.destination);
-    console.log(`playNote midi: ${midi}  semitones: ${semitones}, closest: ${semitones}`)
+    console.log(`PlayNote midi: ${midi}  semitones: ${semitones}, closest: ${semitones}`)
 
     source.start();
   };
 
 
-  function playNoteAtTime(midi, startTime) {
+  function PlayNoteAtTime(midi, startTime) {
   const audioCtx = audioCtxRef.current;
   if (!audioCtx) return;
 
@@ -212,18 +212,18 @@ const [showOpenStringsUI, setShowOpenStringsUI] = useState(true);
   source.start(startTime);
 }
 
-function playChord(name) {
+function PlayChord(name) {
   const shape = CHORDS[name];
   shape.forEach((fret, stringIndex) => {
     if (fret !== null) {
-      playNote(stringIndex, fret);
+      PlayNote(stringIndex, fret);
     }
   });
 }
 
 
 
-function playChord(name) {
+function PlayChord(name) {
   const audioCtx = audioCtxRef.current;
   if (!audioCtx) return;
 
@@ -267,7 +267,7 @@ function playChord(name) {
 
 
 
-function playChordStrum(name, direction = "down") {
+function PlayChordStrum(name, direction = "down") {
   const shape = CHORDS[name];
   const order =
     direction === "down"
@@ -278,7 +278,7 @@ function playChordStrum(name, direction = "down") {
     const fret = shape[stringIndex];
     if (fret !== null) {
       const midi = tuning[stringIndex] + fret;
-      setTimeout(() => playNote(midi), i * 40);
+      setTimeout(() => PlayNote(midi), i * 40);
     }
   });
 }
@@ -288,7 +288,7 @@ function playChordStrum(name, direction = "down") {
 
   const handleNoteClick = (stringIndex, fretIndex) => {
     const midi = getMidiNumber(stringIndex, fretIndex);
-    playNote(midi);
+    PlayNote(midi);
 
     const noteName = noteNameFromMidi(midi, { preferSharps });
     const info = { stringIndex, fretIndex, midi, noteName };
@@ -413,10 +413,10 @@ function playChordStrum(name, direction = "down") {
       </label>
 
 
-  <button onClick={() => playChord("G")}>G</button>
-  <button onClick={() => playChord("D")}>D</button>
-  <button onClick={() => playChord("C")}>C</button>
-  <button onClick={() => playChord("Em")}>Em</button>
+  <button onClick={() => PlayChord("G")}>G</button>
+  <button onClick={() => PlayChord("D")}>D</button>
+  <button onClick={() => PlayChord("C")}>C</button>
+  <button onClick={() => PlayChord("Em")}>Em</button>
 
 
 

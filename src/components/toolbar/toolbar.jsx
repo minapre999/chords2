@@ -166,10 +166,6 @@ const CHORDS = {
       </label>
 
 
-  <button onClick={() => playChord(CHORDS.G)}>G</button>
-  <button onClick={() => playChord(CHORDS.D)}>D</button>
-  <button onClick={() => playChord(CHORDS.C)}>C</button>
-  <button onClick={() => playChord(CHORDS.Em)}>Em</button>
 
 <select onChange={(e) => {
         const name = e.currentTarget.value 

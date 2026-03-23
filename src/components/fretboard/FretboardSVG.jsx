@@ -10,8 +10,7 @@ import StringLane from "./StringLane.jsx"
 import FretboardSurface from "./FretboardSurface.jsx"
 import VibrationOverlay from "./VibrationOverlay.jsx"
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
-import { playNote } from "../../sound/PlayNote.js";
-
+import  PlayNote  from "../../sound/Play.js";
 
 
 // import "../../css/Fretboard.css";
@@ -166,7 +165,7 @@ const getFretX = (fretIndex) => nutX + fretSpacing * fretIndex;
   const handleNoteClick = (stringIndex, fretIndex) => {
    
     const midi = getMidiNumber(stringIndex, fretIndex);
-    playNote(midi);
+    PlayNote(midi);
 
     const noteName = noteNameFromMidi(midi, { preferSharps });
     const info = { stringIndex, fretIndex, midi, noteName };

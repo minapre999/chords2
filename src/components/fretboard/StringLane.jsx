@@ -1,5 +1,5 @@
 
-import { playNote } from "../../sound/PlayNote.js";
+import  PlayNote  from "../../sound/Play.js";
 
 export default function StringLane({
   stringIndex,

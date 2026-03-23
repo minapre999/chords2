@@ -8,7 +8,7 @@ import "../../globals.js";
 // import Picker from "../picker/picker-manager.jsx";
 import { jsPanel } from "jspanel4";
 import ReactDOM from "react-dom/client";
-
+import {PlayChord} from "../../sound/Play.js"
 
 
 
@@ -102,10 +102,27 @@ const [chordRootUI, setChordRootUI] = useState("C")
   useEffect(() => {
     const saved = localStorage.getItem("openMarkers");
     if (saved !== null) setOpenMarkers(saved === "true");
-  }, []);
+  }, []); // runs once only
 
 
-  
+ useEffect(() => {
+  // console.log("Effect triggered: chordRootUI =", chordRootUI);
+
+  try {
+    const cf = dc.HARMONY_MANAGER.chordformWithId(activeCFUI);
+    // console.log("calling PlayChord with argument: ", cf);
+    PlayChord(cf);
+  } catch (e) {
+    console.error("Effect error:", e);
+  }
+}, [chordRootUI, activeCFUI]);
+
+
+
+  // useEffect(() => {
+
+  // }, [chordRootUI]);
+
 
  useEffect(() => {
     async function init() {

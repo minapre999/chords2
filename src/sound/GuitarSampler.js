@@ -37,7 +37,7 @@ function midiFromFilename(filename) {
 
 
 export function storeSample(midi, buffer) {
-  console.log("Storing sample:", midi, buffer);
+  // console.log("Storing sample:", midi, buffer);
   sampleBuffers.set(midi, buffer);
 }
 
@@ -62,7 +62,7 @@ export function getClosestSample(midi) {
 
   const res = await fetch(url);
   const arrayBuffer = await res.arrayBuffer();
-console.log("Fetched URL:", url, "ArrayBuffer size:", arrayBuffer.byteLength);
+// console.log("Fetched URL:", url, "ArrayBuffer size:", arrayBuffer.byteLength);
   const audioBuffer = await new Promise((resolve, reject) => {
     audioCtx.decodeAudioData(arrayBuffer, resolve, reject);
   });
