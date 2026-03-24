@@ -81,7 +81,7 @@ export default function GuitarFretboardSVG({
   chordRootUI="C",
   numStrings = 6,
   tuning = STANDARD_TUNING,
-  numFrets = 17,
+  numFrets = 15,
 
   preferSharps = true,
   interactive = true,
@@ -335,6 +335,8 @@ if( activeCFUI ) {
                     openMidi={openMidi}
                     cf={cf}
                     showOpenStringsUI={showOpenStringsUI}
+                    stringColorUI={stringColorUI}   // ← ADD THIS
+                     bassStringColorUI={bassStringColorUI}
                     showNoteNamesUI={showNoteNamesUI}
                     openMarkers={openMarkers}
                     activeCFUI={activeCFUI}

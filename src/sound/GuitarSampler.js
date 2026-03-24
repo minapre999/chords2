@@ -105,7 +105,7 @@ export async function loadSamples() {
     const midi = midiFromFilename(file);
     const url = `/samples/${file}`;
 
-    console.log("→", file, "→ MIDI", midi);
+    // console.log("→", file, "→ MIDI", midi);
 
     await loadSample(midi, url);
   }

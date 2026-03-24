@@ -6,6 +6,8 @@ export default function StringLane({
   openMidi,
   cf,
   showOpenStringsUI,
+  bassStringColorUI,
+  stringColorUI,
   showNoteNamesUI,
   openMarkers,
   activeCFUI,
@@ -23,10 +25,11 @@ export default function StringLane({
 }) {
   const y = stringY(stringIndex);
   const stringThickness = getStringWidth(stringIndex);
+  const isWound = stringIndex > 2; // 0,1,2 = wound; 3+ = plain
+  const strokeCol = stringIndex > 2 ? bassStringColorUI : stringColorUI;
   const openNoteName = noteNameFromMidi(openMidi, { preferSharps });
-
   // The chordform note for this string (if any)
-  const noteForString = cf?.notes?.[stringIndex] || null;
+  const noteForString = cf?.getNoteForString(stringIndex+1) || null;
 
   return (
     <g>
@@ -63,14 +66,29 @@ export default function StringLane({
     </defs>
 
 
-         {/* === STRING GRAPHICS === */}
+         {/* === STRING GRAPHICS === 
+<g>
+    {/* winding */}
+       <rect
+        x={0}
+        y={y - stringThickness / 2}
+        width={width}
+        height={stringThickness}
+        fill={strokeCol}
+        {...(isWound ? { mask: "url(#woundMask)" } : {})}
+      />
+
+      {/* Sheen on top, no mask */}
       <rect
         x={0}
         y={y - stringThickness / 2}
         width={width}
         height={stringThickness}
-        fill="#ccc"
+        fill="url(#stringSheen)"
       />
+
+
+      
       {/* === OPEN STRING CIRCLE === */}
       {showOpenStringsUI && (
         <g
@@ -142,6 +160,7 @@ export default function StringLane({
         const left = getFretX(fret - 1);
         const right = Math.min(getFretX(fret), width);
         const x = (left + right) / 2;
+        
 
         const isChordNote =
           activeCFUI &&

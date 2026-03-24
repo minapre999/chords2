@@ -378,7 +378,7 @@ getChordforms(options = {}) {
     .filter(cf =>
       (inversion === undefined || cf.inversion === inversion) &&
       (form === undefined || cf.form === form) &&
-      (string === undefined || cf.string === string)
+      (string === undefined || cf.string == string)
     )
     .map(cf => {
       if (root !== undefined) cf.root = root;
@@ -645,8 +645,11 @@ get namesWithInversion() {
     return names
 }
 
+getNoteForString(stringNum){ 
+       const arr = this.notes.filter((n)=>{  return n.stringNumber == stringNum    }) 
+       return arr.length > 0 ? arr[0] : null
+}
 
-// getNotes() {
 get notes() {
   try {
     if (this._root === undefined) {   // ✅ use _root to avoid calling getter

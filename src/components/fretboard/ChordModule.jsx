@@ -79,8 +79,9 @@ export default function ChordModule() {
   const [showNoteNamesUI, setShowNoteNamesUI] = useState(true);
   const [zoom, setZoom] = useState(1);
 const [displayMode, setDisplayMode] = useState("singleInversion") // dislay one at a time or all at once
-const [activeCFUI, setActiveCFUI] = useState(1)
+const [activeCFUI, setActiveCFUI] = useState(321)
 const [chordRootUI, setChordRootUI] = useState("C")
+const [chordStringUI, setChordStringUI] = useState("1") // "D2:1"
 
   // Headstock persistence
   const [showHeadstockUI, setShowHeadstockUI] = useState(() => {
@@ -113,7 +114,7 @@ const [chordRootUI, setChordRootUI] = useState("C")
     // console.log("calling PlayChord with argument: ", cf);
     PlayChord(cf);
   } catch (e) {
-    console.error("Effect error:", e);
+    // console.error("Effect error:", e);
   }
 }, [chordRootUI, activeCFUI]);
 
@@ -126,7 +127,7 @@ const [chordRootUI, setChordRootUI] = useState("C")
 
  useEffect(() => {
     async function init() {
-      console.log("ChordModule load_harmonies")
+      // console.log("ChordModule load_harmonies")
       await dc.HARMONY_MANAGER.load_harmonies();
       console.log("ChordModule ready")
       setReady(true);
@@ -147,9 +148,12 @@ let strCF = "";
 
 
   if (ready) {
-    let chord = dc.HARMONY_MANAGER.chordWithId(1);
-    let chordforms = chord.getChordforms({ root: "C", form: "D2", string: "1" });
-    cf = chordforms[0];
+      const chord = dc.HARMONY_MANAGER.chordsWithSymbol("maj7")[0]
+
+    let cf = chord.getChordform({quality: "maj7", string: "1", form: "D2", inversion: "3"})
+
+
+ 
 
     // console.log("cf: ", cf)
 
@@ -199,10 +203,13 @@ let strCF = "";
   <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
  
     <Toolbar
+    
       activeCFUI={activeCFUI}
       setActiveCFUI={setActiveCFUI}
       chordRootUI={chordRootUI}
       setChordRootUI={setChordRootUI}
+      chordStringUI={chordStringUI}
+      setChordStringUI={setChordStringUI}
       // onOpenPanel={() => setShowPanel(true)}
       stringColorUI={stringColorUI}
       setStringColorUI={setStringColorUI}

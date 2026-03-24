@@ -16,7 +16,11 @@ export default function Toolbar({
     activeChord, setActiveChord,
     showChord, setShowChord,
     activeCFUI, setActiveCFUI,
-    chordRootUI, setChordRootUI
+    
+    chordRootUI, setChordRootUI,
+      chordStringUI, setChordStringUI,
+
+
 }) {
 
 
@@ -79,11 +83,14 @@ const CHORDS = {
       }}
     >
 
-        <OpenPicker  
-          activeCFUI={activeCFUI}
-          setActiveCFUI={setActiveCFUI}
-          chordRootUI={chordRootUI}
-          setChordRootUI={setChordRootUI}
+      <OpenPicker  
+      activeCFUI={activeCFUI}
+      setActiveCFUI={setActiveCFUI}
+      chordRootUI={chordRootUI}
+      setChordRootUI={setChordRootUI}
+      chordStringUI={chordStringUI}
+      setChordStringUI={setChordStringUI}
+
         />
 
       {/* Fretboard colour

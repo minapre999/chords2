@@ -13,7 +13,7 @@ import {midiLookup} from "../harmony/core.js"
 
  export default function PlayNote(midi, duration = 1.0) {
 
-  console.log("PlayNote: ", midi)
+  // console.log("PlayNote: ", midi)
 
   const audioCtx = getAudioContext();   // ← MUST be the first thing
 
@@ -109,7 +109,7 @@ import {midiLookup} from "../harmony/core.js"
 
 export function PlayChord(cf) {
   
-     console.log("PlayChord: ", cf)
+    //  console.log("PlayChord: ", cf)
 
 
     if( cf == null) return
@@ -117,7 +117,7 @@ export function PlayChord(cf) {
     cf.notes.forEach((n)=>{
         const name = n.noteNameWithBias("b")
         const midi = midiLookup[name]
-         console.log("PlayChord name: ", name, "midi: ", midi)
+        //  console.log("PlayChord name: ", name, "midi: ", midi)
          PlayNote(midi)
     })
     
