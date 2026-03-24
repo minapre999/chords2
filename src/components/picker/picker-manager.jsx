@@ -19,9 +19,9 @@ import InversionPanel from "./inversion-panel.jsx"
 function PickerContent({ 
 activeSubPanelUI, 
 setActiveSubPanelUI,
-activeCFUI,
-setActiveCFUI,
 
+  cfUI, 
+  setCFUI2,
 
 chordRootUI,
 setChordRootUI,
@@ -29,12 +29,14 @@ chordStringUI,
 setChordStringUI,
 
  }) {
+
+  // console.log("PickerContent cfUI: ",cfUI)
   return (
     <div className="pm-container">
       <PianoPanel
-      activeCFUI={activeCFUI} 
-      setActiveCFUI ={setActiveCFUI}
-
+ 
+       cfUI={cfUI}
+      setCFUI2={setCFUI2}
 
         activeSubPanelUI={activeSubPanelUI} 
         setActiveSubPanelUI={setActiveSubPanelUI}
@@ -42,16 +44,17 @@ setChordStringUI,
         
       />
       <QualityPanel 
-        activeCFUI={activeCFUI}             
-        setActiveCFUI ={setActiveCFUI}
+
+          cfUI={cfUI}
+      setCFUI2={setCFUI2}
         activeSubPanelUI={activeSubPanelUI} 
         setActiveSubPanelUI={setActiveSubPanelUI}
        
         />     
       <FormSSPanel 
-        activeCFUI={activeCFUI}  
-        setActiveCFUI ={setActiveCFUI} 
 
+  cfUI={cfUI}
+      setCFUI2={setCFUI2}
 
         activeSubPanelUI={activeSubPanelUI} 
         setActiveSubPanelUI={setActiveSubPanelUI}
@@ -59,9 +62,9 @@ setChordStringUI,
            />
 
       <InversionPanel 
-       activeCFUI={activeCFUI} 
-       setActiveCFUI ={setActiveCFUI} 
- 
+    
+   cfUI={cfUI}
+      setCFUI2={setCFUI2}
        
 
         activeSubPanelUI={activeSubPanelUI} 
@@ -74,9 +77,9 @@ setChordStringUI,
 
 // need a react component for the useStates
 export default function OpenPicker({
-  activeCFUI,
-setActiveCFUI,
 
+  cfUI,
+   setCFUI2,
 chordRootUI,
 setChordRootUI,
 chordStringUI,
@@ -85,6 +88,7 @@ setChordStringUI,
   const [activeSubPanelUI, setActiveSubPanelUI] = useState("piano-sp");
   const panelRootRef = useRef(null);
 
+  // console.log("OpenPicker cfUI: ",cfUI)
 
 //  console.log("OpenPicker chordRootUI: ", chordRootUI)
 
@@ -96,8 +100,9 @@ setChordStringUI,
         <PickerContent
           activeSubPanelUI={activeSubPanelUI}
           setActiveSubPanelUI={setActiveSubPanelUI}
-          activeCFUI={activeCFUI}
-          setActiveCFUI={setActiveCFUI}
+            cfUI={cfUI}
+      setCFUI2={setCFUI2}
+
  
           chordRootUI={chordRootUI}
           setChordRootUI={setChordRootUI}
@@ -116,9 +121,9 @@ setChordStringUI,
         <PickerContent
           activeSubPanelUI={activeSubPanelUI}
           setActiveSubPanelUI={setActiveSubPanelUI}
-          activeCFUI={activeCFUI}
-          setActiveCFUI={setActiveCFUI}
-       
+  
+         cfUI={cfUI}
+      setCFUI2={setCFUI2}
           chordRootUI={chordRootUI}
           setChordRootUI={setChordRootUI}
           chordStringUI={chordStringUI}
@@ -127,7 +132,7 @@ setChordStringUI,
         />
       );
     }
-  }, [activeSubPanelUI, activeCFUI, chordRootUI]);
+  }, [activeSubPanelUI, cfUI, chordRootUI]);
 
   return (
     <button onClick={openPanel}>Open picker</button>

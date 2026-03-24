@@ -3,31 +3,46 @@
   import {HarmonyManager, Chord}  from "../../harmony/harmony-manager.js"
 
 export default function QualityPanel({
-  activeCFUI,
-  setActiveCFUI,
+
+     cfUI,
+  setCFUI2,
   activeSubPanelUI,
   setActiveSubPanelUI,
   message,
   onKeyClick
 }) {
+
+  const [isPanelOpen, setIsPanelOpen] = useState(true);
+
+
   const spId = "quality-sp";
   const spClass = "chord-quality-subpanel subpanel";
 
   const ToggleSubPanel = () => {
-    // prev is the previous state value - the value that activeSubPanelUI had right before this update.
+    // prev is the previous state value - the value that setIsPanelOpen had right before this update.
     //React gives you this automatically when you use the “functional update” form of setState.
-    setActiveSubPanelUI(prev =>  prev === spId ? "" : spId );
-
+    setIsPanelOpen(prev =>  prev === spId ? "" : spId );
   };
 
+  let chord = null
   const ClickChordQuality=(chordId)=>{
-    const chord = dc.HARMONY_MANAGER.chordWithId(chordId)
-    const oldCF = dc.HARMONY_MANAGER.chordformWithId(activeCFUI)
-    console.log("ClickChordQuality chord: ", chord, "oldCF", oldCF)
-    const cf = chord.getChordform({string : oldCF.string, form: oldCF.form, inversion: oldCF.inversion})
-    cf.root = oldCF.root
-    // console.log("New cf: " , cf)
-    setActiveCFUI(cf.id)  
+    try{
+    const oldCF = cfUI
+     chord = dc.HARMONY_MANAGER.chordWithId(chordId)
+    
+    // console.log("\nClickChordQuality chord: ", chord, "\noldCF", oldCF)
+    const newCF = chord.getChordform({string : oldCF.string, form: oldCF.form, inversion: oldCF.inversion})
+    // console.log("setting root for newCF: ", newCF, "oldCF.root: ", oldCF.root)
+    newCF.root = oldCF.root
+    // console.log("seting cfUI to newCF: " , newCF)
+
+
+    setCFUI2(newCF)  
+    }
+    catch(e){
+      console.log("\nClickChordQuality error: ", e, "\noldCF: ", oldCF, "\nchord: ", chord, "\ncf: ", newCF)
+    }
+    
   }
 
   const chords = dc.HARMONY_MANAGER.chords
@@ -35,10 +50,10 @@ export default function QualityPanel({
   const dominant = chords.filter( (ch)=> ch.isDominant() )
   const minor = chords.filter( (ch)=>ch.isMinor() )
 
-  const cf = dc.HARMONY_MANAGER.chordformWithId(activeCFUI)
-//  console.log("QualityPanel cf: ", cf)
+ 
+  // console.log("rendering QualityPanel cfUI: ", cfUI)
   return (
-    activeCFUI && (
+    cfUI && (
     <>
      
         <div id={spId} className={spClass}>
@@ -47,7 +62,7 @@ export default function QualityPanel({
           </div>
 
 
- {activeSubPanelUI === spId && (
+ {isPanelOpen === spId && (
           <div className="quality-picker-container picker-container">
             <div id="major" className="chord-picker-group picker-group">
               
@@ -55,7 +70,7 @@ export default function QualityPanel({
                 <div
                   key={ch.id}
 
-                  className={`chord-picker-group-item picker-group-item ${ch.id == cf.chord.id ? "selected" : ""}`}
+                  className={`chord-picker-group-item picker-group-item ${ch.id == cfUI.chord.id ? "selected" : ""}`}
                   data-chord={ch.id}
                   onClick={() => ClickChordQuality(ch.id)}
                 >
@@ -68,7 +83,7 @@ export default function QualityPanel({
               {dominant.map(ch => (
                 <div
                   key={ch.id}
-                  className={`chord-picker-group-item picker-group-item ${ch.id == cf.chord.id ? "selected" : ""}`}
+                  className={`chord-picker-group-item picker-group-item ${ch.id == cfUI.chord.id ? "selected" : ""}`}
                   data-chord={ch.id}
                   onClick={() => ClickChordQuality(ch.id)}
                 >
@@ -81,7 +96,7 @@ export default function QualityPanel({
               {minor.map(ch => (
                 <div
                   key={ch.id}
-                  className={`chord-picker-group-item picker-group-item ${ch == cf.chord.id ? "selected" : ""}`}
+                  className={`chord-picker-group-item picker-group-item ${ch == cfUI.chord.id ? "selected" : ""}`}
                   data-chord={ch.id}
                   onClick={() => ClickChordQuality(ch.id)}
                 >

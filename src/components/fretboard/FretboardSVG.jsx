@@ -77,11 +77,11 @@ function midiFromFilename(filename) {
 
 
 export default function GuitarFretboardSVG({
-  activeCFUI=null,
+  cfUI=null,
   chordRootUI="C",
   numStrings = 6,
   tuning = STANDARD_TUNING,
-  numFrets = 15,
+  numFrets = 16,
 
   preferSharps = true,
   interactive = true,
@@ -181,15 +181,12 @@ const getFretX = (fretIndex) => nutX + fretSpacing * fretIndex;
 
   
 let cf=null
-if( activeCFUI ) {
+if( cfUI ) {
   const hm = dc.HARMONY_MANAGER
-   cf = hm.chordformWithId(activeCFUI)
-  //  console.log("chordRootUI: ", chordRootUI)
+  //  console.log("chordRootUI2: ", chordRootUI)
+  cf = cfUI
    cf.root = chordRootUI
 }
-  //  console.log("found active activeCFUI in FretboardSVG: ", activeCFUI, "cf: ", cf)
-  // } else{   console.log("no active chordform in FretboardSVG: ")}
-
 
 
  return (
@@ -339,7 +336,7 @@ if( activeCFUI ) {
                      bassStringColorUI={bassStringColorUI}
                     showNoteNamesUI={showNoteNamesUI}
                     openMarkers={openMarkers}
-                    activeCFUI={activeCFUI}
+                    cfUI={cfUI}
                     interactive={interactive}
                     handleNoteClick={handleNoteClick}
                     preferSharps={preferSharps}

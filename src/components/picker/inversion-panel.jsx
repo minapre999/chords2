@@ -4,30 +4,35 @@ import ChordForm  from "../../harmony/harmony-manager.js"
 import {HarmonyManager, Chord}  from "../../harmony/harmony-manager.js"
 
 export default function InversionPanel({
-  activeCFUI,
-  setActiveCFUI,
+
+
+  cfUI,
+  setCFUI2,
+
   activeSubPanelUI,
   setActiveSubPanelUI,
   message,
   onKeyClick
 }) {
 
+    const [isPanelOpen, setIsPanelOpen] = useState(true);
+
+
   const spId = "inversion-sp";
   const spClass = "inversion-subpanel subpanel";
 
   const ToggleSubPanel = () => {
-    // prev is the previous state value - the value that activeSubPanelUI had right before this update.
+    // prev is the previous state value - the value that setIsPanelOpen had right before this update.
     //React gives you this automatically when you use the “functional update” form of setState.
-    setActiveSubPanelUI(prev =>  prev === spId ? "" : spId );
-
+    setIsPanelOpen(prev =>  prev === spId ? "" : spId );
   };
 
-  const oldCF = dc.HARMONY_MANAGER.chordformWithId(activeCFUI)
-
+  const oldCF = cfUI
+// console.log("inversion pane oldCF: ", oldCF)
   const ClickInversion=(inv)=>{
-    const cf = oldCF.chord.getChordform({quality: oldCF.quality, string:  oldCF.string, form: oldCF.form, inversion: inv})
-    cf.root = oldCF.root
-    setActiveCFUI(cf.id)  
+    const newCF = oldCF.chord.getChordform({quality: oldCF.quality, string:  oldCF.string, form: oldCF.form, inversion: inv})
+    newCF.root = oldCF.root
+    setCFUI2(newCF)  
   }
 
   const arrInv = [...new Set(oldCF.chord.chordforms.map(cf=>{return cf.inversion}))] // unique inversions
@@ -40,7 +45,7 @@ export default function InversionPanel({
             <div className="title">Inversion</div>
           </div>
 
- {activeSubPanelUI === spId && (
+ {isPanelOpen === spId && (
         <div className="chord-form-ss-container picker-container">
             <div class="inversion-picker-group picker-group">
 

@@ -15,7 +15,8 @@ export default function Toolbar({
     showInlaysUI, setShowInlaysUI,
     activeChord, setActiveChord,
     showChord, setShowChord,
-    activeCFUI, setActiveCFUI,
+
+      cfUI, setCFUI2,
     
     chordRootUI, setChordRootUI,
       chordStringUI, setChordStringUI,
@@ -58,7 +59,7 @@ const CHORDS = {
   E:  [0, 2, 2, 1, 0, 0],
 };
 
-
+// console.log('Toolbar cfUI:', cfUI)
   return (
     <div className="toolbar">
         
@@ -84,8 +85,9 @@ const CHORDS = {
     >
 
       <OpenPicker  
-      activeCFUI={activeCFUI}
-      setActiveCFUI={setActiveCFUI}
+  
+        cfUI={cfUI}
+      setCFUI2={setCFUI2}
       chordRootUI={chordRootUI}
       setChordRootUI={setChordRootUI}
       chordStringUI={chordStringUI}

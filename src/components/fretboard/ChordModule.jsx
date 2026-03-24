@@ -13,19 +13,20 @@ import {PlayChord} from "../../sound/Play.js"
 
 
 function ChordInfo({
-    activeCFUI,
-      setActiveCFUI,
+    cfUI,
+   
       chordRootUI,
       setChordRootUI
 }) {
-  if(!activeCFUI | chordRootUI) return( <></> )
+  if(!cfUI ) return( <></> )
 
 
-  let cf = dc.HARMONY_MANAGER.chordformWithId(activeCFUI);
-  cf.root=chordRootUI
-  let chord = dc.HARMONY_MANAGER.chordformWithId( activeCFUI );
+  // let cf = dc.HARMONY_MANAGER.chordformWithId(cfUI);
+  // cf.root=chordRootUI
+  // let chord = dc.HARMONY_MANAGER.chordformWithId( cfUI );
+  let chord = cfUI.chord
     // let chordforms = chord.getChordforms({ root: "C", form: "D2", string: "1" });
-  chord.root=chordRootUI
+  // chord.root=cfUI.root
 
     // console.log("cf: ", cf)
 
@@ -37,22 +38,22 @@ function ChordInfo({
     };
 
     // Get the label safely
-    const formKey = cf.form;
+    const formKey = cfUI.form;
     const formLabel = formLabels[formKey] || formKey;
     // Build the final string
-     const strCF = `${formLabel}, strings ${cf.stringset}, inversion ${cf.inversion}`;
+     const strCF = `${formLabel}, strings ${cfUI.stringset}, inversion ${cfUI.inversion}`;
 
 // console.log("ChordInfo Chord root: ", chordRootUI, "strCF: ", strCF)
 
-  return ( chordRootUI && activeCFUI && (
+  return ( cfUI && (
         <>
             <div className="mb-4">&nbsp;</div>
 
             <div>
-            {cf.root}
+            {cfUI.root}
             <span
               dangerouslySetInnerHTML={{
-                __html: cf.chord.harmony.symbols[0]
+                __html: cfUI.chord.harmony.symbols[0]
               }}
             />
           </div>
@@ -79,7 +80,7 @@ export default function ChordModule() {
   const [showNoteNamesUI, setShowNoteNamesUI] = useState(true);
   const [zoom, setZoom] = useState(1);
 const [displayMode, setDisplayMode] = useState("singleInversion") // dislay one at a time or all at once
-const [activeCFUI, setActiveCFUI] = useState(321)
+const [cfUI, setCFUI2] = useState(null)
 const [chordRootUI, setChordRootUI] = useState("C")
 const [chordStringUI, setChordStringUI] = useState("1") // "D2:1"
 
@@ -110,13 +111,12 @@ const [chordStringUI, setChordStringUI] = useState("1") // "D2:1"
   // console.log("Effect triggered: chordRootUI =", chordRootUI);
 
   try {
-    const cf = dc.HARMONY_MANAGER.chordformWithId(activeCFUI);
-    // console.log("calling PlayChord with argument: ", cf);
-    PlayChord(cf);
+ 
+    PlayChord(cfUI);
   } catch (e) {
     // console.error("Effect error:", e);
   }
-}, [chordRootUI, activeCFUI]);
+}, [chordRootUI, cfUI]);
 
 
 
@@ -150,7 +150,7 @@ let strCF = "";
   if (ready) {
       const chord = dc.HARMONY_MANAGER.chordsWithSymbol("maj7")[0]
 
-    let cf = chord.getChordform({quality: "maj7", string: "1", form: "D2", inversion: "3"})
+     cf = chord.getChordform({quality: "maj7", string: "1", form: "D2", inversion: "3"})
 
 
  
@@ -180,11 +180,17 @@ let strCF = "";
   // (hooks must be before return)
   // -------------------------
   useEffect(() => {
+    // console.log("ChordModule useEffect for setCFUI2: cf", cf)
     if (cf?.id !== undefined) {
-      console.log("ChordModule Setting activeCFUI: ", cf.id)
-      setActiveCFUI(cf.id);
+      // console.log("ChordModule Setting cfUI: ", cf.id)
+
+      setCFUI2(cf);
     }
   }, [cf]);
+
+
+
+
 
   // -------------------------
   // CONDITIONAL RETURN
@@ -197,15 +203,18 @@ let strCF = "";
   // NOW SAFE TO USE cf
   // -------------------------
   // console.log("ChordModule checking harmony is loaded", cf);
+// console.log('ChordModule cfUI:', cfUI)
 
 
   return (
   <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
  
     <Toolbar
-    
-      activeCFUI={activeCFUI}
-      setActiveCFUI={setActiveCFUI}
+  
+
+      cfUI={cfUI}
+      setCFUI2={setCFUI2}
+
       chordRootUI={chordRootUI}
       setChordRootUI={setChordRootUI}
       chordStringUI={chordStringUI}
@@ -233,7 +242,9 @@ let strCF = "";
 <div id="content">
 
     <GuitarFretboardSVG
-      activeCFUI={activeCFUI}
+
+        cfUI={cfUI}
+      
       chordRootUI={chordRootUI}
       width={1800}
       height={220}
@@ -254,8 +265,11 @@ let strCF = "";
 
 
     <ChordInfo 
-      activeCFUI={activeCFUI}
-      setActiveCFUI={setActiveCFUI}
+  
+        cfUI={cfUI}
+      setCFUI2={setCFUI2}
+
+
       chordRootUI={chordRootUI}
       setChordRootUI={setChordRootUI}
     />

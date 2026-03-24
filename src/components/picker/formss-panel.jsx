@@ -3,41 +3,44 @@ import React, { useState } from "react";
 import {HarmonyManager, Chord}  from "../../harmony/harmony-manager.js"
 
 export default function FormSSPanel({
-  activeCFUI,
-  setActiveCFUI,
+
+  cfUI,
+  setCFUI2,
   activeSubPanelUI,
   setActiveSubPanelUI,
   message,
   onKeyClick
 }) {
+  const [isPanelOpen, setIsPanelOpen] = useState(true);
+
 
   const spId = "formSS-sp";
   const spClass = "chord-quality-subpanel subpanel";
 
-  const ToggleSubPanel = () => {
-    // prev is the previous state value - the value that activeSubPanelUI had right before this update.
+    const ToggleSubPanel = () => {
+    // prev is the previous state value - the value that setIsPanelOpen had right before this update.
     //React gives you this automatically when you use the “functional update” form of setState.
-    setActiveSubPanelUI(prev =>  prev === spId ? "" : spId );
-
+    setIsPanelOpen(prev =>  prev === spId ? "" : spId );
   };
+
 
    const ClickFormSS=(fssId)=>{
     const i = fssId.indexOf(":")
     const string = fssId.slice(i+1, i+2)
     const form =  fssId.slice(0, i)
 
-    const oldCF = dc.HARMONY_MANAGER.chordformWithId(activeCFUI)
-    const cf = oldCF.chord.getChordform({quality: oldCF.quality, string:  string, form: form, inversion: oldCF.inversion})
-    cf.root = oldCF.root
-    // console.log("ClickFormSS oldCF", oldCF, "cf: ", cf)
-    
-    // console.log("New cf: " , cf)
-    setActiveCFUI(cf.id)  
+   
+    const newCF = cfUI.chord.getChordform({quality: cfUI.quality, 
+                                                  string:  string, 
+                                                  form: form, 
+                                                  inversion: cfUI.inversion})
+    setCFUI2(newCF)  
   }
 
 const uniqueFSS =   [...new Set(dc.HARMONY_MANAGER.chordforms.map(cf=>{return cf.form_ss}))] // unique FSS
-const activeCF = dc.HARMONY_MANAGER.chordformWithId(activeCFUI)
+const activeCF = cfUI
   return (
+    cfUI && (
     <>
      
         <div id={spId} className={spClass}>
@@ -45,7 +48,7 @@ const activeCF = dc.HARMONY_MANAGER.chordformWithId(activeCFUI)
             <div className="title">Form and String Set</div>
           </div>
 
- {activeSubPanelUI === spId && (
+ {isPanelOpen === spId && (
         <div className="chord-form-ss-container picker-container">
           <div id="form-ss" className="chord-picker-group picker-group">
 
@@ -65,5 +68,6 @@ const activeCF = dc.HARMONY_MANAGER.chordformWithId(activeCFUI)
             )}
     </div>
   </>
+    )
   );
 }

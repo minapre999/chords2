@@ -7,8 +7,9 @@ import {HarmonyManager, Chord}  from "../../harmony/harmony-manager.js"
 export default function PianoPanel({
   activeSubPanelUI,
   setActiveSubPanelUI,
-  activeCFUI,
-  setActiveCFUI,
+
+   cfUI,
+  setCFUI2,
   message,
   onKeyClick,
   chordRootUI,
@@ -16,27 +17,30 @@ export default function PianoPanel({
 
 }) {
 
-
+const [isPanelOpen, setIsPanelOpen] = useState(true);
 
   const spId = "piano-sp";
   const spClass = "root-subpanel subpanel";
 
   const ToggleSubPanel = () => {
-    // prev is the previous state value - the value that activeSubPanelUI had right before this update.
+    // prev is the previous state value - the value that setIsPanelOpen had right before this update.
     //React gives you this automatically when you use the “functional update” form of setState.
-    setActiveSubPanelUI(prev =>  prev === spId ? "" : spId );
+    setIsPanelOpen(prev =>  prev === spId ? "" : spId );
 
   };
 
 
 
-   const oldCF = dc.HARMONY_MANAGER.chordformWithId(activeCFUI)
-
+const oldCF = cfUI
   const ClickPiano=(root)=>{
     // this won't work if using an id 
     // try passing the cf rather than the cf.id in the props
-    cf.root = root
-    setActiveCFUI(cf.id)  
+    
+    
+    // cf.root = root
+    // setCFUI2(cf.id)  
+    oldCF.root = root
+    setCFUI2(oldCF)  
   }
 
 
@@ -57,8 +61,11 @@ export default function PianoPanel({
 ];
 
 // console.log("rendering piano with chordRootUI: " , chordRootUI)
+// console.log("rendering piano with cfUI: " , cfUI)
+
+
  return (
-  chordRootUI && (
+  cfUI && (
     
     <div id={spId} className={spClass}>
 
@@ -66,7 +73,7 @@ export default function PianoPanel({
         <div className="title">Root</div>
       </div>
 
- {activeSubPanelUI === spId && (
+ {isPanelOpen === spId && (
       <div className="keyboard">
         {KEYS.map(k => (
           <div

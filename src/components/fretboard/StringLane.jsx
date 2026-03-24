@@ -10,7 +10,8 @@ export default function StringLane({
   stringColorUI,
   showNoteNamesUI,
   openMarkers,
-  activeCFUI,
+
+   cfUI,
   interactive,
   handleNoteClick,
   preferSharps,
@@ -111,7 +112,7 @@ export default function StringLane({
       )}
 
       {/* === OPEN / MUTED MARKERS (O / X) === */}
-      {openMarkers && activeCFUI && (
+      {openMarkers && cfUI && (
         <g className="open-muted-markers">
           {(() => {
             if (!noteForString) return null;
@@ -163,7 +164,7 @@ export default function StringLane({
         
 
         const isChordNote =
-          activeCFUI &&
+          cfUI &&
           noteForString &&
           noteForString.fret === fret;
 
