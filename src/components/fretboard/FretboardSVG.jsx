@@ -185,7 +185,7 @@ if( cfUI ) {
   const hm = dc.HARMONY_MANAGER
   //  console.log("chordRootUI2: ", chordRootUI)
   cf = cfUI
-   cf.root = chordRootUI
+  cf.root = chordRootUI
 }
 
 

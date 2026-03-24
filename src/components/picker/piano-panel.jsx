@@ -1,5 +1,6 @@
 
-import React, { useState } from "react";
+  import React, { useState, useEffect } from "react";
+
  import ChordForm  from "../../harmony/harmony-manager.js"
 import {HarmonyManager, Chord}  from "../../harmony/harmony-manager.js"
 
@@ -9,38 +10,43 @@ export default function PianoPanel({
   setActiveSubPanelUI,
 
    cfUI,
-  setCFUI2,
-  message,
+  setCFUI,
   onKeyClick,
   chordRootUI,
-  setChordRootUI
+  setChordRootUI,
+  forceAll
 
 }) {
 
-const [isPanelOpen, setIsPanelOpen] = useState(true);
 
-  const spId = "piano-sp";
-  const spClass = "root-subpanel subpanel";
+const [isOpen, setIsOpen] = useState(true);
 
-  const ToggleSubPanel = () => {
-    // prev is the previous state value - the value that setIsPanelOpen had right before this update.
-    //React gives you this automatically when you use the “functional update” form of setState.
-    setIsPanelOpen(prev =>  prev === spId ? "" : spId );
+  // console.log("PianoPanel component forceAll: ", forceAll, "isOpen:", isOpen, "setCFUI: ", setCFUI)
 
-  };
 
+
+
+ // Respond to global force command
+  useEffect(() => {
+    if (forceAll === "open") setIsOpen(true);
+    if (forceAll === "close") setIsOpen(false);
+  }, [forceAll]);
+  
+  
+const toggle = () => setIsOpen(prev => !prev);
+
+
+ 
 
 
 const oldCF = cfUI
   const ClickPiano=(root)=>{
-    // this won't work if using an id 
-    // try passing the cf rather than the cf.id in the props
-    
-    
-    // cf.root = root
-    // setCFUI2(cf.id)  
-    oldCF.root = root
-    setCFUI2(oldCF)  
+    cfUI.root = root // this was previously set in FretboardSVG render
+    setChordRootUI(root)
+ // this doesn't work as eact state updates only fire when the reference changes.
+ // would need to make a clone - don't want to do this as chordforms are all linked to chords and harmonies
+    // oldCF.root = root
+    // setCFUI(oldCF)  
   }
 
 
@@ -60,30 +66,35 @@ const oldCF = cfUI
   { note: "B", class: "white-key b" },
 ];
 
-// console.log("rendering piano with chordRootUI: " , chordRootUI)
 // console.log("rendering piano with cfUI: " , cfUI)
 
+ const spId = "piano-sp";
+  const spClass = "root-subpanel subpanel";
 
+  
  return (
   cfUI && (
     
+    
     <div id={spId} className={spClass}>
 
-      <div className="title-bar" onClick={ToggleSubPanel}>
+      <div className="title-bar" onClick={toggle}>
         <div className="title">Root</div>
       </div>
 
- {isPanelOpen === spId && (
+ {isOpen  && (
+  <div className="root-picker-container picker-container">
       <div className="keyboard">
         {KEYS.map(k => (
           <div
             key={k.note}
-            className={`key ${k.class} ${chordRootUI === k.note ? "selected" : ""}`}
-            onClick={() => setChordRootUI(k.note)}
+            className={`key ${k.class} ${cfUI.root  === k.note ? "selected" : ""}`}
+            onClick={() => ClickPiano(k.note)}
           >
             <span>{k.note}</span>
           </div>
         ))}
+      </div>
       </div>
  )}
     </div>

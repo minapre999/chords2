@@ -16,7 +16,7 @@ export default function Toolbar({
     activeChord, setActiveChord,
     showChord, setShowChord,
 
-      cfUI, setCFUI2,
+      cfUI, setCFUI,
     
     chordRootUI, setChordRootUI,
       chordStringUI, setChordStringUI,
@@ -28,7 +28,8 @@ export default function Toolbar({
 //  console.log("Toolbar chordRootUI: ", chordRootUI)
 
 
-  
+
+
   
   
   useEffect(() => {
@@ -87,7 +88,7 @@ const CHORDS = {
       <OpenPicker  
   
         cfUI={cfUI}
-      setCFUI2={setCFUI2}
+      setCFUI={setCFUI}
       chordRootUI={chordRootUI}
       setChordRootUI={setChordRootUI}
       chordStringUI={chordStringUI}

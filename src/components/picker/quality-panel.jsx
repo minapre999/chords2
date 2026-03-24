@@ -1,68 +1,87 @@
-  import React, { useState } from "react";
+  import React, { useState, useEffect } from "react";
+
   import ChordForm  from "../../harmony/harmony-manager.js"
   import {HarmonyManager, Chord}  from "../../harmony/harmony-manager.js"
 
 export default function QualityPanel({
 
-     cfUI,
-  setCFUI2,
-  activeSubPanelUI,
-  setActiveSubPanelUI,
-  message,
-  onKeyClick
+  cfUI,
+  setCFUI,
+  onKeyClick,
+  forceAll
 }) {
 
+
   const [isPanelOpen, setIsPanelOpen] = useState(true);
+const [isOpen, setIsOpen] = useState(true);
+
+  // console.log("\QualityPanel component forceAll: ", forceAll, "\nisOpen:", isOpen, "\ncfUI: ", cfUI, "setCFUI: ", setCFUI)
 
 
-  const spId = "quality-sp";
-  const spClass = "chord-quality-subpanel subpanel";
 
-  const ToggleSubPanel = () => {
-    // prev is the previous state value - the value that setIsPanelOpen had right before this update.
-    //React gives you this automatically when you use the “functional update” form of setState.
-    setIsPanelOpen(prev =>  prev === spId ? "" : spId );
-  };
+ // Respond to global force command
+  useEffect(() => {
+    if (forceAll === "open") setIsOpen(true);
+    if (forceAll === "close") setIsOpen(false);
+  }, [forceAll]);
+
+const toggle = () => setIsOpen(prev => !prev);
+
+ 
 
   let chord = null
+  let newCF = null
   const ClickChordQuality=(chordId)=>{
     try{
-    const oldCF = cfUI
-     chord = dc.HARMONY_MANAGER.chordWithId(chordId)
-    
-    // console.log("\nClickChordQuality chord: ", chord, "\noldCF", oldCF)
-    const newCF = chord.getChordform({string : oldCF.string, form: oldCF.form, inversion: oldCF.inversion})
-    // console.log("setting root for newCF: ", newCF, "oldCF.root: ", oldCF.root)
-    newCF.root = oldCF.root
+   
+
+
+    // problem here is what is the chord does not have forms or inversions similar to the old chord form?
+    // solution: first get the relevant chord form from the same
+     chord = dc.HARMONY_MANAGER.chordWithId(chordId) // should always return, b/c it was set in the render
+     //dc.HARMONY_MANAGER.chordsWithSymbol()
+    // console.log("\nClickChordQuality chord: ", chord, "\noldCF", cfUI)
+     newCF = chord.getChordform({string : cfUI.string, form: cfUI.form, inversion: cfUI.inversion})
+    // console.log("setting root for newCF: ", newCF, "oldCF.root: ", cfUI.root)
+
+    if( typeof newCF === "undefined" ){
+      console.log("no chordforms found for string and inversion so returns first chordform in array: ", dc.HARMONY_MANAGER.chordforms)
+        newCF = dc.HARMONY_MANAGER.chordforms[0]
+    }
+    newCF.root = cfUI.root
     // console.log("seting cfUI to newCF: " , newCF)
 
 
-    setCFUI2(newCF)  
+    setCFUI(newCF)  
     }
     catch(e){
-      console.log("\nClickChordQuality error: ", e, "\noldCF: ", oldCF, "\nchord: ", chord, "\ncf: ", newCF)
+      console.log("\nClickChordQuality error: ", e, "\cfUI: ", cfUI, "\nchord: ", chord, "\ncf: ", newCF)
     }
     
   }
 
   const chords = dc.HARMONY_MANAGER.chords
-  const major = chords.filter( (ch)=>ch.isMajor() )
-  const dominant = chords.filter( (ch)=> ch.isDominant() )
-  const minor = chords.filter( (ch)=>ch.isMinor() )
+  // for some reason there are still some chords with no chordforms so check for chordforms.length
+  const major = chords.filter( (ch)=>ch.isMajor() && ch.chordforms.length )
+  const dominant = chords.filter( (ch)=> ch.isDominant() && ch.chordforms.length )
+  const minor = chords.filter( (ch)=>ch.isMinor() && ch.chordforms.length )
 
- 
+  const spId = "quality-sp";
+  const spClass = "chord-quality-subpanel subpanel";
+
+
   // console.log("rendering QualityPanel cfUI: ", cfUI)
   return (
     cfUI && (
     <>
      
         <div id={spId} className={spClass}>
-          <div className="title-bar" onClick={ToggleSubPanel}>
+          <div className="title-bar" onClick={toggle}>
             <div className="title">Quality</div>
           </div>
 
 
- {isPanelOpen === spId && (
+ {isOpen  && (
           <div className="quality-picker-container picker-container">
             <div id="major" className="chord-picker-group picker-group">
               

@@ -1,5 +1,6 @@
 
- import React, { useState } from "react";
+ import React, { useState,useEffect } from "react";
+
 import ChordForm  from "../../harmony/harmony-manager.js"
 import {HarmonyManager, Chord}  from "../../harmony/harmony-manager.js"
 
@@ -7,46 +8,56 @@ export default function InversionPanel({
 
 
   cfUI,
-  setCFUI2,
+  setCFUI,
 
   activeSubPanelUI,
   setActiveSubPanelUI,
   message,
-  onKeyClick
+  onKeyClick,
+  forceAll
 }) {
 
     const [isPanelOpen, setIsPanelOpen] = useState(true);
+const [isOpen, setIsOpen] = useState(true);
+ // Respond to global force command
+  useEffect(() => {
+    if (forceAll === "open") setIsOpen(true);
+    if (forceAll === "close") setIsOpen(false);
+  }, [forceAll]);
+
+
+    const toggle = () => setIsOpen(prev => !prev);
+
 
 
   const spId = "inversion-sp";
   const spClass = "inversion-subpanel subpanel";
 
-  const ToggleSubPanel = () => {
-    // prev is the previous state value - the value that setIsPanelOpen had right before this update.
-    //React gives you this automatically when you use the “functional update” form of setState.
-    setIsPanelOpen(prev =>  prev === spId ? "" : spId );
-  };
-
+ 
   const oldCF = cfUI
 // console.log("inversion pane oldCF: ", oldCF)
   const ClickInversion=(inv)=>{
     const newCF = oldCF.chord.getChordform({quality: oldCF.quality, string:  oldCF.string, form: oldCF.form, inversion: inv})
     newCF.root = oldCF.root
-    setCFUI2(newCF)  
+    setCFUI(newCF)  
   }
 
-  const arrInv = [...new Set(oldCF.chord.chordforms.map(cf=>{return cf.inversion}))] // unique inversions
-  
+  let arrInv = [...new Set(oldCF.chord.chordforms.map(cf=>{return cf.inversion}))] // unique inversions
+  console.log("arrInv: ", arrInv)
+  arrInv = arrInv.sort((a,b)=>{ return  a.toLowerCase().charCodeAt(0) - b.toLowerCase().charCodeAt(0) } )
+
+ 
+  console.log("sorted arrInv: ", arrInv)
   return (
     <>
      
         <div id={spId} className={spClass}>
-          <div className="title-bar" onClick={ToggleSubPanel}>
+          <div className="title-bar" onClick={toggle}>
             <div className="title">Inversion</div>
           </div>
 
- {isPanelOpen === spId && (
-        <div className="chord-form-ss-container picker-container">
+ {isOpen && (
+        <div className="inversion-container picker-container">
             <div class="inversion-picker-group picker-group">
 
                    {arrInv.map(inv => (

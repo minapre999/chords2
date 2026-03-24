@@ -1,27 +1,35 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+
  import ChordForm  from "../../harmony/harmony-manager.js"
 import {HarmonyManager, Chord}  from "../../harmony/harmony-manager.js"
 
 export default function FormSSPanel({
-
   cfUI,
-  setCFUI2,
+  setCFUI,
   activeSubPanelUI,
   setActiveSubPanelUI,
   message,
-  onKeyClick
+  onKeyClick,
+  forceAll
 }) {
+  
   const [isPanelOpen, setIsPanelOpen] = useState(true);
+const [isOpen, setIsOpen] = useState(true);
+ // Respond to global force command
+  useEffect(() => {
+    if (forceAll === "open") setIsOpen(true);
+    if (forceAll === "close") setIsOpen(false);
+  }, [forceAll]);
+
+
+  const toggle = () => setIsOpen(prev => !prev);
+
 
 
   const spId = "formSS-sp";
-  const spClass = "chord-quality-subpanel subpanel";
+  const spClass = "chord-form-ss-subpanel subpanel";
 
-    const ToggleSubPanel = () => {
-    // prev is the previous state value - the value that setIsPanelOpen had right before this update.
-    //React gives you this automatically when you use the “functional update” form of setState.
-    setIsPanelOpen(prev =>  prev === spId ? "" : spId );
-  };
+ 
 
 
    const ClickFormSS=(fssId)=>{
@@ -34,7 +42,7 @@ export default function FormSSPanel({
                                                   string:  string, 
                                                   form: form, 
                                                   inversion: cfUI.inversion})
-    setCFUI2(newCF)  
+    setCFUI(newCF)  
   }
 
 const uniqueFSS =   [...new Set(dc.HARMONY_MANAGER.chordforms.map(cf=>{return cf.form_ss}))] // unique FSS
@@ -44,11 +52,11 @@ const activeCF = cfUI
     <>
      
         <div id={spId} className={spClass}>
-          <div className="title-bar" onClick={ToggleSubPanel}>
+          <div className="title-bar" onClick={toggle}>
             <div className="title">Form and String Set</div>
           </div>
 
- {isPanelOpen === spId && (
+ {isOpen && (
         <div className="chord-form-ss-container picker-container">
           <div id="form-ss" className="chord-picker-group picker-group">
 

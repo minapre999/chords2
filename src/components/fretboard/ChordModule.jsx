@@ -80,7 +80,7 @@ export default function ChordModule() {
   const [showNoteNamesUI, setShowNoteNamesUI] = useState(true);
   const [zoom, setZoom] = useState(1);
 const [displayMode, setDisplayMode] = useState("singleInversion") // dislay one at a time or all at once
-const [cfUI, setCFUI2] = useState(null)
+const [cfUI, setCFUI] = useState(null)
 const [chordRootUI, setChordRootUI] = useState("C")
 const [chordStringUI, setChordStringUI] = useState("1") // "D2:1"
 
@@ -127,7 +127,7 @@ const [chordStringUI, setChordStringUI] = useState("1") // "D2:1"
 
  useEffect(() => {
     async function init() {
-      // console.log("ChordModule load_harmonies")
+      console.log("ChordModule load_harmonies")
       await dc.HARMONY_MANAGER.load_harmonies();
       console.log("ChordModule ready")
       setReady(true);
@@ -180,11 +180,11 @@ let strCF = "";
   // (hooks must be before return)
   // -------------------------
   useEffect(() => {
-    // console.log("ChordModule useEffect for setCFUI2: cf", cf)
+    // console.log("ChordModule useEffect for setCFUI: cf", cf)
     if (cf?.id !== undefined) {
       // console.log("ChordModule Setting cfUI: ", cf.id)
 
-      setCFUI2(cf);
+      setCFUI(cf);
     }
   }, [cf]);
 
@@ -213,7 +213,7 @@ let strCF = "";
   
 
       cfUI={cfUI}
-      setCFUI2={setCFUI2}
+      setCFUI={setCFUI}
 
       chordRootUI={chordRootUI}
       setChordRootUI={setChordRootUI}
@@ -267,7 +267,7 @@ let strCF = "";
     <ChordInfo 
   
         cfUI={cfUI}
-      setCFUI2={setCFUI2}
+      setCFUI={setCFUI}
 
 
       chordRootUI={chordRootUI}

@@ -177,12 +177,13 @@ get availableFS() {
 // }
 // get harmonies from the server
 async ajax_retrieve() {
+  try{
   console.log("ajax_retrieve for harmony data on the server ...");
 
   const token = await dc.getCSRF_TOKEN() 
   console.log("ajax-harmonies token:", token);
   const url = "http://127.0.0.1:8000/ajax-harmonies/";
-  await fetch(url, {
+  let response = await fetch(url, {
         method: "POST",
         credentials: "include",
         headers: {
@@ -193,13 +194,21 @@ async ajax_retrieve() {
           harmony_dict_id: 1
         })
       })
-      .then((response)=>{
-          console.log("ajax_retrieve returning data:", response.harmony_dict);
-         return response.harmony_dict;
-      })
 
-console.log("ajax_retrieve: something went wrong ... returning null")
-return null
+    const data = await response.json();
+    console.log("server returned:", data);
+
+  if(  data.harmony_dict) {
+  console.log("ajax_retrieve returning data:", data.harmony_dict);
+  return data.harmony_dict;
+  }
+    
+  console.log("ajax_retrieve: something went wrong ... returning null")
+  return null
+  }
+    catch(err){
+      console.log("error fetching chord data")
+    }
 }
 
 

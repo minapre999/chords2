@@ -13,17 +13,36 @@
 /* width: 250px !important; */
 
 }
+
+.my-toggle-btn {
+  cursor: pointer;
+  padding: 4px 8px;
+  font-size: 14px;
+  color: #ddd;
+}
+
+.my-toggle-btn:hover {
+  color: white;
+}
+
+
+
 .picker-panel  .jsPanel-headerbar,
 .pick-master  .jsPanel-headerbar
 {
-    min-height: 22px !important;
-    height: 24px;
+    /* min-height: 18px !important; */
+    padding: 0 6px !important;
+    /* height: 28px; */
+    /* line-height: 18px !important; */
     }
+
+   
 
 .picker-panel .jsPanel-controlbar,
 .pick-master .jsPanel-controlbar,
 .legend-master .jsPanel-controlbar
 {
+      height: 28px;
     /* transform: scale(0.7,0.7); */
     transform: translateY(-6px) scale(0.6,0.6);
 }
@@ -33,15 +52,28 @@
     background-color: #111;
     }
 
-    .pick-master  .jsPanel-titlebar {
-        font-size: 13px !important;
-    }
 
-    
 .pick-master  .title-bar {
     color: #ffffff;
     background-color: #546678 !important;
     border-bottom: 1px solid #9498ad !important;
+}
+
+.pick-master .force-all{
+    position: absolute;
+    right: 46px;
+    top: 16px;
+    /* color: pink; */
+    /* text-align: right; */
+}
+
+.pick-master #open-all:hover, .pick-master #close-all:hover{
+  cursor: pointer;
+ transform: translate(1px, 1px); 
+ /* background-color: #546678 !important; */
+   background-color: rgb(151, 162, 167);
+  /* color: white; */
+  /* transform: translateY(-1px); */
 }
 
 
@@ -63,9 +95,20 @@
     height: 100% !important;
 } */
 
+
+
+.pick-master  .jsPanel-titlebar {
+        padding-top: 6px;
+        font-size: 18px !important;
+        /* font-weight: bold; */
+    }
+
+
 .picker-panel .jsPanel-title,
 .pick-master .jsPanel-title{
-    font-size: 13px !important;
+     padding-top: 6px;
+        font-size: 18px !important;
+        /* font-weight: bold; */
 }
 
 
@@ -82,9 +125,10 @@
     font-size: 13px !important;
 } */
 
-/* .picker-panel .jsPanel-content {
-    height: auto !important;
-} */
+.picker-panel .jsPanel-content {
+    /* height: auto !important; */
+    min-height: 150px;
+}
 /* 
 .picker-panel .jsPanel-hdr,
 .pick-master .jsPanel-hdr {
