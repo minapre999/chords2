@@ -1,4 +1,4 @@
-
+import  Note  from "../../harmony/note.js";
 import  PlayNote  from "../../sound/Play.js";
 
 export default function StringLane({
@@ -22,7 +22,8 @@ export default function StringLane({
   stringY,
   getStringWidth,
   noteNameFromMidi,
-  showAllNotesUI
+  showAllNotesUI,
+  noteMode
 }) {
   const y = stringY(stringIndex);
   const stringThickness = getStringWidth(stringIndex);
@@ -30,7 +31,7 @@ export default function StringLane({
   const strokeCol = stringIndex > 2 ? bassStringColorUI : stringColorUI;
   const openNoteName = noteNameFromMidi(openMidi, { preferSharps });
   // The chordform note for this string (if any)
-  const noteForString = cf?.getNoteForString(stringIndex+1) || null;
+  const chNote = cf?.getNoteForString(stringIndex+1) || null;
 
   return (
     <g>
@@ -115,11 +116,11 @@ export default function StringLane({
       {openMarkers && cfUI && (
         <g className="open-muted-markers">
           {(() => {
-            if (!noteForString) return null;
+            if (!chNote) return null;
 
             const x = getFretX(0) - 40;
 
-            if (noteForString.fret === 0) {
+            if (chNote.fret === 0) {
               return (
                 <text
                   x={x}
@@ -133,7 +134,7 @@ export default function StringLane({
               );
             }
 
-            if (noteForString.fret === null) {
+            if (chNote.fret === null) {
               return (
                 <text
                   x={x}
@@ -154,9 +155,18 @@ export default function StringLane({
 
       {/* === FRETTED NOTES === */}
       {Array.from({ length: numFrets }).map((_, fretIndex) => {
+         if (!chNote) return null;
+         
         const fret = fretIndex + 1;
         const midi = openMidi + fret;
-        const noteName = noteNameFromMidi(midi, { preferSharps });
+
+        console.log("StringLine: noteMode: ", noteMode)
+        let noteName = null
+        if(noteMode == "note") { noteName = noteNameFromMidi(midi, { preferSharps })} 
+          else if (noteMode == "interval"){noteName= chNote.interval }
+        else if (noteMode == "fingering"){ noteName= chNote.finger }
+        
+
 
         const left = getFretX(fret - 1);
         const right = Math.min(getFretX(fret), width);
@@ -165,9 +175,10 @@ export default function StringLane({
 
         const isChordNote =
           cfUI &&
-          noteForString &&
-          noteForString.fret === fret;
+          chNote &&
+          chNote.fret === fret;
 
+          console.log("isChordNote: ", isChordNote, "noteName; ", noteName)
         return (
           <g
             key={fretIndex}

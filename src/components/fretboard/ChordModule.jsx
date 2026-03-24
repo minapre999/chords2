@@ -83,6 +83,7 @@ const [displayMode, setDisplayMode] = useState("singleInversion") // dislay one 
 const [cfUI, setCFUI] = useState(null)
 const [chordRootUI, setChordRootUI] = useState("C")
 const [chordStringUI, setChordStringUI] = useState("1") // "D2:1"
+const [noteMode, setNoteMode] = useState("note");
 
   // Headstock persistence
   const [showHeadstockUI, setShowHeadstockUI] = useState(() => {
@@ -236,7 +237,8 @@ let strCF = "";
       setShowHeadstockUI={setShowHeadstockUI}
       showInlaysUI={showInlaysUI}
       setShowInlaysUI={setShowInlaysUI}
-
+      noteMode={noteMode}
+      setNoteMode={setNoteMode}
     />
 
 <div id="content">
@@ -261,6 +263,7 @@ let strCF = "";
       showOpenStringsUI={showOpenStringsUI}
       showHeadstockUI={showHeadstockUI}
       showInlaysUI={showInlaysUI}
+      noteMode={noteMode}
     />
 
 

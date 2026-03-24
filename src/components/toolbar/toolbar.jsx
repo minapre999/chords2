@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import OpenPicker from "../picker/picker-manager"
-
+import "./toolbar.css"
+import NoteModeWidget from "./note-mode.jsx"
 
 
 export default function Toolbar({ 
@@ -20,7 +21,7 @@ export default function Toolbar({
     
     chordRootUI, setChordRootUI,
       chordStringUI, setChordStringUI,
-
+noteMode, setNoteMode
 
 }) {
 
@@ -59,6 +60,9 @@ const CHORDS = {
   Am: [null, 0, 2, 2, 1, 0],
   E:  [0, 2, 2, 1, 0, 0],
 };
+
+
+
 
 // console.log('Toolbar cfUI:', cfUI)
   return (
@@ -140,15 +144,14 @@ const CHORDS = {
         Inlays
       </label>
 
-      {/* Note names */}
-      <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
-        <input
-          type="checkbox"
-          checked={showNoteNamesUI}
-          onChange={(e) => setShowNoteNamesUI(e.target.checked)}
-        />
-        Note names
-      </label>
+  
+    <NoteModeWidget 
+    noteMode={noteMode}
+    setNoteMode={setNoteMode}
+    />
+
+
+
 
       {/* Open strings */}
       <label style={{ display: "flex", alignItems: "center", gap: 6 }}>

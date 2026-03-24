@@ -101,6 +101,7 @@ showNoteNamesUI,
   showAllNotesUI=false,
 setOpenMarkers,
 openMarkers,
+noteMode
 }) {
   const [selected, setSelected] = useState(null);
   const [vibratingString, setVibratingString] = useState(null);
@@ -349,6 +350,7 @@ if( cfUI ) {
                     noteNameFromMidi={noteNameFromMidi}
                     showAllNotesUI={showAllNotesUI}
                     fretSpacing={fretSpacing}
+                    noteMode={noteMode}
                   />
                 ))}
               </svg>
