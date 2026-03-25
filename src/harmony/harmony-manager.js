@@ -622,15 +622,18 @@ get notes() {
 get position() {
   let pos = undefined;
 
+  // In JavaScript, a return statement inside a for...of loop does not just stop the loop — 
+  // it immediately exits the entire function in which the loop is running.
+// If you only want to stop the loop but keep executing the rest of the function, you should use break instead.
   for (const n of this.notes) {
-    if (n.finger === 1) return +n.fret;
-    if (n.finger === "1s") pos = +n.fret + 1;
-    if (n.finger === 2) pos = +n.fret - 1;
-    if (n.finger === 3) pos = +n.fret - 2;
-    if (n.finger === '4s') pos = +n.fret - 3;
+    if (n.finger == 1) return +n.fret;
+    if (n.finger =="1s") return +n.fret + 1;
+    if (n.finger == 2) return +n.fret - 1;
+    if (n.finger == 3) return +n.fret - 2;
+    if (n.finger == '4s') return +n.fret - 3;
   }
 
-  return pos;
+  return null;
 }
 
 

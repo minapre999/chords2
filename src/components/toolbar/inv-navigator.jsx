@@ -1,11 +1,12 @@
 import React from "react";
-import "./cf-navigator.css"
+import "./chord-navigation.css"
 import  ChordForm, {Chord}  from "../../harmony/harmony-manager.js"
 
 
-export default function ChordFormNavigator({
+export default function InversionNavigator({
   cfUI,
-  setCFUI
+  setCFUI,
+  
  
 }) {
 
@@ -17,24 +18,15 @@ export default function ChordFormNavigator({
     // const total = arr.length
     // const currentIndex = arr.findIndex((cf) => cf.id === cfUI.id)
 
-console.log("cfUI root: ", cfUI.root)
+// console.log("InversionNavigator cfUI: ", cfUI, "cfUI.root: ", cfUI.root)
     let arrInv = cfUI.chord.chordforms.filter((cf=>cf.form_ss == cfUI.form_ss && cf.quality == cfUI.quality))
   // strip non-numerics from string in sort
-  console.log("unsorted: ", arrInv.map((cf)=> {
-    cf.root = cfUI.root
-    cf.position}
-))
-    arrInv.sort((a,b)=>{ 
-        // return  Number(a.inversion.replace(/\D+/g, '')) - Number(b.inversion.replace(/\D+/g, '')) 
-        a.root=cfUI.root
-        b.root = cfUI.root
-        return a.position - b.position
-    } )
+  // need to set root to have a valid position
+    arrInv.forEach((cf)=>cf.root = cfUI.root)
+    arrInv.sort((a,b)=>a.position - b.position )
 
-console.log("sorted: ", arrInv.map((cf)=>cf.position))
+// console.log("sorted: ", arrInv.map((cf)=>cf.position))
 
-
-    // sort by fretboard position
 
     const totalInv = arrInv.length
     const invIndex = arrInv.findIndex((cf) => cf.id === cfUI.id)
@@ -52,7 +44,7 @@ console.log("sorted: ", arrInv.map((cf)=>cf.position))
    }
 
 
-// console.log("ChordFormNavigator arrInv: ", arrInv, "totalInv: ", totalInv, "invIndex: ", invIndex)
+// console.log("InversionNavigator arrInv: ", arrInv, "totalInv: ", totalInv, "invIndex: ", invIndex)
   return (
  cfUI && (
     <div className="cf-nav-widget">
@@ -64,9 +56,9 @@ console.log("sorted: ", arrInv.map((cf)=>cf.position))
         <i className="fa fa-chevron-left"></i>
       </button>
 
-      <span className="cf-nav-label">
+      <div className="nav-label cf-nav-label">
         {invIndex + 1} / {totalInv}
-      </span>
+      </div>
 
       <button
         className="cf-nav-btn"

@@ -3,8 +3,9 @@ import OpenPicker from "../picker/picker-manager"
 import "./toolbar.css"
 import "./note-mode.css"
 import NoteModeWidget from "./note-mode.jsx"
-import ChordFormNavigator from "./cf-navigator.jsx"
-
+import InversionNavigator from "./inv-navigator.jsx"
+import FormSSNavigator from "./form-ss-navigator.jsx"
+// import OpenPicker from "./open-picker.jsx"
 
 export default function Toolbar({ 
     onOpenPanel,
@@ -63,7 +64,7 @@ const CHORDS = {
 };
 
 
-
+console.log("Rendering InversionNavigator");
 
 // console.log('Toolbar cfUI:', cfUI)
   return (
@@ -90,7 +91,16 @@ const CHORDS = {
       }}
     >
 
-      <OpenPicker  
+
+            {/* Zoom controls */}
+      <button onClick={() => setZoom(z => Math.max(0.5, z - 0.1))}>–</button>
+      <span>{Math.round(zoom * 100)}%</span>
+      <button onClick={() => setZoom(z => Math.min(3, z + 0.1))}>+</button>
+
+
+
+
+      <OpenPicker  className="toolbar-btn" 
   
         cfUI={cfUI}
       setCFUI={setCFUI}
@@ -99,7 +109,9 @@ const CHORDS = {
       chordStringUI={chordStringUI}
       setChordStringUI={setChordStringUI}
 
-        />
+        >
+            <img src="/img/chord-icon.svg" className="toolbar-icon" />
+        </OpenPicker>
 
       {/* Fretboard colour
       <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -147,12 +159,18 @@ const CHORDS = {
 
   
 
-  <ChordFormNavigator
+  <InversionNavigator
   cfUI={cfUI}
   setCFUI={setCFUI}
   // onPrev={() => setCFUI(cfUI.prevForm())}
   // onNext={() => setCFUI(cfUI.nextForm())}
 />
+
+<FormSSNavigator
+ cfUI={cfUI}
+  setCFUI={setCFUI}
+/>
+
 
 
     <NoteModeWidget 
@@ -173,10 +191,6 @@ const CHORDS = {
         Open strings
       </label>
 
-      {/* Zoom controls */}
-      <button onClick={() => setZoom(z => Math.max(0.5, z - 0.1))}>–</button>
-      <span>{Math.round(zoom * 100)}%</span>
-      <button onClick={() => setZoom(z => Math.min(3, z + 0.1))}>+</button>
 
       {/* Headstock toggle */}
       <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -190,7 +204,7 @@ const CHORDS = {
 
 
 
-<select onChange={(e) => {
+{/* <select onChange={(e) => {
         const name = e.currentTarget.value 
         console.log("onChange setting active chord to: ", name)
         console.log(CHORDS[name])
@@ -200,9 +214,9 @@ const CHORDS = {
   {Object.keys(CHORDS).map((name) => (
     <option key={name} value={name}>{name}</option>
   ))}
-</select>
+</select> */}
 
-
+{/* 
 <label>
   <input
     type="checkbox"
@@ -210,7 +224,7 @@ const CHORDS = {
     onChange={(e) => setShowChord(e.target.checked)}
   />
   Highlight chord
-</label>
+</label> */}
 
 <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
   <input

@@ -152,7 +152,7 @@ let strCF = "";
       const chord = dc.HARMONY_MANAGER.chordsWithSymbol("maj7")[0]
 
      cf = chord.getChordform({quality: "maj7", string: "1", form: "D2", inversion: "3"})
-
+    cf.root=chordRootUI
 
 
     // console.log("cf: ", cf)
@@ -182,11 +182,11 @@ let strCF = "";
   useEffect(() => {
     // console.log("ChordModule useEffect for setCFUI: cf", cf)
     if (cf?.id !== undefined) {
-      console.log("ChordModule Setting cfUI: ", cf.id, "typeof cf: ", typeof(cf))
+      // console.log("ChordModule Setting cfUI: ", cf, "cf.root: ", cf.root)
 
       setCFUI(cf);
 
-            console.log("ChordModule Setting cfUI: ", cf.id, "typeof cfUI: ", typeof(cfUI))
+            // console.log("ChordModule complet setting cfUI: ", cfUI, "cfUI.root", cfUI)
 
 
     }
