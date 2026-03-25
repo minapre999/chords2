@@ -154,7 +154,6 @@ let strCF = "";
      cf = chord.getChordform({quality: "maj7", string: "1", form: "D2", inversion: "3"})
 
 
- 
 
     // console.log("cf: ", cf)
 
@@ -183,9 +182,13 @@ let strCF = "";
   useEffect(() => {
     // console.log("ChordModule useEffect for setCFUI: cf", cf)
     if (cf?.id !== undefined) {
-      // console.log("ChordModule Setting cfUI: ", cf.id)
+      console.log("ChordModule Setting cfUI: ", cf.id, "typeof cf: ", typeof(cf))
 
       setCFUI(cf);
+
+            console.log("ChordModule Setting cfUI: ", cf.id, "typeof cfUI: ", typeof(cfUI))
+
+
     }
   }, [cf]);
 

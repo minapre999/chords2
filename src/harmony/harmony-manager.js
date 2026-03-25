@@ -503,38 +503,138 @@ isMinor() { return this.harmony.cat1 === "min"  }
 
 export default class ChordForm{
 constructor() {
-    this._id
-    this._tuning
-    this._chord
-    this._string
-    this._inversion
-    this._form
-    /* _strings are an array of objects for each string in the chordform in the "C" position
-        they are **not** note objects - they are the objects as loaded from the backend
-    {
-       [ string : string
-        fret : integer
-        finger :  string
-         interval : integer
-       ],
+    // this._id
+    // this._tuning
+    // this._chord
+    // this._string
+    // this._inversion
+    // this._form
+    // /* _strings are an array of objects for each string in the chordform in the "C" position
+    //     they are **not** note objects - they are the objects as loaded from the backend
+    // {
+    //    [ string : string
+    //     fret : integer
+    //     finger :  string
+    //      interval : integer
+    //    ],
 
-       ...
+    //    ...
 
-    */
-    this._strings
-    this._text = "test"
-    this._comments
+    // */
+    // this._strings
+    // this._text = "test"
+    // this._comments
 
-    // the following are for in-memory applications and buffering operations  
-    this._root
-    this._r_notes_cache
-    this._transpose = 0; // custom transpose - used for high fret position
-    this._enharmonic_bias = "b"; // whether to make notes sharp or flat
+    // // the following are for in-memory applications and buffering operations  
+    // this._root
+    // this._r_notes_cache
+    // this._transpose = 0; // custom transpose - used for high fret position
+    // this._enharmonic_bias = "b"; // whether to make notes sharp or flat
+
+     this._id = null;
+  this._tuning = null;
+  this._chord = null;
+  this._string = null;
+  this._inversion = 0;
+  this._form = 0;
+  this._strings = [];   // ← CRITICAL
+  this._text = "test";
+  this._comments = null;
+
+  this._root = null;
+  this._r_notes_cache = [];
+  this._transpose = 0;
+  this._enharmonic_bias = "b";
+
+
     }    
     init() {
             
         }
 // parent() - for the jstree interface
+
+
+
+get notes() {
+  try {
+    if (this._root === undefined) {   // ✅ use _root to avoid calling getter
+      throw `ChordForm:getNotes: root is not defined.
+             ${this.id}, ${this.chord.name} form: ${this.form} stringset: ${this.stringset} inversion: ${this.inversion}`;
+    }
+
+    // Return cached notes if available
+    if (this._r_notes_cache && this._r_notes_cache.length > 0) {
+      return this._r_notes_cache;
+    }
+
+    // Build fresh cache
+    this._r_notes_cache = this.strings.map(s =>
+      new Note({
+        fret: s.fret,
+        finger: s.finger,
+        stringNumber: s.string,
+        interval: s.interval
+      }, dc.FRETBOARD_MANAGER)
+    );
+
+    // Root-based transpose
+    const transpose_st = transpose_lookup[this._root];  // ✅ use _root
+
+    let lowFret = Infinity;
+
+    for (const note of this._r_notes_cache) {
+      note.fret += transpose_st;
+      if (note.fret < lowFret) lowFret = note.fret;
+    }
+
+    const highestAllowedFret = 18;
+
+    // Adjust for low/high fret boundaries
+    if (lowFret < dc.LOWEST_ALLOWED_FRET) {
+      for (const note of this._r_notes_cache) {
+        note.fret += 12;
+      }
+    } else if (lowFret > highestAllowedFret) {
+      for (const note of this._r_notes_cache) {
+        note.fret -= 12;
+      }
+    }
+
+    // Custom transpose
+    for (const note of this._r_notes_cache) {
+      note.fret += this._transpose;
+    }
+
+    // Populate note names
+    this.getNoteNames();
+
+    return this._r_notes_cache;
+  } catch (err) {
+    console.log("%c" + err, "color: red;");
+    console.log(err.stack);
+  }
+}
+
+
+
+ // define position for fret where first finger is fretted
+
+get position() {
+  let pos = undefined;
+
+  for (const n of this.notes) {
+    if (n.finger === 1) return +n.fret;
+    if (n.finger === "1s") pos = +n.fret + 1;
+    if (n.finger === 2) pos = +n.fret - 1;
+    if (n.finger === 3) pos = +n.fret - 2;
+    if (n.finger === '4s') pos = +n.fret - 3;
+  }
+
+  return pos;
+}
+
+
+
 get id() {return this._id }
 get bassNote() {
   return this._r_notes_cache
@@ -613,21 +713,6 @@ set root(root) {
 
 
 
- // define position for fret where first finger is fretted
-
-get position() {
-  let pos = undefined;
-
-  for (const n of this.notes) {
-    if (n.finger === 1) return +n.fret;
-    if (n.finger === "1s") pos = +n.fret + 1;
-    if (n.finger === 2) pos = +n.fret - 1;
-    if (n.finger === 3) pos = +n.fret - 2;
-  }
-
-  return pos;
-}
-
 
 // define position for fret where first finger is fretted
 
@@ -654,70 +739,26 @@ get namesWithInversion() {
     return names
 }
 
+// index of nextForm and prevForm are circular - go back to zero if the current form is the last one
+nextForm() {
+const forms=this.chord.chordforms
+let index = forms.findIndex((cf) => cf[id] === this.id)
+index = index < forms.length-1 ? index+1 : 0
+return forms[index]
+}
+
+prevForm() {
+const forms=this.chord.chordforms
+let index = forms.findIndex((cf) => cf[id] === this.id)
+ index = index == 0 ?  forms.length-1 : index-1
+ return forms[index]
+}
+
 getNoteForString(stringNum){ 
        const arr = this.notes.filter((n)=>{  return n.stringNumber == stringNum    }) 
        return arr.length > 0 ? arr[0] : null
 }
 
-get notes() {
-  try {
-    if (this._root === undefined) {   // ✅ use _root to avoid calling getter
-      throw `ChordForm:getNotes: root is not defined.
-             ${this.id}, ${this.chord.name} form: ${this.form} stringset: ${this.stringset} inversion: ${this.inversion}`;
-    }
-
-    // Return cached notes if available
-    if (this._r_notes_cache && this._r_notes_cache.length > 0) {
-      return this._r_notes_cache;
-    }
-
-    // Build fresh cache
-    this._r_notes_cache = this.strings.map(s =>
-      new Note({
-        fret: s.fret,
-        finger: s.finger,
-        stringNumber: s.string,
-        interval: s.interval
-      }, dc.FRETBOARD_MANAGER)
-    );
-
-    // Root-based transpose
-    const transpose_st = transpose_lookup[this._root];  // ✅ use _root
-
-    let lowFret = Infinity;
-
-    for (const note of this._r_notes_cache) {
-      note.fret += transpose_st;
-      if (note.fret < lowFret) lowFret = note.fret;
-    }
-
-    const highestAllowedFret = 18;
-
-    // Adjust for low/high fret boundaries
-    if (lowFret < dc.LOWEST_ALLOWED_FRET) {
-      for (const note of this._r_notes_cache) {
-        note.fret += 12;
-      }
-    } else if (lowFret > highestAllowedFret) {
-      for (const note of this._r_notes_cache) {
-        note.fret -= 12;
-      }
-    }
-
-    // Custom transpose
-    for (const note of this._r_notes_cache) {
-      note.fret += this._transpose;
-    }
-
-    // Populate note names
-    this.getNoteNames();
-
-    return this._r_notes_cache;
-  } catch (err) {
-    console.log("%c" + err, "color: red;");
-    console.log(err.stack);
-  }
-}
 
 
 getNoteLetters(options) {

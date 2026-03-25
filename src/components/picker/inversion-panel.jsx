@@ -43,11 +43,11 @@ const [isOpen, setIsOpen] = useState(true);
   }
 
   let arrInv = [...new Set(oldCF.chord.chordforms.map(cf=>{return cf.inversion}))] // unique inversions
-  console.log("arrInv: ", arrInv)
+  // console.log("arrInv: ", arrInv)
   arrInv = arrInv.sort((a,b)=>{ return  a.toLowerCase().charCodeAt(0) - b.toLowerCase().charCodeAt(0) } )
 
  
-  console.log("sorted arrInv: ", arrInv)
+  // console.log("sorted arrInv: ", arrInv)
   return (
     <>
      

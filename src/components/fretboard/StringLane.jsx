@@ -160,7 +160,7 @@ export default function StringLane({
         const fret = fretIndex + 1;
         const midi = openMidi + fret;
 
-        console.log("StringLine: noteMode: ", noteMode)
+        // console.log("StringLine: noteMode: ", noteMode)
         let noteName = null
         if(noteMode == "note") { noteName = noteNameFromMidi(midi, { preferSharps })} 
           else if (noteMode == "interval"){noteName= chNote.interval }
@@ -178,7 +178,7 @@ export default function StringLane({
           chNote &&
           chNote.fret === fret;
 
-          console.log("isChordNote: ", isChordNote, "noteName; ", noteName)
+          // console.log("isChordNote: ", isChordNote, "noteName; ", noteName)
         return (
           <g
             key={fretIndex}

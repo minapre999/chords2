@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef, useMemo } from "react";
-
+import "./note-mode.css"
 
 /* note mode widget for the toolbar */
 

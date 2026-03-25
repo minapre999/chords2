@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import OpenPicker from "../picker/picker-manager"
 import "./toolbar.css"
+import "./note-mode.css"
 import NoteModeWidget from "./note-mode.jsx"
+import ChordFormNavigator from "./cf-navigator.jsx"
 
 
 export default function Toolbar({ 
@@ -26,9 +28,6 @@ noteMode, setNoteMode
 }) {
 
 
-//  console.log("Toolbar chordRootUI: ", chordRootUI)
-
-
 
 
   
@@ -50,6 +49,8 @@ noteMode, setNoteMode
     localStorage.setItem("showInlaysUI", showInlaysUI);
   }, [showInlaysUI]);
   
+
+
 
 
 const CHORDS = {
@@ -145,6 +146,15 @@ const CHORDS = {
       </label>
 
   
+
+  <ChordFormNavigator
+  cfUI={cfUI}
+  setCFUI={setCFUI}
+  // onPrev={() => setCFUI(cfUI.prevForm())}
+  // onNext={() => setCFUI(cfUI.nextForm())}
+/>
+
+
     <NoteModeWidget 
     noteMode={noteMode}
     setNoteMode={setNoteMode}
