@@ -1,10 +1,14 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react"
+import "bootstrap/dist/js/bootstrap.bundle.min.js"
+import "bootstrap/dist/css/bootstrap.min.css"
+
 import "./toolbar.css"
 import "./note-mode.css"
 import NoteModeWidget from "./note-mode.jsx"
 import InversionNavigator from "./inv-navigator.jsx"
 import FormSSNavigator from "./form-ss-navigator.jsx"
 import OpenPicker from "./open-picker.jsx"
+
 
 export default function Toolbar({ 
     onOpenPanel,
@@ -72,22 +76,8 @@ console.log("Rendering InversionNavigator");
     
 
        {/* TOOLBAR */}
-    <div
-      style={{
-        position: "relative",
-        top: 0,
-        left: 0,
-        right: 0,
-        height: "48px",
-        background: "#222",
-        display: "flex",
-        alignItems: "center",
-        padding: "0 16px",
-        gap: "16px",
-        zIndex: 99,
-        color: "white",
-        borderBottom: "1px solid #444",
-      }}
+    <div className="toolbar-inner"
+     
     >
 
 

@@ -1,17 +1,18 @@
-
+/* ──────────────────────────────────────────────── */
+/* CHORD NAVIGATION WIDGET — LIGHT THEME            */
+/* ──────────────────────────────────────────────── */
 
 .chord-nav-widget {
   display: inline-flex;
   flex-direction: column;
   align-items: center;
   gap: 2px;
-  background: #222;
-  border: 1px solid #444;
+  background: #f7f7f7;                 /* light background */
+  border: 1px solid #d0d0d0;           /* subtle border */
   padding: 4px;
   border-radius: 6px;
   margin-left: 8px;
 }
-
 
 .middle-row {
   display: flex;
@@ -19,43 +20,53 @@
   gap: 4px;
 }
 
+/* Navigation buttons */
 .nav-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 22px;     /* match inversion widget */
-  width: 26px;      /* optional, keeps symmetry */
+  height: 22px;
+  width: 26px;
+  background: #ffffff;                 /* white button */
+  border: 1px solid #c8c8c8;           /* light border */
+  color: #333;                         /* dark text */
+  border-radius: 4px;
+  cursor: pointer;
 }
 
-
 .nav-btn:hover:not(:disabled) {
-  background: #333;
+  background: #eaeaea;                 /* light hover */
+  border-color: #bcbcbc;
 }
 
 .nav-btn:disabled {
-  opacity: 0.3;
+  opacity: 0.4;
   cursor: default;
 }
 
+/* Label in the middle */
 .nav-label {
-  color: #ddd;
+  color: #333;                         /* dark text */
   font-size: 16px;
   padding: 2px 6px;
   min-width: 40px;
   text-align: center;
-  background: #1a1a1a;
+  background: #ffffff;                 /* white label */
   border-radius: 3px;
-  border: 1px solid #333;
+  border: 1px solid #c8c8c8;
 }
 
 
+/* ──────────────────────────────────────────────── */
+/* FORM / SS NAVIGATION WIDGET — LIGHT THEME        */
+/* ──────────────────────────────────────────────── */
 
 .formss-nav-widget {
   display: inline-flex;
   flex-direction: row;
   align-items: center;
-  background: #222;
-  border: 1px solid #444;
+  background: #f7f7f7;
+  border: 1px solid #d0d0d0;
   padding: 4px;
   border-radius: 6px;
   margin-left: 8px;
@@ -68,14 +79,13 @@
 }
 
 .formss-nav-widget .nav-label {
- /* color: red; */
- /* border-color: white; */
- padding: 0px;
-
- /* width: 20px; */
+  padding: 0px;
+  background: #ffffff;
+  border: 1px solid #c8c8c8;
+  color: #333;
 }
 
 .cf-nav-label {
-  /* color: pink; */
   display: inline-block;
+  color: #333;
 }

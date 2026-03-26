@@ -3,6 +3,7 @@ import "./globals.js"
 import ChordModule from "/src/components/chord/ChordModule.jsx";
 import ScaleModule from "/src/components/scale/ScaleModule.jsx";
 import SettingsModule from "/src/components/settings/SettingsModule.jsx";
+import LeadSheetModule from "/src/components/ls/LeadSheetModule.jsx";
 import NavigationBar from "/src/components/navbar/navigation-bar.jsx";
 import { loadSamples } from "./sound/GuitarSampler";
 
@@ -41,6 +42,7 @@ useEffect(() => {
 
       {page === "chords" &&  <ChordModule/>}
       {page === "scales" && <ScaleModule />}
+      {page === "lead-sheet" && <LeadSheetModule />}
       {page === "settings" && <SettingsModule />}
     </div>
   );

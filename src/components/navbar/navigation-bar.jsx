@@ -18,6 +18,11 @@ export default function NavigationBar({ currentPage, setPage }) {
       </button>
     </li>
     <li className="nav-item">
+      <button className="nav-btn" onClick={() => setPage("lead-sheet")}>
+        Lead Sheet
+      </button>
+    </li>
+    <li className="nav-item">
       <button className="nav-btn" onClick={() => setPage("settings")}>
         Settings
       </button>

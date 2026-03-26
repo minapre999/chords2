@@ -1,41 +1,41 @@
+/* NAVBAR CONTAINER — charcoal theme */
 .app-nav {
-  background: #111;
-  border-bottom: 1px solid #333;
-  height: 36px;
+  background: #2b2b2b;              /* charcoal */
+  border-bottom: 1px solid #3a3a3a;
+  height: 38px;
   display: flex;
   align-items: center;
-  padding: 0 8px !important;
+  padding: 0 12px !important;
 }
 
-/* Force horizontal nav items */
+/* Force horizontal layout */
 nav.navbar .navbar-nav {
   flex-direction: row !important;
   align-items: center !important;
 }
 
-
-/* Buttons */
+/* NAV BUTTONS — charcoal theme */
 .nav-btn {
-  background: none;
-  border: none;
-  color: #ccc;
-  padding: 0 12px;
+  all: unset;                       /* wipe Bootstrap interference */
+  display: inline-block;
+  padding: 4px 12px;
   margin: 0 4px;
   font-size: 14px;
   font-weight: 500;
-  line-height: 1;
-  height: 24px;
+  color: #e0e0e0;                   /* light gray text */
   border-radius: 4px;
-  min-width: 48px;;
+  cursor: pointer;
 }
 
+/* Hover — soft lightening, NOT black */
 .nav-btn:hover {
-  background: #222;
-  color: #fff;
+  background: #3a3a3a !important;   /* slightly lighter charcoal */
+  color: #ffffff !important;        /* clean white text */
 }
 
+/* Active state — subtle highlight */
 .nav-btn.active {
-  background: #fff;
-  color: #000;
+  background: #4a4a4a !important;   /* medium charcoal */
+  color: #ffffff !important;
   font-weight: 600;
 }
