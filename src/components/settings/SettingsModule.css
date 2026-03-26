@@ -1,0 +1,42 @@
+.settings-layout {
+  display: flex;
+  height: calc(100vh - 48px); /* subtract toolbar height */
+  background: #fafafa;
+}
+
+/* LEFT SIDEBAR */
+.settings-sidebar {
+  width: 200px;
+  background: #f3f3f3;
+  border-right: 1px solid #d0d0d0;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.settings-sidebar button {
+  all: unset;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  color: #333;
+  font-size: 14px;
+}
+
+.settings-sidebar button:hover {
+  background: #e6e6e6;
+}
+
+.settings-sidebar button.active {
+  background: #dce7ff;
+  color: #0047b3;
+  font-weight: 600;
+}
+
+/* RIGHT CONTENT AREA */
+.settings-content {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+}

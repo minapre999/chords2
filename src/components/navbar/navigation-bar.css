@@ -9,32 +9,32 @@
 }
 
 /* Force horizontal layout */
-nav.navbar .navbar-nav {
+.app-nav.navbar .navbar-nav {
   flex-direction: row !important;
   align-items: center !important;
 }
 
 /* NAV BUTTONS — charcoal theme */
-.nav-btn {
+.app-nav .nav-btn {
   all: unset;                       /* wipe Bootstrap interference */
   display: inline-block;
   padding: 4px 12px;
   margin: 0 4px;
   font-size: 14px;
   font-weight: 500;
-  color: #e0e0e0;                   /* light gray text */
+  color: #e0e0e0 !important;                   /* light gray text */
   border-radius: 4px;
   cursor: pointer;
 }
 
 /* Hover — soft lightening, NOT black */
-.nav-btn:hover {
+.app-nav .nav-btn:hover {
   background: #3a3a3a !important;   /* slightly lighter charcoal */
   color: #ffffff !important;        /* clean white text */
 }
 
 /* Active state — subtle highlight */
-.nav-btn.active {
+.app-nav .nav-btn.active {
   background: #4a4a4a !important;   /* medium charcoal */
   color: #ffffff !important;
   font-weight: 600;

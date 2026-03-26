@@ -22,21 +22,22 @@
 
 /* Navigation buttons */
 .nav-btn {
-  display: flex;
+
+  display: inline-block;
   align-items: center;
   justify-content: center;
-  height: 22px;
+  height: 32px;
   width: 26px;
   background: #ffffff;                 /* white button */
   border: 1px solid #c8c8c8;           /* light border */
-  color: #333;                         /* dark text */
+  color: #333 !important;  
   border-radius: 4px;
   cursor: pointer;
 }
 
 .nav-btn:hover:not(:disabled) {
-  background: #eaeaea;                 /* light hover */
-  border-color: #bcbcbc;
+  background: #eaeaea !important;                 /* light hover */
+  border-color: #bcbcbc !important;
 }
 
 .nav-btn:disabled {

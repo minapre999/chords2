@@ -75,7 +75,7 @@ function midiFromFilename(filename) {
 
 
 
-export default function GuitarFretboardSVG({
+export default function FretboardSVG({
   cfUI=null,
   chordRootUI="C",
   numStrings = 6,

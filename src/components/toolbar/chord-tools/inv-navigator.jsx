@@ -1,6 +1,6 @@
 import React from "react";
 import "./chord-navigation.css"
-import  ChordForm, {Chord}  from "../../harmony/harmony-manager.js"
+import  ChordForm, {HarmonyManager, Chord}  from "/src/harmony/harmony-manager.js"
 
 
 export default function InversionNavigator({
@@ -48,8 +48,13 @@ export default function InversionNavigator({
   return (
  cfUI && (
     <div className="cf-nav-widget">
+
+      {/* <button className="widget-nav-btn">◀</button>
+<button className="widget-nav-btn">▶</button>
+ */}
+
       <button
-        className="cf-nav-btn"
+        className="nav-btn"
         disabled={invIndex <= 0}
         onClick={onPrev}
       >
@@ -61,7 +66,7 @@ export default function InversionNavigator({
       </div>
 
       <button
-        className="cf-nav-btn"
+        className="nav-btn"
         disabled={invIndex >= totalInv - 1}
         onClick={onNext}
       >

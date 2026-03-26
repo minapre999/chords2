@@ -98,7 +98,7 @@ export default function StringLane({
           style={{ cursor: interactive ? "pointer" : "default" }}
         >
           <circle cx={nutX - 18} cy={y} r={10} fill="#fff" stroke="#333" />
-          {showNoteNamesUI && (
+           (
             <text
               x={nutX - 18}
               y={y + 4}
@@ -108,7 +108,7 @@ export default function StringLane({
             >
               {openNoteName}
             </text>
-          )}
+          )
         </g>
       )}
 

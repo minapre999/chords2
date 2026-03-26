@@ -1,83 +1,34 @@
 import React, { useState, useEffect, useMemo } from "react";
 import Toolbar from "/src/components/toolbar/toolbar.jsx";
-import GuitarFretboardSVG from "/src/components/fretboard/FretboardSVG.jsx";
+import FretboardSVG from "/src/components/fretboard/FretboardSVG.jsx";
 import "/src/globals.js";
  import ChordForm  from "../../harmony/harmony-manager.js"
  import {Chord}  from "../../harmony/harmony-manager.js"
+import ChordInfo from "./chord-info.jsx"
 
-// import Picker from "../picker/picker-manager.jsx";
 import { jsPanel } from "jspanel4";
 import ReactDOM from "react-dom/client";
 import {PlayChord} from "/src/sound/Play.js"
 
 
 
-function ChordInfo({
-    cfUI,
-   
-      chordRootUI,
-      setChordRootUI
-}) {
-  if(!cfUI ) return( <></> )
 
+export default function ChordModule(
+  props
+) { 
 
-  // let cf = dc.HARMONY_MANAGER.chordformWithId(cfUI);
-  // cf.root=chordRootUI
-  // let chord = dc.HARMONY_MANAGER.chordformWithId( cfUI );
-  let chord = cfUI.chord
-    // let chordforms = chord.getChordforms({ root: "C", form: "D2", string: "1" });
-  // chord.root=cfUI.root
+  const {showOpenStringsUI, setShowOpenStringsUI, showInlaysUI, setShowInlaysUI, ...rest} = props
 
-    // console.log("cf: ", cf)
-
-    // Map form → label
-    const formLabels = {
-      D2: "Drop 2",
-      D3: "Drop 3",
-      D4: "Drop 2+4",
-    };
-
-    // Get the label safely
-    const formKey = cfUI.form;
-    const formLabel = formLabels[formKey] || formKey;
-    // Build the final string
-     const strCF = `${formLabel}, strings ${cfUI.stringset}, inversion ${cfUI.inversion}`;
-
-// console.log("ChordInfo Chord root: ", chordRootUI, "strCF: ", strCF)
-
-  return ( cfUI && (
-        <>
-            <div className="mb-4">&nbsp;</div>
-
-            <div>
-            {cfUI.root}
-            <span
-              dangerouslySetInnerHTML={{
-                __html: cfUI.chord.harmony.symbols[0]
-              }}
-            />
-          </div>
-          <div />
-          <div>{strCF}</div>
-      </>
-      )
-  );
-}
-
-
-
-export default function ChordModule() {
 //Always put hooks at the top of the component, before any conditional return.
    const [fretboardColor, setFretboardColor] = useState("#4a2619");
-  const [stringColor, setStringColor] = useState("#d0d0d0");
   const [fretboardImage, setFretboardImage] = useState("");
   const [showPanel, setShowPanel] = useState(false);
-  const [stringColorUI, setStringColorUI] = useState("silver");
-  const [bassStringColorUI, setBassStringColorUI] = useState("#d4af37");
-  const [showOpenStringsUI, setShowOpenStringsUI] = useState(true);
+
+  const [showNoteNamesUI, setShowNoteNamesUI] = useState(true);
+
+
   const [openMarkers, setOpenMarkers] = useState(true);
   const [showAllNotesUI, setShowAllNotesUI] = useState(false);
-  const [showNoteNamesUI, setShowNoteNamesUI] = useState(true);
   const [zoom, setZoom] = useState(1);
 const [displayMode, setDisplayMode] = useState("singleInversion") // dislay one at a time or all at once
 const [cfUI, setCFUI] = useState(null)
@@ -85,15 +36,8 @@ const [chordRootUI, setChordRootUI] = useState("C")
 const [chordStringUI, setChordStringUI] = useState("1") // "D2:1"
 const [noteMode, setNoteMode] = useState("note");
 
-  // Headstock persistence
-  const [showHeadstockUI, setShowHeadstockUI] = useState(() => {
-    const saved = localStorage.getItem("showHeadstockUI");
-    return saved === null ? true : saved === "true";
-  });
-  const [showInlaysUI, setShowInlaysUI] = useState(() => {
-    const saved = localStorage.getItem("showInlaysUI");
-    return saved === null ? true : saved === "true";
-  });
+
+  
 
    const [ready, setReady] = useState(false);
 
@@ -214,8 +158,8 @@ let strCF = "";
   <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
  
     <Toolbar
-  
-
+      {...props}
+      page="chords"
       cfUI={cfUI}
       setCFUI={setCFUI}
 
@@ -223,62 +167,42 @@ let strCF = "";
       setChordRootUI={setChordRootUI}
       chordStringUI={chordStringUI}
       setChordStringUI={setChordStringUI}
-      // onOpenPanel={() => setShowPanel(true)}
-      stringColorUI={stringColorUI}
-      setStringColorUI={setStringColorUI}
-      bassStringColorUI={bassStringColorUI}
-      setBassStringColorUI={setBassStringColorUI}
+   
       zoom={zoom}
       setZoom={setZoom}
       showNoteNamesUI={showNoteNamesUI}
       setShowNoteNamesUI={setShowNoteNamesUI}
       showAllNotesUI={showAllNotesUI}
       setShowAllNotesUI={setShowAllNotesUI}
-      showOpenStringsUI={showOpenStringsUI}
-      setShowOpenStringsUI={setShowOpenStringsUI}
-      showHeadstockUI={showHeadstockUI}
-      setShowHeadstockUI={setShowHeadstockUI}
-      showInlaysUI={showInlaysUI}
-      setShowInlaysUI={setShowInlaysUI}
+  
+  
       noteMode={noteMode}
       setNoteMode={setNoteMode}
     />
 
 <div id="content">
 
-    <GuitarFretboardSVG
-
+    <FretboardSVG
+  {...props}
         cfUI={cfUI}
       
       chordRootUI={chordRootUI}
       width={1800}
       height={220}
       fretboardColor={fretboardColor}
-      stringColor={stringColor}
       fretboardImage={fretboardImage}
-      // onOpenPanel={() => setShowPanel(true)}
-      stringColorUI={stringColorUI}
-       bassStringColorUI={bassStringColorUI}
+  
       zoom={zoom}
       setZoom={setZoom}
       showNoteNamesUI={showNoteNamesUI}
       showAllNotesUI={showAllNotesUI}
-      showOpenStringsUI={showOpenStringsUI}
-      showHeadstockUI={showHeadstockUI}
-      showInlaysUI={showInlaysUI}
+   
       noteMode={noteMode}
     />
 
 
-    <ChordInfo 
-  
-        cfUI={cfUI}
-      setCFUI={setCFUI}
-
-
-      chordRootUI={chordRootUI}
-      setChordRootUI={setChordRootUI}
-    />
+   
+    <ChordInfo   cfUI={cfUI}  />
 
     {/* {showPanel && (
       <Picker

@@ -1,6 +1,6 @@
 import React from "react";
 import "./chord-navigation.css"
-import  ChordForm, {HarmonyManager, Chord}  from "../../harmony/harmony-manager.js"
+import  ChordForm, {HarmonyManager, Chord}  from "/src/harmony/harmony-manager.js"
 
 
 export default function FormSSNavigator({

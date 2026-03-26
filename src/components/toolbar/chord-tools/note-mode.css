@@ -1,0 +1,68 @@
+/* Container */
+.fb-display-widget {
+  position: relative;
+  display: inline-block;
+}
+
+/* Button */
+.fb-display-btn {
+  all: unset;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  background: #ffffff;
+  border: 1px solid #c8c8c8;
+  color: #333;
+
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.fb-display-btn:hover {
+  background: #eaeaea;
+  border-color: #bcbcbc;
+}
+
+/* Dropdown menu */
+.fb-display-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+
+  background: #ffffff;
+  border: 1px solid #d0d0d0;
+  border-radius: 4px;
+
+  padding: 4px 0;
+  min-width: 140px;
+
+  /* THE FIXES */
+  display: block;          /* ensures vertical stacking */
+  overflow: visible;       /* prevents clipping */
+  z-index: 999;            /* ensures visibility */
+  box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+}
+
+/* Menu items */
+.fb-display-menu > div {
+  padding: 6px 12px;
+  font-size: 13px;
+  color: #333;
+  cursor: pointer;
+  white-space: nowrap;      /* prevents text wrapping */
+}
+
+.fb-display-menu > div:hover {
+  background: #f0f0f0;
+}
+
+/* Selected item */
+.fb-display-menu > div.selected {
+  background: #e6f0ff;
+  color: #0056d6;
+  font-weight: 600;
+}

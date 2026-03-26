@@ -1,49 +1,35 @@
-.toolbar-inner {
-  position: relative;
-  height: 48px;
-  background: #f7f7f7;            /* light background */
-  border-bottom: 1px solid #d0d0d0;
+.toolbar {
   display: flex;
   align-items: center;
-  padding: 0 16px;
-  gap: 16px;
-  color: #222;                    /* dark text */
-  z-index: 99;
+  justify-content: flex-start;
+
+  height: 48px;
+  background: #f7f7f7;
+  border-bottom: 1px solid #d0d0d0;
+
+  padding: 0 12px;
+  gap: 12px;
 }
 
-/* Buttons inside toolbar */
-.toolbar-inner button,
-.toolbar-inner .toolbar-btn {
-  background: #ffffff;
-  border: 1px solid #c8c8c8;
-  color: #333;
-  padding: 4px 10px;
-  border-radius: 4px;
-  font-size: 13px;
-}
-
-.toolbar-inner button:hover,
-.toolbar-inner .toolbar-btn:hover {
-  background: #eaeaea;
-  border-color: #bcbcbc;
-}
-
-/* Labels */
-.toolbar-inner label {
-  color: #333;
-}
-
-/* Inputs */
-.toolbar-inner input[type="checkbox"],
-.toolbar-inner input[type="color"] {
-  accent-color: #007bff;
+.toolbar-left,
+.toolbar-center,
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 
 
-.toolbar-icon {
-  width: 18px;
-  height: 18px;
-  display: inline-block;
-  padding: 0px;
+.toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.toolbar-divider {
+  width: 1px;
+  height: 24px;
+  background: #d0d0d0;
+  margin: 0 12px;
 }
