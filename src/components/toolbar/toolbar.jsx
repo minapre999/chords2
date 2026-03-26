@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
-import OpenPicker from "../picker/picker-manager"
 import "./toolbar.css"
 import "./note-mode.css"
 import NoteModeWidget from "./note-mode.jsx"
 import InversionNavigator from "./inv-navigator.jsx"
 import FormSSNavigator from "./form-ss-navigator.jsx"
-// import OpenPicker from "./open-picker.jsx"
+import OpenPicker from "./open-picker.jsx"
 
 export default function Toolbar({ 
     onOpenPanel,
@@ -75,7 +74,7 @@ console.log("Rendering InversionNavigator");
        {/* TOOLBAR */}
     <div
       style={{
-        position: "fixed",
+        position: "relative",
         top: 0,
         left: 0,
         right: 0,

@@ -1,0 +1,41 @@
+.app-nav {
+  background: #111;
+  border-bottom: 1px solid #333;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  padding: 0 8px !important;
+}
+
+/* Force horizontal nav items */
+nav.navbar .navbar-nav {
+  flex-direction: row !important;
+  align-items: center !important;
+}
+
+
+/* Buttons */
+.nav-btn {
+  background: none;
+  border: none;
+  color: #ccc;
+  padding: 0 12px;
+  margin: 0 4px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1;
+  height: 24px;
+  border-radius: 4px;
+  min-width: 48px;;
+}
+
+.nav-btn:hover {
+  background: #222;
+  color: #fff;
+}
+
+.nav-btn.active {
+  background: #fff;
+  color: #000;
+  font-weight: 600;
+}

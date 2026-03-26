@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react"
 import "./globals.js"
-import ChordModule from "./components/fretboard/ChordModule.jsx";
-
+import ChordModule from "/src/components/chord/ChordModule.jsx";
+import ScaleModule from "/src/components/scale/ScaleModule.jsx";
+import SettingsModule from "/src/components/settings/SettingsModule.jsx";
+import NavigationBar from "/src/components/navbar/navigation-bar.jsx";
 import { loadSamples } from "./sound/GuitarSampler";
 
 
@@ -29,10 +31,23 @@ useEffect(() => {
   });
 }, []);
 
- 
+   const [page, setPage] = useState("chords");
+
   return (
-    <div style={{ padding: 20 }}>
-      <ChordModule/>
+
+      <div className="app-container">
+      <NavigationBar currentPage={page} setPage={setPage} />
+      {/* <Toolbar /> */}
+
+      {page === "chords" &&  <ChordModule/>}
+      {page === "scales" && <ScaleModule />}
+      {page === "settings" && <SettingsModule />}
     </div>
   );
+
+
+    // <div style={{ padding: 20 }}>
+     
+    // </div>
+  
 }

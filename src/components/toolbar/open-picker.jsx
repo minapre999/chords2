@@ -1,7 +1,78 @@
-
 import { useState, useEffect, useRef } from "react";
-import ReactDOM from "react-dom/client";
 import { jsPanel } from "jspanel4";
+import ReactDOM from "react-dom/client";
+import "jspanel4/dist/jspanel.css";
+
+import "/src/globals.js";
+ import {Chord}  from "/src/harmony/harmony-manager.js"
+import PianoPanel from "/src/components/picker/piano-panel.jsx"
+import QualityPanel from "/src/components/picker/quality-panel.jsx"
+import FormSSPanel from "/src/components/picker/formss-panel.jsx"
+import InversionPanel from "/src/components/picker/inversion-panel.jsx"
+import "font-awesome/css/font-awesome.min.css";
+import "/src/components/picker/picker-manager.css"
+
+
+
+
+function PickerContent({ 
+activeSubPanelUI, 
+setActiveSubPanelUI,
+
+  cfUI, 
+  setCFUI,
+
+chordRootUI,
+setChordRootUI,
+chordStringUI,
+setChordStringUI,
+forceAll
+ }) {
+
+  // console.log("PickerContent cfUI: ",cfUI)
+  return (
+    <div className="pm-container">
+      <PianoPanel
+ 
+       cfUI={cfUI}
+      setCFUI={setCFUI}
+
+        activeSubPanelUI={activeSubPanelUI} 
+        setActiveSubPanelUI={setActiveSubPanelUI}
+        chordRootUI={chordRootUI} setChordRootUI={setChordRootUI}
+           forceAll={forceAll}
+      />
+      <QualityPanel 
+
+          cfUI={cfUI}
+      setCFUI={setCFUI}
+        activeSubPanelUI={activeSubPanelUI} 
+        setActiveSubPanelUI={setActiveSubPanelUI}
+          forceAll={forceAll}
+        />     
+      <FormSSPanel 
+
+  cfUI={cfUI}
+      setCFUI={setCFUI}
+
+        activeSubPanelUI={activeSubPanelUI} 
+        setActiveSubPanelUI={setActiveSubPanelUI}
+         forceAll={forceAll}
+           />
+
+      <InversionPanel 
+    
+   cfUI={cfUI}
+      setCFUI={setCFUI}
+       
+
+        activeSubPanelUI={activeSubPanelUI} 
+        setActiveSubPanelUI={setActiveSubPanelUI}
+         forceAll={forceAll}
+            />
+    </div>
+  );
+}
 
 // need a react component for the useStates
 export default function OpenPicker({
@@ -79,7 +150,7 @@ setChordStringUI,
 
   return (
     <button onClick={openPanel}>
-      <img src="/img/chord-icon.svg" className="toolbar-icon" />
+      <img src="src/img/chord-icon.svg" className="toolbar-icon" />
     </button>
       
 
@@ -154,6 +225,13 @@ function CreatePanel() {
     });
   });
 }
+
+
+
+
+
+
+
 
 
 

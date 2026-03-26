@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useMemo } from "react";
-import Toolbar from "../toolbar/toolbar.jsx";
-import GuitarFretboardSVG from "./FretboardSVG.jsx";
-import "../../globals.js";
+import Toolbar from "/src/components/toolbar/toolbar.jsx";
+import GuitarFretboardSVG from "/src/components/fretboard/FretboardSVG.jsx";
+import "/src/globals.js";
  import ChordForm  from "../../harmony/harmony-manager.js"
  import {Chord}  from "../../harmony/harmony-manager.js"
 
 // import Picker from "../picker/picker-manager.jsx";
 import { jsPanel } from "jspanel4";
 import ReactDOM from "react-dom/client";
-import {PlayChord} from "../../sound/Play.js"
+import {PlayChord} from "/src/sound/Play.js"
 
 
 
