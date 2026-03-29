@@ -70,6 +70,11 @@ export default class Note {
     return tuning[this._stringNumber - 1];
   }
 
+  get  letter() {
+    return this.name?.replace(/[0-9]/g, "");
+  }
+
+
   // -----------------------------
   // Fingering
   // -----------------------------
@@ -115,11 +120,11 @@ export default class Note {
   }
 
   pitch() {
-    return this.noteLetter()?.[0];
+    return this.letter?.[0];
   }
 
   alter() {
-    const letter = this.noteLetter();
+    const letter = this.letter;
     if (!letter) return 0;
     if (letter.includes("#")) return 1;
     if (letter.includes("b")) return -1;
@@ -135,9 +140,9 @@ export default class Note {
     }
   }
 
-  noteLetter() {
-    return this.name?.replace(/[0-9]/g, "");
-  }
+  // noteLetter() {
+  //   return this.name?.replace(/[0-9]/g, "");
+  // }
 
   enharmonicBias() {
     const n = this.name;

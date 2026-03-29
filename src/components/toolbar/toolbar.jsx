@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from "react"
 import "bootstrap/dist/js/bootstrap.bundle.min.js"
 import "bootstrap/dist/css/bootstrap.min.css"
-
+import "./toolbar.css";
 import ChordTools from "/src/components/toolbar/toolbar-pages/chord-tools.jsx";
 import ScaleTools from "/src/components/toolbar/toolbar-pages/scale-tools.jsx";
 import SettingsTools from "/src/components/toolbar/toolbar-pages/settings-tools.jsx";
@@ -10,7 +10,6 @@ import ColorControls from "/src/components/toolbar/toolbar-global/color-controls
 import HeadstockToggle from "/src/components/toolbar/toolbar-global/headstock-toggle.jsx"
 
 
-import "./toolbar.css";
 
 export default function Toolbar({ 
   page,

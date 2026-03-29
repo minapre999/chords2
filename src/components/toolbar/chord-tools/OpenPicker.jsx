@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { jsPanel } from "jspanel4";
 import ReactDOM from "react-dom/client";
 import "jspanel4/dist/jspanel.css";
+import "/src/components/toolbar/toolbar.css";
 
 import "/src/globals.js";
  import {Chord}  from "/src/harmony/harmony-manager.js"
@@ -9,7 +10,6 @@ import PianoPanel from "/src/components/picker/piano-panel.jsx"
 import QualityPanel from "/src/components/picker/quality-panel.jsx"
 import FormSSPanel from "/src/components/picker/formss-panel.jsx"
 import InversionPanel from "/src/components/picker/inversion-panel.jsx"
-import "font-awesome/css/font-awesome.min.css";
 import "/src/components/picker/picker-manager.css"
 
 
@@ -149,10 +149,12 @@ setChordStringUI,
   }, [activeSubPanelUI, cfUI, chordRootUI, forceAll]);
 
   return (
-    <button onClick={openPanel}>
-      <img src="src/img/chord-icon.svg" className="toolbar-icon" />
-    </button>
-      
+
+<button className = "picker-button" onClick={openPanel}>
+  <i className="fa-solid fa-music toolbar-icon"></i>
+</button>
+
+
 
   );
 }

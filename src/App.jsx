@@ -6,7 +6,8 @@ import SettingsModule from "/src/components/settings/SettingsModule.jsx";
 import LeadSheetModule from "/src/components/ls/LeadSheetModule.jsx";
 import NavigationBar from "/src/components/navbar/navigation-bar.jsx";
 import { loadSamples } from "./sound/GuitarSampler";
-
+import "@fortawesome/fontawesome-free/css/all.min.css";
+import TuningManager from "/src/harmony/tuning-manager.js"
 
 
 // ut the key is understanding that React always renders something first.
@@ -51,11 +52,11 @@ localStorage always stores strings, never booleans.
 return saved === null ? true : saved === "true";
 Converts the stored string into a real boolean, with a default of true
 */ 
-      const [showOpenStringsUI, setShowOpenStringsUI] = useState(() => {
+const [showOpenStringsUI, setShowOpenStringsUI] = useState(() => {
               const saved = localStorage.getItem("showOpenStringsUI");
               return saved === null ? true : saved === "true";
             });
-    useEffect(() => {  localStorage.setItem("showOpenStringsUI", showOpenStringsUI);
+useEffect(() => {  localStorage.setItem("showOpenStringsUI", showOpenStringsUI);
                    }, [showOpenStringsUI]);
 
                      // Headstock persistence
@@ -63,7 +64,7 @@ Converts the stored string into a real boolean, with a default of true
       const saved = localStorage.getItem("showHeadstockUI");
       return saved === null ? false : saved === "true";
     });
-    useEffect(() => {  localStorage.setItem("showHeadstockUI", showHeadstockUI);
+useEffect(() => {  localStorage.setItem("showHeadstockUI", showHeadstockUI);
         }, [showHeadstockUI]);
 
 
@@ -71,14 +72,14 @@ Converts the stored string into a real boolean, with a default of true
       const saved = localStorage.getItem("stringColorUI")
       return saved === null ? "silver" : saved 
     });
-    useEffect(() => {  localStorage.setItem("stringColorUI", stringColorUI);
+useEffect(() => {  localStorage.setItem("stringColorUI", stringColorUI);
         }, [stringColorUI]);
 
   const [bassStringColorUI, setBassStringColorUI] = useState(() => {
       const saved = localStorage.getItem("bassStringColorUI")
       return saved === null ? "#e6d685" : saved 
     });
-    useEffect(() => {  localStorage.setItem("bassStringColorUI", bassStringColorUI);
+useEffect(() => {  localStorage.setItem("bassStringColorUI", bassStringColorUI);
         }, [bassStringColorUI]);
 
 
@@ -87,9 +88,38 @@ Converts the stored string into a real boolean, with a default of true
         const saved = localStorage.getItem("showInlaysUI");
         return saved === null ? true : saved === "true";
       });
-    useEffect(() => {
+useEffect(() => {
           localStorage.setItem("showInlaysUI", showInlaysUI);
         }, [showInlaysUI]);
+
+const [renderDataUI, setRenderDataUI] = useState(null);
+
+  /*
+  setRenderNotes: eact requires you to create a new array when updating state. Never mutate the existing one.
+adding an item: setRenderNotes(prev => [...prev, newRN]);
+removing an item: setRenderNotes(prev => prev.filter(n => n.id !== idToRemove));
+updating an item: setRenderNotes(prev => prev.map(n => n.id === updated.id ? updated : n)
+replace entire array: setRenderNotes(newArray);
+);
+  */
+
+
+
+
+useEffect(() => {
+      let cancelled = false;   // 1. Track whether the component is still mounted
+    
+      async function init() {
+        await dc.TUNING_MANAGER.load_tuning();  // 2. Wait for the real load
+        if (!cancelled) setReady(true);             // 3. Only update state if mounted
+      }
+    
+      init();                                       // 4. Kick off the async load
+      return () => { cancelled = true };            // 5. Cleanup: mark as unmounted
+    }, []);
+      
+
+
 
 
   return (
@@ -100,13 +130,21 @@ Converts the stored string into a real boolean, with a default of true
 
       {page === "chords" &&  
       <ChordModule  
+      renderDataUI={renderDataUI} setRenderDataUI={setRenderDataUI}
         showOpenStringsUI={showOpenStringsUI}  setShowOpenStringsUI={setShowOpenStringsUI}
         showInlaysUI={showInlaysUI}  setShowInlaysUI={setShowInlaysUI}
         stringColorUI={stringColorUI} setStringColorUI={setStringColorUI}
         bassStringColorUI={bassStringColorUI} setBassStringColorUI={setBassStringColorUI}
         showHeadstockUI={showHeadstockUI} setShowHeadstockUI={setShowHeadstockUI}
         />}
-      {page === "scales" && <ScaleModule />}
+      {page === "scales" && <ScaleModule 
+       renderDataUI={renderDataUI} setRenderDataUI={setRenderDataUI}
+        showOpenStringsUI={showOpenStringsUI}  setShowOpenStringsUI={setShowOpenStringsUI}
+        showInlaysUI={showInlaysUI}  setShowInlaysUI={setShowInlaysUI}
+        stringColorUI={stringColorUI} setStringColorUI={setStringColorUI}
+        bassStringColorUI={bassStringColorUI} setBassStringColorUI={setBassStringColorUI}
+        showHeadstockUI={showHeadstockUI} setShowHeadstockUI={setShowHeadstockUI}
+      />}
       {page === "lead-sheet" && <LeadSheetModule />}
       {page === "settings" && 
       <SettingsModule 

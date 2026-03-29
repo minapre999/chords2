@@ -1,17 +1,24 @@
 
 
-import OpenPicker from "/src/components/toolbar/chord-tools/open-picker.jsx";
-import InversionNavigator from "/src/components/toolbar/chord-tools/inv-navigator.jsx";
-import FormSSNavigator from "/src/components/toolbar/chord-tools/form-ss-navigator.jsx";
-import NoteModeWidget from "/src/components/toolbar/chord-tools/note-mode.jsx";
+import OpenPicker from "/src/components/toolbar/chord-tools/OpenPicker.jsx";
+import InversionNavigator from "/src/components/toolbar/chord-tools/InversionNavigator.jsx";
+import FormSSNavigator from "/src/components/toolbar/chord-tools/FormSSNavigator.jsx";
+import NoteMode from "/src/components/toolbar/chord-tools/NoteMode.jsx";
 
 export default function ChordTools(props) {
   return (
     <>
-        <OpenPicker {...props} />
+     
         <InversionNavigator {...props} />
         <FormSSNavigator {...props} />
-        <NoteModeWidget {...props} />
+
+              <div className="toolbar-divider" />
+
+           <OpenPicker {...props} />
+           
+        <div className="toolbar-divider" />
+
+        <NoteMode {...props} />
     </>
   );
 }

@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect, useRef, useMemo } from "react";
-import "./note-mode.css"
+import  ChordForm, {HarmonyManager, Chord}  from "/src/harmony/harmony-manager.js"
+import "./NoteMode.css"
 
 /* note mode widget for the toolbar */
 
@@ -11,7 +12,7 @@ import "./note-mode.css"
     { id: "none", label: "Nothing" }
   ];
 
-export default function NoteModeWidget({
+export default function NoteMode({
      noteMode, 
      setNoteMode }) {
   const [open, setOpen] = useState(false);

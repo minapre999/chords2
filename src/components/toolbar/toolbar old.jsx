@@ -4,10 +4,10 @@ import "bootstrap/dist/css/bootstrap.min.css"
 
 import "./toolbar.css"
 import "./note-mode.css"
-import NoteModeWidget from "./chord-tools/note-mode.jsx"
+import NoteMode from "./chord-tools/NoteMode.jsx"
 import InversionNavigator from "./inv-navigator.jsx"
 import FormSSNavigator from "./form-ss-navigator.jsx"
-import OpenPicker from "./chord-tools/open-picker.jsx"
+import OpenPicker from "./chord-tools/OpenPicker.jsx"
 
 
 export default function Toolbar({ 
@@ -151,7 +151,7 @@ console.log("Rendering InversionNavigator");
 
 
 
-    <NoteModeWidget 
+    <NoteMode 
     noteMode={noteMode}
     setNoteMode={setNoteMode}
     />

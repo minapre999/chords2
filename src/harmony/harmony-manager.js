@@ -1,7 +1,7 @@
 
-import dc from '../globals.js'
+import '/src/globals.js'
 import Dexie from "dexie"
-import Note from "./note.js"
+import Note from "/src/harmony/note.js"
 import  installStringPrototypes  from "./core.js";
 import {transpose_lookup}  from "./core.js";
 installStringPrototypes();   
@@ -72,19 +72,19 @@ numberOfChords() {
 
 export class HarmonyManager {
 constructor() {
-    
+      this._loadingPromise = null;
         this._dict = null;
     }
 
     
 get dict() { return this._dict }
 set  dict(d ) {this._dict  = d }
-get name (){  return this.dict.name }
+get name (){  return this.dict?.name }
 get genre (){return this.dict.name }
-get harmonies() { return this.dict.harmonies
+get harmonies() { return this.dict?.harmonies
 }
-get chords() {  return this.dict.chords  }
-get chordforms() { return this.dict.chordforms  }
+get chords() {  return this.dict?.chords  }
+get chordforms() { return this.dict?.chordforms  }
 
 harmonyWithId(my_id) {
   return this.harmonies.find(h => h.id === my_id);
@@ -106,7 +106,7 @@ chordsWithHarmonyId(my_id) {
 chordsWithSymbol(symbol) {
   const stripped = symbol.replace('</sup>', '').replace('<sup>', '').toUpperCase();
 
-  const found_harmony = this.harmonies.find(h =>
+  const found_harmony = this.harmonies?.find(h =>
     h.symbols.some(s =>
       s.replace('</sup>', '').replace('<sup>', '').toUpperCase() === stripped
     )
@@ -181,8 +181,10 @@ async ajax_retrieve() {
   console.log("ajax_retrieve for harmony data on the server ...");
 
   const token = await dc.getCSRF_TOKEN() 
-  console.log("ajax-harmonies token:", token);
-  const url = "http://127.0.0.1:8000/ajax-harmonies/";
+  // console.log("ajax-harmonies token:", token);
+  // need to use localhost here to align with the backend 
+// otherwise get cookie not being sent correctly
+  const url = "http://localhost:8000/ajax-harmonies/";
   let response = await fetch(url, {
         method: "POST",
         credentials: "include",
@@ -196,14 +198,14 @@ async ajax_retrieve() {
       })
 
     const data = await response.json();
-    console.log("server returned:", data);
+    // console.log("server returned:", data);
 
   if(  data.harmony_dict) {
-  console.log("ajax_retrieve returning data:", data.harmony_dict);
+  // console.log("ajax_retrieve returning data:", data.harmony_dict);
   return data.harmony_dict;
   }
     
-  console.log("ajax_retrieve: something went wrong ... returning null")
+  // console.log("ajax_retrieve: something went wrong ... returning null")
   return null
   }
     catch(err){
@@ -224,97 +226,181 @@ however ... as we are using existence of the database to check whether to load
 data from the server, the first thing here will be to check this
     */
 
-async load_harmonies() {
+
+
+ async load_harmonies() {
+    if (this._loadingPromise) return this._loadingPromise;
+    this._loadingPromise = this._loadInternal();
+    return this._loadingPromise;
+  }
+
+
+async _loadInternal() {
+
+  if (this._loaded) return;
+this._loaded = true;
+
+
+
  if( this._dict != null) return null
   
-  return new Promise(async (resolve, reject) => {
     try {
-      const exists = await Dexie.exists("DropChords");
 
-      if (exists) {
-        console.log("Dexie DB already exists — loading from IndexedDB");
+      // console.log("Before ANY loading, chordforms length:", this.chordforms?.length);
 
-        const db = new Dexie("DropChords");
-        db.version(1).stores({
-          harm_dicts: "id"
-        });
+      const db = dc.db
+      // console.log("dexie db: ", db)
 
-        const stored = await db.harm_dicts.get({ id: 1 });
+     let stored = await db.harm_dict.orderBy('id').first();
 
-        this.dict = stored.harm_dict;
+      if (stored) {
+        // console.log("Dexie harmony table already exists — loading from IndexedDB");
 
-        // hydrate harmonies
-        for (const [index, h] of Object.entries(this.dict.harmonies)) {
-          this.dict.harmonies[index] = Object.assign(new Harmony(), h);
-        }
+        
+        //  this._dict = stored.harm_dict;
+        this._dict = JSON.parse(JSON.stringify(stored.harm_dict));
+        // Object.assign(this._dict, { harmonies: [], chords: [], chordforms: []  }  )
+        this._dict.harmonies = [];
+this._dict.chords = [];
+this._dict.chordforms = [];
 
-        // hydrate chords
-        for (const [index, c] of Object.entries(this.dict.chords)) {
-          const chord = Object.assign(new Chord(), c);
-          delete chord._cf_buffer;
-          this.dict.chords[index] = chord;
-        }
+      
+        //  harmonies
+        let arrStored = await db.harmony .orderBy('id').toArray()
+        arrStored.forEach((stored)=>{
+          const h = Object.assign(new Harmony(), JSON.parse(stored.data))
+          this._dict.harmonies.push(h)
+        })
+       
+        //  chords
 
-        // hydrate chordforms
-        for (const [index, cf] of Object.entries(this.dict.chordforms)) {
-          const chordform = Object.assign(new ChordForm(), cf);
-          delete chordform._r_notes_cache;
-          this.dict.chordforms[index] = chordform;
-        }
+          arrStored = await db.chord .toArray()
+        arrStored.forEach((stored)=>{
+          const ch= Object.assign(new Chord(), JSON.parse(stored.data))
+          this._dict.chords.push(ch)
+        })
 
-        resolve();   // ⭐ IMPORTANT
+        // chordforms
+         arrStored = await db.chordform .toArray()
+                  //  console.log("Stored chordforms BEFORE reset:", stored.harm_dict.chordforms?.length);
+
+        //  console.log("ARRAY STORED LENGTH: ", arrStored.length, "CHORDFORMS LENGTH ",  this.chordforms.length)
+        arrStored.forEach((stored, index)=>{
+          const cf= Object.assign(new ChordForm(), JSON.parse(stored.data))
+
+          this._dict.chordforms.push(cf)
+        })
+
+  
+
+
+
+        
+
         return;
-      }
+      } // stored
 
-      // -------------------------
-      // FETCH FROM SERVER BRANCH
-      // -------------------------
+        else {
+            // -------------------------
+            // FETCH FROM SERVER BRANCH
+            // -------------------------
 
-      console.log("Retrieving harmony data from server...");
+          console.log("Retrieving harmony data from server...");
 
-      const hDict = await this.ajax_retrieve();
-      transformKeys(hDict);
-      this._dict = hDict;
+          const hDict = await this.ajax_retrieve();
+          transformKeys(hDict);
+          this._dict = hDict;
 
-      // hydrate chords
-      for (const [index, cRaw] of Object.entries(this.dict.chords)) {
-        let c = transformKeys(cRaw);
-        c = Object.assign(new Chord(), JSON.parse(JSON.stringify(c)));
-        delete c._cf_buffer;
-        this.dict.chords[index] = c;
-      }
+          // hydrate chords
+          for (const [index, cRaw] of Object.entries(this.dict.chords)) {
+            let c = transformKeys(cRaw);
+            c = Object.assign(new Chord(), JSON.parse(JSON.stringify(c)));
+            delete c._cf_buffer;
+            this.dict.chords[index] = c;
+          }
 
-      // hydrate chordforms
-      for (const [index, cfRaw] of Object.entries(this.dict.chordforms)) {
-        let cf = transformKeys(cfRaw);
-        cf = Object.assign(new ChordForm(), JSON.parse(JSON.stringify(cf)));
-        delete cf._r_notes_cache;
-        this.dict.chordforms[index] = cf;
-      }
+          // hydrate chordforms
+          for (const [index, cfRaw] of Object.entries(this.dict.chordforms)) {
+            let cf = transformKeys(cfRaw);
+            cf = Object.assign(new ChordForm(), JSON.parse(JSON.stringify(cf)));
+            delete cf._r_notes_cache;
+            this.dict.chordforms[index] = cf;
+          }
 
-      // hydrate harmonies
-      for (const [index, hRaw] of Object.entries(this.dict.harmonies)) {
-        let h = transformKeys(hRaw);
-        h = Object.assign(new Harmony(), JSON.parse(JSON.stringify(h)));
-        this.dict.harmonies[index] = h;
-      }
+          // hydrate harmonies
+          for (const [index, hRaw] of Object.entries(this.dict.harmonies)) {
+            let h = transformKeys(hRaw);
+            h = Object.assign(new Harmony(), JSON.parse(JSON.stringify(h)));
+            this.dict.harmonies[index] = h;
+          }
 
-      // write to Dexie
-      const db = new Dexie("DropChords");
-      db.version(1).stores({ harm_dicts: "id" });
-      await db.open();
+          // write to Dexie
+       
+      
+          await db.harmony.put({
+            id: this._dict.id,
+            harm_dict: this._dict
+          });
+          
+          const { harmonies, chords,  chordforms,...clean } = this._dict;
+        
 
-      await db.harm_dicts.add({
-        id: this._dict.id,
-        harm_dict: this._dict
-      });
+          await db.harm_dict.put({
+            id: this._dict.id,
+            harm_dict: clean
+          });
 
-      resolve();   // ⭐ IMPORTANT
-    } catch (err) {
-      console.log("harmony_manager load_harmonies error")
-      reject(err);
+
+          this.harmonies.forEach(async(h)=>{
+        // console.log("writing harmony: ", id, h)
+            await db.harmony.put({
+              // id: this.id,
+              // scales: JSON.stringify(this.scales)
+                  id: h.id,
+                  symbol: h.symbol,
+                  data: JSON.stringify(h)
+                  });
+                })
+
+              this.chords.forEach(async(ch)=>{
+              
+                // if don't clear caches this will lead to problem when reading
+                ch.clear_caches()
+              await db.chord.put({
+                
+                // id: this.id,
+                // scales: JSON.stringify(this.scales)
+                    id: ch.id,
+                    h_id: ch.harmony_id,
+                    data: JSON.stringify(ch)
+                    });
+                // another nested loop for the chordform data
+                ch.chordforms.forEach(async(cf)=>{
+                  delete cf._r_notes_cache
+                  await db.chordform.put({
+                    // id: this.id,
+                    // scales: JSON.stringify(this.scales)
+                        id: cf.id,
+                        ch_id: ch.id,
+                        data: JSON.stringify(cf)
+                        });
+                      })
+                  
+                })     
+            
+
+
+
+          return
+        } 
+
+
+     
+    } 
+  catch (err) {
+      console.log("harmony_manager load_harmonies error", err)
     }
-  });
+  
 }
 
 
@@ -335,7 +421,7 @@ constructor() {
     this._harmony
     this._name
     this._interval_ex
-    this._text = "test"
+    this._text = ""
     this._comments
     this._cf_buffer
     }    
@@ -360,6 +446,12 @@ get interval_ex(){ return this._interval_ex }
 set interval_ex(e){ this._interval_ex = e }
 get comments(){ return this._comments }
 set comments(c){  this._comments = c }
+
+clear_caches(){
+ if (Array.isArray(this._cf_buffer)) {
+                delete this._cf_buffer;
+              }
+}
 
 get chordforms() {
     const self = this
@@ -538,7 +630,7 @@ constructor() {
   this._inversion = 0;
   this._form = 0;
   this._strings = [];   // ← CRITICAL
-  this._text = "test";
+  this._text = "";
   this._comments = null;
 
   this._root = null;
@@ -643,7 +735,7 @@ get bassNote() {
   return this._r_notes_cache
     .map(n => n.copy())
     .sort((a, b) => b._stringNumber - a._stringNumber)[0]
-    .noteLetter();
+    .letter;
 }
 
 get chord_id(){return this._chord}
@@ -737,7 +829,7 @@ get namesWithInversion() {
         const bassNote = this.notes[notes.length -1]
         if( this.inversion == 1){names.push( `${this.root}${this.chord.harmony.symbols[0]}` )}
         names.push(`${this.root}${this.chord.harmony.symbols[0]}/${this.inversion}`)
-        names.push(`${this.root}${ this.chord.harmony.symbols[0] }/${ this.bassNote.noteLetter() }`)
+        names.push(`${this.root}${ this.chord.harmony.symbols[0] }/${ this.bassNote.letter }`)
         }
     return names
 }
@@ -765,7 +857,7 @@ getNoteForString(stringNum){
 
 
 getNoteLetters(options) {
-  const noteLetters = this.notes.map(note => note.noteLetter());
+  const noteLetters = this.notes.map(note => note.letter);
 
   if (options?.order_by_letter === true) {
     noteLetters.sort((a, b) => {

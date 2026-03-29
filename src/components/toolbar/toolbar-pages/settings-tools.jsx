@@ -7,7 +7,7 @@ export default function SettingsTools(props) {
       {/* <OpenPicker {...props} />
       <InversionNavigator {...props} />
       <FormSSNavigator {...props} />
-       <NoteModeWidget {...props} /> */}
+       <NoteMode {...props} /> */}
     </div>
   );
 }

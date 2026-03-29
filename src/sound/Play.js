@@ -2,9 +2,9 @@
 import { getAudioContext } from "./AudioEngine.js";
 import { getClosestSample, getSampleBuffer } from "./GuitarSampler.js";
 import ChordForm from "../harmony/harmony-manager.js"
-import Note from "../harmony/note.js"
+import Note from "/src/harmony/note.js"
  import dc from "../globals.js"
-import {midiLookup} from "../harmony/core.js"
+import {midiLookup} from "/src/harmony/core.js"
 /**
  * Core note playback — immediate or scheduled.
  * startTime = null → plays immediately

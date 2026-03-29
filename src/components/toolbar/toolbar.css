@@ -32,4 +32,9 @@
   height: 24px;
   background: #d0d0d0;
   margin: 0 12px;
+   border: none !important;
+}
+
+.picker-button{
+  border: none;
 }

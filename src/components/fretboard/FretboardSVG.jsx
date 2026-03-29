@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, useMemo } from "react";
  import ChordDictionary from "../../harmony/cd-manager.js"
  import {CDManager} from "../../harmony/cd-manager.js"
   import  ChordForm, {Chord}  from "../../harmony/harmony-manager.js"
- import Note from "../../harmony/note.js"
+ import Note from "/src/harmony/note.js"
 import StringLane from "./StringLane.jsx"
 import FretboardSurface from "./FretboardSurface.jsx"
 import VibrationOverlay from "./VibrationOverlay.jsx"
@@ -76,6 +76,7 @@ function midiFromFilename(filename) {
 
 
 export default function FretboardSVG({
+  renderDataUI,
   cfUI=null,
   chordRootUI="C",
   numStrings = 6,
@@ -110,17 +111,9 @@ noteMode
 
   
 
+const normalizedTuning = dc.TUNING_MANAGER.midi
 
-  const normalizedTuning = useMemo(() => {
-    let t = tuning.slice();
-    if (t.length < numStrings) {
-      const diff = numStrings - t.length;
-      t = [...Array(diff).fill(t[0]), ...t];
-    } else if (t.length > numStrings) {
-      t = t.slice(t.length - numStrings);
-    }
-    return t;
-  }, [tuning, numStrings]);
+ 
 
   const headstockWidth = 180;
   const effectiveHeadstockWidth = showHeadstockUI ? headstockWidth : 0;
@@ -154,9 +147,6 @@ const getFretX = (fretIndex) => nutX + fretSpacing * fretIndex;
     normalizedTuning[stringIndex] + fretIndex;
 
   
-
-
-
 
 
 
@@ -327,6 +317,7 @@ if( cfUI ) {
 
                 {normalizedTuning.map((openMidi, stringIndex) => (
                   <StringLane
+                  renderDataUI={renderDataUI}
                     key={stringIndex}
                     stringIndex={stringIndex}
                     openMidi={openMidi}

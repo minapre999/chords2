@@ -1,3 +1,30 @@
+import Dexie from "dexie"
+
+var  dcDB = new Dexie("DropChords")
+ 
+// can't alter the db schema after the db opens, so do it here
+  dcDB.version(1).stores({   
+      harmony: "id,harm_dict",
+      scale_dict: "id,name,author,category,description",
+      scales: "id,dict,quality,form,data",
+      harm_dict: "id", // harmony manager dictionary - id doesn't mean anything
+      harmony: "id,symbol", //new schema - harmony / chord / chordform separate
+      chord: "id,h_id",
+      chordform: "id,ch_id,name,data",
+      tuning: "id,name,notes"
+
+      });
+
+await dcDB.open();
+// console.log(dcDB.tables.map(t => t.name));
+// await dcDB.test.put({
+//     // id: this.id,
+//     // scales: JSON.stringify(this.scales)
+//     f1: 1,
+//     f2: 'quick',
+//     f3: "brown",
+//   f4: "fox"
+//       });
 
 
 // Declare variables in a separate .js file and export them. 
@@ -10,6 +37,12 @@ export class  DCManager {
   #globals = {}
   constructor(){ 
    
+   
+     this.#globals.db = dcDB
+
+    this.#globals._HARMONY_MANAGER = null
+    this.#globals._SCALE_MANAGER = null
+    this.#globals._TUNING_MANAGER = null
     this.#globals.DEFAULT_NOTE_COLOR = "darkgrey"
     this.#globals.ROOT_NOTE_COLOR = "black"
     this.#globals.THIRD_NOTE_COLOR = "green"
@@ -33,8 +66,7 @@ export class  DCManager {
 
 
 
-
- async  initCsrf() {
+  async initCsrf() {
   return await fetch("http://localhost:8000/set-csrf/", {
     credentials: "include"
   })
@@ -42,7 +74,8 @@ export class  DCManager {
 }
 
 
-
+get db() { return this.#globals.db}
+// looking at online examples, I dont think db.open() needs to be called
 
   
  async getCSRF_TOKEN() {
@@ -93,12 +126,13 @@ get UNDO_MANAGER() { return this.#globals.UNDO_MANAGER}
 set UNDO_MANAGER(x) {  this.#globals.UNDO_MANAGER = x}
 
 
-get TUNING() { return this.#globals._TUNING}
-set TUNING(x) {  this.#globals._TUNING = x}
+get TUNING_MANAGER() { return this.#globals._TUNING_MANAGER}
+set TUNING_MANAGER(x) {  this.#globals._TUNING_MANAGER = x}
 get HARMONY_MANAGER() { return this.#globals._HARMONY_MANAGER}
 set HARMONY_MANAGER(x) {  this.#globals._HARMONY_MANAGER = x}
-get CHORD_CHOPS() { return this.#globals._CHORD_CHOPS}
-set CHORD_CHOPS(x) {  this.#globals._CHORD_CHOPS = x}
+get SCALE_MANAGER() { return this.#globals._SCALE_MANAGER}
+set SCALE_MANAGER(x) {  this.#globals._SCALE_MANAGER = x}
+
 get LEAD_SHEET() { return this.#globals.LEAD_SHEET}
 set LEAD_SHEET(x) {  this.#globals.LEAD_SHEET = x}
 // LEADSHEET_ID for open document - can prob change this to embed in an element

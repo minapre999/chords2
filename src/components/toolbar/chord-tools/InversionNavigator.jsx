@@ -6,8 +6,9 @@ import  ChordForm, {HarmonyManager, Chord}  from "/src/harmony/harmony-manager.j
 export default function InversionNavigator({
   cfUI,
   setCFUI,
+  cfChanged,
+  setCFChanged
   
- 
 }) {
 
 
@@ -19,7 +20,7 @@ export default function InversionNavigator({
     // const currentIndex = arr.findIndex((cf) => cf.id === cfUI.id)
 
 // console.log("InversionNavigator cfUI: ", cfUI, "cfUI.root: ", cfUI.root)
-    let arrInv = cfUI.chord.chordforms.filter((cf=>cf.form_ss == cfUI.form_ss && cf.quality == cfUI.quality))
+    let arrInv = cfUI.chord.chordforms.filter((cf=>cf.form_ss == cfUI.form_ss ))
   // strip non-numerics from string in sort
   // need to set root to have a valid position
     arrInv.forEach((cf)=>cf.root = cfUI.root)
@@ -36,11 +37,13 @@ export default function InversionNavigator({
     const nextCF = arrInv[invIndex+1]
     // console.log("onNext nextCF: ", nextCF)
     setCFUI(nextCF)
+    setCFChanged(nextCF.id)
    }
 
    const onPrev=()=>{
     const prevCF = arrInv[invIndex-1]
     setCFUI(prevCF)
+    setCFChanged(prevCF.id)
    }
 
 

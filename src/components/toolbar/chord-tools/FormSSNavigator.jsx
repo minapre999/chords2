@@ -23,6 +23,7 @@ setCFUI
 
             const nextCF = cfUI.chord.getChordform({ inversion:cfUI.inversion, form:form, string:string, root:cfUI.root } )
             setCFUI(nextCF)
+            setCFChanged(nextCF.id)
         }
 
         const onPrev=()=>{
@@ -33,6 +34,7 @@ setCFUI
 
             const nextCF = cfUI.chord.getChordform({ inversion:cfUI.inversion, form:form, string:string, root:cfUI.root } )
             setCFUI(nextCF)
+            setCFChanged(nextCF.id)
         }
 
 console.log("Rendering FormSSNavigator");

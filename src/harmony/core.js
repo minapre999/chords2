@@ -1,5 +1,6 @@
 
    import jQuery from 'jquery';
+   import '/src/globals.js'
 /*
 going forward, introduce several abstraction levels for working with musical notes
 level 2:  C, C#, D, Eb, Fb, F, GbF#, G, G#, Bbb, Bb, B♮

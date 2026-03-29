@@ -11,7 +11,7 @@ export default function ScaleTools(props) {
       {/* <OpenPicker {...props} />
       <InversionNavigator {...props} />
       <FormSSNavigator {...props} />
-       <NoteModeWidget {...props} /> */}
+       <NoteMode {...props} /> */}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 "use strict";
 import jQuery from 'jquery';
 import dc from '../globals.js'
-
+import Note from '/src/harmony/note.js'
 export class ChordGroup {
     constructor(  ) {
     this.id
@@ -14,7 +14,7 @@ export class ChordGroup {
 
 get id() { return this._id }
 copy( ) { 
-    const copy = Object.assign(new ChordGroup,  JSON.parse( JSON.stringify(this) ) ) // deep copy
+    const copy = Object.assign(new ChordGroup(),  JSON.parse( JSON.stringify(this) ) ) // deep copy
     return copy
   }
 
@@ -129,7 +129,7 @@ get cat1() { return this.chord_group.cat1 }
 get cat2() { return this.chord_group.cat1 }
 
  copy() {
-        const copy = Object.assign(new Chord, JSON.parse(JSON.stringify(this))); // deep copy
+        const copy = Object.assign(new Chord(), JSON.parse(JSON.stringify(this))); // deep copy
         copy._c_notes = [];
         $.each(this._c_notes, function (index, _c_note) {
             copy._c_notes.push(_c_note.copy());
@@ -206,7 +206,7 @@ get cat2() { return this.chord_group.cat1 }
         const self = this;
         this._r_notes_cache = [];
         $.each(this._c_notes, function (index, note) {
-            let rNote = Object.assign(new Note, note);
+            let rNote = Object.assign(new Note(), note);
             self._r_notes_cache.push(rNote);
         });
         // fret transformation for chord root relevat to "C"
@@ -258,7 +258,7 @@ get cat2() { return this.chord_group.cat1 }
         let notes = this.getNotes();
         let noteLetters = [];
         $.each(notes, function (index, note) {
-            let letter = note.noteLetter();
+            let letter = note.letter;
             noteLetters.push(letter);
         });
         if (typeof options !== "undefined" && options.order_by_letter === true) {
@@ -380,7 +380,7 @@ get cat2() { return this.chord_group.cat1 }
                 $.each(this.getNotes(), function (index, note) {
                     if (note.interval == targetInterval) {
                         // found note
-                        const foundLetter = note.noteLetter();
+                        const foundLetter = note.letter;
                         foundNote = foundLetter + nnOctave;
                         if (foundLetter < nnLetter) { foundNote = foundLetter + (+nnOctave + 1); }
                         return foundNote;
@@ -446,7 +446,7 @@ get cat2() { return this.chord_group.cat1 }
                 $.each(this.getNotes(), function (index, note) {
                     if (note.interval == targetInterval) {
                         // found note
-                        const foundLetter = note.noteLetter();
+                        const foundLetter = note.letter;
                         foundNote = foundLetter + nnOctave;
                         if (foundLetter > nnLetter) { foundNote = foundLetter + (+nnOctave - 1); }
                         return false;
@@ -896,7 +896,7 @@ export default class ChordDictionary {
         /* strings updated and stored in JSON */
         $.each(chords, function (index, item) {
             let chord = JSON.parse(JSON.stringify(item));
-            chord = Object.assign(new Chord, chord);
+            chord = Object.assign(new Chord(), chord);
 
             chord._c_notes = [];
             $.each( item.strings, (index, s) => {
@@ -963,7 +963,7 @@ export default class ChordDictionary {
         this._chord_groups = [];
         $.each(chord_groups, (index, item) => {
             let cg = JSON.parse(JSON.stringify(item));
-            cg = Object.assign(new ChordGroup, cg);
+            cg = Object.assign(new ChordGroup(), cg);
             self._chord_groups.push(cg);
         })
 

@@ -47,6 +47,9 @@ export default function ChordInfo({
           </div>
           <div />
           <div>{strCF}</div>
+          <div>Chordform id: {cfUI.id}</div>
+          <div>Chord id: {cfUI.chord.id}</div>
+          <div>Harmony id: {cfUI.chord.harmony.id}</div>
       </>
       )
   );
