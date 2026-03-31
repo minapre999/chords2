@@ -1,4 +1,4 @@
-import jQuery from 'jquery';
+// import jQuery from 'jquery';
 import '/src/globals.js'
 import {midiLookup} from "/src/harmony/core.js"
 

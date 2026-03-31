@@ -1,6 +1,19 @@
 import dc from '/src/globals.js' // need to import first as it sets up database
 import Dexie from "dexie"
 import Note from "/src/harmony/note.js"
+import {transpose_lookup, 
+      modeLookupIntervals, 
+      MODE_LOOKUP_SEMITONES,
+    MAJOR_INTERVALS,
+    MM_INTERVALS,
+    HM_INTERVALS,
+    ARPEGGIO_INTERVALS,
+    OTHER_INTERVALS
+  }  from "/src/harmony/core.js";
+
+
+      
+
 
 /*
 
@@ -59,7 +72,7 @@ export default class Scale {
         // the following are temp variables used to transpose the scale to
         // a key and mode
         this.root = "C"
-        this.mode
+        this._mode = null
         /* for whole tone scale and diminished scales
         in which each note is effectively a root
         there are no modes
@@ -77,6 +90,79 @@ set quality( q ) { return this._quality = q }
 get form() { return this._form } 
 set form( f ) { return this._form  = f } 
 get qual_form() {return `${_quality}:${_form}` }
+
+  /* return notes in the coordinate system of the root and the mode
+    if not cached, will need to convert from 'C' coordinates
+    */
+get notes() {
+  try {
+    // reset cache if empty array
+    if (this._r_notes_cache !== null &&
+        this._r_notes_cache.length === 0) {
+      this._r_notes_cache = null;
+    }
+
+    // return cached notes if available
+    if (this._r_notes_cache !== null) {
+      return this._r_notes_cache;
+    }
+
+    // required properties
+    if (this.mode === undefined)
+      throw "No mode set for scale: Scale.getNotes";
+    if (this.root === undefined)
+      throw "No root set for scale: Scale.getNotes";
+    if (this._c_notes === undefined)
+      throw "No 'C' notes found in scale: Scale.getNotes";
+
+    // clone C-notes into result cache
+    this._r_notes_cache = [];
+    for (const cNote of this._c_notes) {
+      const rNote = Object.assign(new Note(), cNote);
+      this._r_notes_cache.push(rNote);
+    }
+
+    // compute transpose amount
+    let fretTranspose =
+      transpose_lookup[this.root] +
+      MODE_LOOKUP_SEMITONES[this.mode] +
+      this.rootlessTranslation;
+
+    // open string rules
+    let highestFret = 13;
+    if (dc.SCALE_MANAGER.allowOpenStrings === true) {
+      dc.LOWEST_ALLOWED_FRET = 0;
+      highestFret = 12;
+    }
+
+    // adjust transpose to keep notes in range
+    if (this.lowFret + fretTranspose < dc.LOWEST_ALLOWED_FRET) {
+      fretTranspose += 12;
+    } else if (this.lowFret + fretTranspose >= highestFret) {
+      fretTranspose -= 12;
+    }
+
+    // interval transpose lookup
+    const intervalTranspose = modeLookupIntervals[this.mode];
+
+    // apply fret transposition
+    for (const note of this._r_notes_cache) {
+      const transposedFret = parseInt(note.fret) + fretTranspose;
+      note.fret = transposedFret;
+      // interval transposition was commented out in your original
+      // note.interval = intervalTranspose[ intervalLookup.indexOf(note.interval) ];
+    }
+
+    return this._r_notes_cache;
+  }
+
+  catch (err) {
+    console.log("%c" + err, "color: red;");
+    console.log(err.stack);
+  }
+}
+
+
 copy() {
   // Deep‑clone primitive fields and arrays
   const clone = Object.assign(new Scale(), JSON.parse(JSON.stringify(this)));
@@ -145,7 +231,7 @@ copy() {
 
         let urlPath = this.getRoot()
         if (urlPath.length > 0) {
-            let urlMode = encodeURIComponent(this.getMode())
+            let urlMode = encodeURIComponent(this.mode)
 
             if (typeof urlMode !== "undefined" && urlMode.length > 0) {
                 urlPath = urlPath + "/" + urlMode
@@ -176,18 +262,17 @@ copy() {
         this.root = root
         return this
     }
-    getMode() {
-        return this.mode
-    }
-    setMode(mode) {
+ get    mode() { return this._mode  }
+  set mode(m) {  if (this._mode != m) {
+                  this.clearCache() }
 
-        if (this.mode != mode) {
-            this.clearCache()
-        }
+                this._mode = m
+                return this
+            } 
 
-        this.mode = mode
-        return this
-    } 
+    
+
+
     clearCache() {
         this._r_notes_cache = null
         return this
@@ -196,7 +281,7 @@ copy() {
     in transformed position */
     lowestFret() {
 
-        const notes = this.getNotes()
+        const notes = this.notes
         let lowestFret = 24
         for (const note of notes) {
           const fret = note.fret;
@@ -207,85 +292,16 @@ copy() {
 
 
     }
-    /* return notes in the coordinate system of the root and the mode
-    if not cached, will need to convert from 'C' coordinates
-    */
-   getNotes(n) {
-  try {
-    // reset cache if empty array
-    if (this._r_notes_cache !== null &&
-        this._r_notes_cache.length === 0) {
-      this._r_notes_cache = null;
-    }
-
-    // return cached notes if available
-    if (this._r_notes_cache !== null) {
-      return this._r_notes_cache;
-    }
-
-    // required properties
-    if (this.mode === undefined)
-      throw "No mode set for scale: Scale.getNotes";
-    if (this.root === undefined)
-      throw "No root set for scale: Scale.getNotes";
-    if (this._c_notes === undefined)
-      throw "No 'C' notes found in scale: Scale.getNotes";
-
-    // clone C-notes into result cache
-    this._r_notes_cache = [];
-    for (const cNote of this._c_notes) {
-      const rNote = Object.assign(new Note(), cNote);
-      this._r_notes_cache.push(rNote);
-    }
-
-    // compute transpose amount
-    let fretTranspose =
-      transpose_lookup[this.root] +
-      MODE_LOOKUP_SEMITONES[this.mode] +
-      this.rootlessTranslation;
-
-    // open string rules
-    let highestFret = 13;
-    if (dc.SCALE_MANAGER.allowOpenStrings === true) {
-      dc.LOWEST_ALLOWED_FRET = 0;
-      highestFret = 12;
-    }
-
-    // adjust transpose to keep notes in range
-    if (this.lowFret + fretTranspose < dc.LOWEST_ALLOWED_FRET) {
-      fretTranspose += 12;
-    } else if (this.lowFret + fretTranspose >= highestFret) {
-      fretTranspose -= 12;
-    }
-
-    // interval transpose lookup
-    const intervalTranspose = modeLookupIntervals[this.mode];
-
-    // apply fret transposition
-    for (const note of this._r_notes_cache) {
-      const transposedFret = parseInt(note.fret) + fretTranspose;
-      note.fret = transposedFret;
-      // interval transposition was commented out in your original
-      // note.interval = intervalTranspose[ intervalLookup.indexOf(note.interval) ];
-    }
-
-    return this._r_notes_cache;
-  }
-
-  catch (err) {
-    console.log("%c" + err, "color: red;");
-    console.log(err.stack);
-  }
-}
+  
 
     /* return note letters in the coordinate system of the root and the mode
     */
    getNoteLetters() {
   try {
-    this.getNotes(); // refresh cache if needed
+    this.notes // refresh cache if needed
 
     const letters = [];
-    const notes = this.getNotes();
+    const notes = this.notes
 
     for (const note of notes) {
       letters.push(note.letter);
@@ -651,7 +667,8 @@ scalesWithQuality(q) {
     // assume only one scale with a quality and form
 scaleWithQualityAndForm(q, f) {
   for (const nextScale of this.scales) {
-    if (nextScale.quality === q && nextScale.form === f) {
+    // console.log(`nextScale.quality: ${nextScale.quality} q: ${q} nextScale.form ${nextScale.form } f: ${f}`)
+    if (nextScale.quality == q && nextScale.form == f) {
       return nextScale;   // early exit
     }
   }
@@ -710,7 +727,7 @@ scaleWithQualityAndForm(q, f) {
 
             let scale = this.getActiveScale(true) // true means create if needed
             let quality = scale.quality
-            let mode = scale.getMode()
+            let mode = scale.mode
             let root = scale.getRoot()
             let form = scale.form
 
@@ -841,7 +858,7 @@ modeNamesForChord(chord) {
     scale.clearCache();
     scale.setRoot(chord.root);
     scale.setMode(modeName);
-    scale.getNotes();
+    scale.notes
 
     const scaleLetters = scale.getNoteLetters();
     let ok = true;
@@ -1021,7 +1038,7 @@ modeNamesForChord(chord) {
 setFormFromFret2( newFret, strDir, loop=true){
         const self = this
         let scale = this.getActiveScale()
-        let mode = scale.getMode()
+        let mode = scale.mode
         let root = scale.getRoot()
         let quality = scale.quality
         let scales = []
@@ -1093,7 +1110,7 @@ setFormFromFret2( newFret, strDir, loop=true){
   setFormFromFret(fret, ignoreActive = true) {
 
   let scale = this.getActiveScale();
-  const mode = scale.getMode();
+  const mode = scale.mode
   const root = scale.getRoot();
 
   // Determine scale quality category from mode
@@ -1228,26 +1245,27 @@ catch(err){
 
 
  async load_scales() {
+  // console.log("load_scales()) called.")
     if (this._loadingPromise) return this._loadingPromise;
-    this._loadingPromise = this._loadInternal();
+    this._loadingPromise =  this._loadInternal();
     return this._loadingPromise;
   }
 
 
 async _loadInternal() {
 
-
+// console.log("_loadInternal()) called. this._loaded", this._loaded)
   if (this._loaded) return;
-this._loaded = true;
 
 
     try {
+      console.log("looking for scales in local db.")
        const db = dc.db// create or open
       //  console.log("dexie db: ", db)
 
       let stored = await db.scale_dict.orderBy('id').first();
       if( stored) { 
-        // console.log("Scales table exist in Dexie DB.  Loading from storage."); 
+        console.log("Scales found in local db."); 
           // Object.assign(this, { id, name, description, category, author });
           this._id = stored.id
           this.name = stored.name
@@ -1261,11 +1279,19 @@ this._loaded = true;
                                 .toArray()
             // console.log("stored scales: ", storedScales)
           storedScales.forEach((s)=>{
-          // console.log("creating scale from stored data: ", s)
+          // console.log("creating scale from local db: ", s.id)
           const loaded = Object.assign(new Scale(),  JSON.parse( s.data ) ) 
           loaded._id = s.id
           loaded._quality = s.quality
           loaded._form = s.form
+          const arr = []
+          // hydrate the notes objects
+          for(const n of loaded._c_notes){
+            const obj = Object.assign(new Note({}), JSON.parse(JSON.stringify(n)));
+            arr.push(obj)
+          }
+          loaded._c_notes = arr
+
           this.scales  = [...this.scales, loaded]             
                 // scale.
             })
@@ -1291,7 +1317,7 @@ this._loaded = true;
                         create_ts: data.scale_dict._create_ts
                       });
 
-          // console.log("hydrating scales")
+          console.log("hydrating scales")
           this.hydrateScales(data.scale_dict.scales)
         
            // write to db
@@ -1311,48 +1337,38 @@ this._loaded = true;
       // console.log("writing scales: ",  data.scale_dict.scales)
           //  data.scale_dict.scales.forEach(async(s)=>{
                   // console.log("writing scale: ", s)
-           this.scales.forEach(async(s)=>{
-          
-        
+            
+                 // forEach does not wait for async callbacks.
+                 // replaced for for...of
+                  for (const s of this.scales) {
+              const copy = s.copy();
+              delete copy._id;
+              delete copy._quality;
+              delete copy._form;
+              delete copy.create_ts;
 
-          const copy = s.copy()
-
-          delete copy._id
-          delete copy._quality
-          delete copy._form
-         delete copy.create_ts
-
-          // ["_id", "_quality", "_form", "create_ts" ] //"mod_ts"
-          //       .forEach(k => delete s[k]);
-
-  // console.log("writing scale: ", id, s)
-
-          await db.scales.put({
-            // id: this.id,
-            // scales: JSON.stringify(this.scales)
-            id: s.id,
-            quality: s.quality,
-            form: s.form,
-            data: JSON.stringify(copy),
-            dict: this.id
-            // scales: "TEST2"
+              await db.scales.put({
+                id: s.id,
+                quality: s.quality,
+                form: s.form,
+                data: JSON.stringify(copy),
+                dict: this.id
               });
+            }
 
 
-        }) 
     } // not stored 
-
+this._loaded = true;
+// console.log("BEFORE RETURN");
+return
   } // try
   
   catch(e){
       console.log("ScaleDictionary load_scales error: ", e)
   
   }
-       
-
-
-
-} // load_scales
+// console.log("DONE")
+} // _loadInternal
 
 
 } // ScaleDictionary 
@@ -1419,7 +1435,7 @@ async load_scales() {
  if( this.scaleDictionaries.length > 0) return null
 
  const scaleDict = new ScaleDictionary()
- scaleDict.load_scales() // load the default scales
+ await scaleDict.load_scales() // load the default scales
  this.addDictionary(scaleDict)
 }
 

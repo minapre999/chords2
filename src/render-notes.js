@@ -9,16 +9,30 @@ attributes
 */
 
 export  class RenderNote {
-    constructor(args={note: n, color: 'black', strokeColor: 'black', fillColor: 'white', fontSize: 12, width: 12, text: "" }) {
-        this._note = args.note
-        this._strokeColor=args.strokeColor
-        this._fillColor=args.fillColor
-        this._color=args.color
-        this._stroke=args.fillColor
-        this._width=args.width
-        this._text=args.text
-        this._fontSize=args.fontSize
-    }
+   constructor(options = {}) {
+
+    // Destructure the options object.
+    // Each field has its own default value.
+    const {
+      note = null,
+      color = 'black',
+      strokeColor = 'black',
+      fillColor = 'white',
+      fontSize = 12,
+      width = 12,
+      text = ''
+    } = options;
+
+    // Assign to internal fields
+    this._note = note;
+    this._color = color;
+    this._strokeColor = strokeColor;
+    this._fillColor = fillColor;
+    this._stroke = strokeColor;   // assuming stroke = strokeColor
+    this._width = width;
+    this._text = text;
+    this._fontSize = fontSize;
+  }
 
     get note(){return this._note}
     set note(n){this._note = n}
@@ -42,7 +56,7 @@ export  class RenderNote {
 // each member of the 
 export default class RenderData {
     constructor( ) {
-        console.log(`initialising with ${dc.TUNING_MANAGER.numberOfStrings} strings`)
+        // console.log(`initialising with ${dc.TUNING_MANAGER.numberOfStrings} strings`)
         this._strings = []
         const len = dc.TUNING_MANAGER.numberOfStrings
         for(let i=0; i<len; i++){

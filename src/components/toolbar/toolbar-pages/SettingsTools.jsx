@@ -1,20 +1,13 @@
 
 
-
-
-
-
-export default function ScaleTools(props) {
+export default function SettingsTools(props) {
   return (
     <div>
-        Scale tools here
-      {/* <OpenPicker {...props} />
+        Settings tools here
+      {/* <ChordPicker {...props} />
       <InversionNavigator {...props} />
       <FormSSNavigator {...props} />
        <NoteMode {...props} /> */}
     </div>
   );
 }
-
-
-

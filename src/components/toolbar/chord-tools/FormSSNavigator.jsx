@@ -5,7 +5,8 @@ import  ChordForm, {HarmonyManager, Chord}  from "/src/harmony/harmony-manager.j
 
 export default function FormSSNavigator({
 cfUI,
-setCFUI
+setCFUI,
+setCFChanged
 
 }) {
 
@@ -37,7 +38,7 @@ setCFUI
             setCFChanged(nextCF.id)
         }
 
-console.log("Rendering FormSSNavigator");
+// console.log("Rendering FormSSNavigator");
   return (
      cfUI &&    (
     <div className="formss-nav-widget">

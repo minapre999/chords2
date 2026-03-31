@@ -1,13 +1,100 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect,  } from "react"
+import { BrowserRouter, Routes, Route, Outlet, useLocation } from "react-router-dom";
+import HomePage from "/src/components/pages/HomePage.jsx";
+import ScalePage from "/src/components/pages/ScalePage.jsx";
+import ChordPage from "/src/components/pages/ChordPage.jsx";
+import SettingsPage from "/src/components/pages/SettingsPage.jsx";
+import LeadSheetPage from "/src/components/pages/LeadSheetPage.jsx";
 import "./globals.js"
-import ChordModule from "/src/components/chord/ChordModule.jsx";
-import ScaleModule from "/src/components/scale/ScaleModule.jsx";
 import SettingsModule from "/src/components/settings/SettingsModule.jsx";
 import LeadSheetModule from "/src/components/ls/LeadSheetModule.jsx";
 import NavigationBar from "/src/components/navbar/navigation-bar.jsx";
 import { loadSamples } from "./sound/GuitarSampler";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 import TuningManager from "/src/harmony/tuning-manager.js"
+import { jsPanel } from "jspanel4";
+
+
+
+ function AppLayout() {
+  const location = useLocation();
+
+  useEffect(() => {
+
+      
+
+
+    const chordEl = document.getElementById("chord-picker");
+    const scaleEl = document.getElementById("scale-picker");
+console.log("chordEl: ", chordEl, "scaleEl: ", scaleEl)
+
+  console.log("chordEl.jspanel: ", chordEl.jspanel, "scaleEl.jspanel: ", scaleEl.jspanel)
+
+    const chordPanel = chordEl?.jspanel || chordEl?.closest(".jsPanel")?.jspanel;
+    const scalePanel = scaleEl?.jspanel || scaleEl?.closest(".jsPanel")?.jspanel;
+console.log("chordPanel: ", chordPanel, "scalePanel: ", scalePanel)
+    // ---- ROUTE LOGIC ----
+
+    if (location.pathname === "/scales") {
+      if (scaleEl) {
+        scaleEl.style.display = "";
+        scaleEl.style.pointerEvents = "auto";
+        scaleEl.style.opacity = "1";
+        if (scalePanel) {
+            scalePanel.content.innerHTML = chordPanel.content.innerHTML;
+          scalePanel.reposition();
+          scalePanel.front();
+          scalePanel.status = "normalized";
+          }
+
+      }
+
+      if (chordEl) {
+        chordEl.style.display = "none";
+        if (chordPanel) chordPanel.status = "hidden";
+
+      }
+    }
+
+    if (location.pathname === "/chords") {
+      if (chordEl) {
+        chordEl.style.display = "";
+        chordEl.style.pointerEvents = "auto";
+        chordEl.style.opacity = "1";
+  if (chordPanel) {
+      chordPanel.content.innerHTML = chordPanel.content.innerHTML;
+          chordPanel.reposition();
+          chordPanel.front();
+          chordPanel.status = "normalized";
+          }      }
+
+      if (scaleEl) {
+        scaleEl.style.display = "none";
+        if (scalePanel) scalePanel.status = "hidden";
+      }
+    }
+
+    if (location.pathname === "/") {
+      if (chordEl) chordEl.style.display = "none";
+      if (scaleEl) scaleEl.style.display = "none";
+    }
+  }, [location.pathname]);
+
+  return (
+    <div className="app-layout">
+      <NavigationBar />
+      <Outlet />
+    </div>
+  );
+}
+
+
+
+
+
+
+function App() {
+
 
 
 // ut the key is understanding that React always renders something first.
@@ -19,7 +106,6 @@ import TuningManager from "/src/harmony/tuning-manager.js"
 
 
 
-export default function App() {
   const [ready, setReady] = useState(false);
 
 useEffect(() => {
@@ -33,25 +119,25 @@ useEffect(() => {
   });
 }, []);
 
-    const [page, setPage] = useState("chords");
-/*
-Lazy initialization
+//     const [page, setPage] = useState("chords");
+// /*
+// Lazy initialization
 
-useState(() => { ... }) means:
-  React calls the function only on the first render
-  The returned value becomes the initial state
-  On later renders, React does not call the function again  
-This is more efficient than: useState(localStorage.getItem("showOpenStringsUI")) 
-because that version reads from localStorage every render.
-const saved = localStorage.getItem("showOpenStringsUI");
-This returns:
-    "true"
-    "false"
-    or null (if nothing saved yet)
-localStorage always stores strings, never booleans.
-return saved === null ? true : saved === "true";
-Converts the stored string into a real boolean, with a default of true
-*/ 
+// useState(() => { ... }) means:
+//   React calls the function only on the first render
+//   The returned value becomes the initial state
+//   On later renders, React does not call the function again  
+// This is more efficient than: useState(localStorage.getItem("showOpenStringsUI")) 
+// because that version reads from localStorage every render.
+// const saved = localStorage.getItem("showOpenStringsUI");
+// This returns:
+//     "true"
+//     "false"
+//     or null (if nothing saved yet)
+// localStorage always stores strings, never booleans.
+// return saved === null ? true : saved === "true";
+// Converts the stored string into a real boolean, with a default of true
+// */ 
 const [showOpenStringsUI, setShowOpenStringsUI] = useState(() => {
               const saved = localStorage.getItem("showOpenStringsUI");
               return saved === null ? true : saved === "true";
@@ -94,14 +180,14 @@ useEffect(() => {
 
 const [renderDataUI, setRenderDataUI] = useState(null);
 
-  /*
-  setRenderNotes: eact requires you to create a new array when updating state. Never mutate the existing one.
-adding an item: setRenderNotes(prev => [...prev, newRN]);
-removing an item: setRenderNotes(prev => prev.filter(n => n.id !== idToRemove));
-updating an item: setRenderNotes(prev => prev.map(n => n.id === updated.id ? updated : n)
-replace entire array: setRenderNotes(newArray);
-);
-  */
+//   /*
+//   setRenderNotes: eact requires you to create a new array when updating state. Never mutate the existing one.
+// adding an item: setRenderNotes(prev => [...prev, newRN]);
+// removing an item: setRenderNotes(prev => prev.filter(n => n.id !== idToRemove));
+// updating an item: setRenderNotes(prev => prev.map(n => n.id === updated.id ? updated : n)
+// replace entire array: setRenderNotes(newArray);
+// );
+//   */
 
 
 
@@ -123,43 +209,83 @@ useEffect(() => {
 
 
   return (
+    <BrowserRouter>
+      <Routes>
+        {/* Layout wrapper */}
+        <Route element={<AppLayout />}>
+          <Route path="/" element={<HomePage />} />
 
-      <div className="app-container">
-      <NavigationBar currentPage={page} setPage={setPage} />
-      {/* <Toolbar /> */}
+          <Route
+            path="/chords"
+            element={
+              <ChordPage
+                renderDataUI={renderDataUI}
+                setRenderDataUI={setRenderDataUI}
+                showOpenStringsUI={showOpenStringsUI}
+                setShowOpenStringsUI={setShowOpenStringsUI}
+                showInlaysUI={showInlaysUI}
+                setShowInlaysUI={setShowInlaysUI}
+                stringColorUI={stringColorUI}
+                setStringColorUI={setStringColorUI}
+                bassStringColorUI={bassStringColorUI}
+                setBassStringColorUI={setBassStringColorUI}
+                showHeadstockUI={showHeadstockUI}
+                setShowHeadstockUI={setShowHeadstockUI}
+              />
+            }
+          />
 
-      {page === "chords" &&  
-      <ChordModule  
-      renderDataUI={renderDataUI} setRenderDataUI={setRenderDataUI}
-        showOpenStringsUI={showOpenStringsUI}  setShowOpenStringsUI={setShowOpenStringsUI}
-        showInlaysUI={showInlaysUI}  setShowInlaysUI={setShowInlaysUI}
-        stringColorUI={stringColorUI} setStringColorUI={setStringColorUI}
-        bassStringColorUI={bassStringColorUI} setBassStringColorUI={setBassStringColorUI}
-        showHeadstockUI={showHeadstockUI} setShowHeadstockUI={setShowHeadstockUI}
-        />}
-      {page === "scales" && <ScaleModule 
-       renderDataUI={renderDataUI} setRenderDataUI={setRenderDataUI}
-        showOpenStringsUI={showOpenStringsUI}  setShowOpenStringsUI={setShowOpenStringsUI}
-        showInlaysUI={showInlaysUI}  setShowInlaysUI={setShowInlaysUI}
-        stringColorUI={stringColorUI} setStringColorUI={setStringColorUI}
-        bassStringColorUI={bassStringColorUI} setBassStringColorUI={setBassStringColorUI}
-        showHeadstockUI={showHeadstockUI} setShowHeadstockUI={setShowHeadstockUI}
-      />}
-      {page === "lead-sheet" && <LeadSheetModule />}
-      {page === "settings" && 
-      <SettingsModule 
-          showOpenStringsUI={showOpenStringsUI}  setShowOpenStringsUI={setShowOpenStringsUI}
-          showInlaysUI={showInlaysUI}  setShowInlaysUI={setShowInlaysUI}
-          stringColorUI={stringColorUI} setStringColorUI={setStringColorUI}
-          bassStringColorUI={bassStringColorUI} setBassStringColorUI={setBassStringColorUI}
-          showHeadstockUI={showHeadstockUI} setShowHeadstockUI={setShowHeadstockUI}
-      />}
-    </div>
+          <Route
+            path="/scales"
+            element={
+              <ScalePage
+                renderDataUI={renderDataUI}
+                setRenderDataUI={setRenderDataUI}
+                showOpenStringsUI={showOpenStringsUI}
+                setShowOpenStringsUI={setShowOpenStringsUI}
+                showInlaysUI={showInlaysUI}
+                setShowInlaysUI={setShowInlaysUI}
+                stringColorUI={stringColorUI}
+                setStringColorUI={setStringColorUI}
+                bassStringColorUI={bassStringColorUI}
+                setBassStringColorUI={setBassStringColorUI}
+                showHeadstockUI={showHeadstockUI}
+                setShowHeadstockUI={setShowHeadstockUI}
+              />
+            }
+          />
+
+          <Route path="/lead-sheet" element={<LeadSheetPage />} />
+
+          <Route
+            path="/settings"
+            element={
+              <SettingsPage
+                showOpenStringsUI={showOpenStringsUI}
+                setShowOpenStringsUI={setShowOpenStringsUI}
+                showInlaysUI={showInlaysUI}
+                setShowInlaysUI={setShowInlaysUI}
+                stringColorUI={stringColorUI}
+                setStringColorUI={setStringColorUI}
+                bassStringColorUI={bassStringColorUI}
+                setBassStringColorUI={setBassStringColorUI}
+                showHeadstockUI={showHeadstockUI}
+                setShowHeadstockUI={setShowHeadstockUI}
+              />
+            }
+          />
+        </Route>
+      </Routes>
+    </BrowserRouter>
   );
 
-
-    // <div style={{ padding: 20 }}>
-     
-    // </div>
   
 }
+
+export default App;
+
+
+
+
+
+  

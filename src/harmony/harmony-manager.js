@@ -3,7 +3,7 @@ import '/src/globals.js'
 import Dexie from "dexie"
 import Note from "/src/harmony/note.js"
 import  installStringPrototypes  from "./core.js";
-import {transpose_lookup}  from "./core.js";
+import {transpose_lookup}  from "/src/harmony/core.js";
 installStringPrototypes();   
 
 

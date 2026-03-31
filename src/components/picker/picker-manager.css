@@ -113,7 +113,7 @@
 
 
 .subpanel .title {
-    font-size: 13px;
+    font-size: 16px;
     /*! margin-bottom: 3px; */
     transform: translateY(-3px);
   }
@@ -219,7 +219,7 @@ background-color: #8e9ca1; */
     border: #ededede8 1px solid;
     background-color: #f1f0ea;
     margin: 2px;
-font-size: 13px;
+font-size: 16px;
 font-family: Arial Narrow, sans-serif, Arial, Helvetica, sans-serif;
 text-align: center;
 border-radius: 3px;
@@ -258,22 +258,6 @@ unless the z-index is set to 1 */
   }
 
 
-/*  SCALE PICKER  ***/
-
-
-
-/* 
-.scale-picker-group-item {
-min-width: 75px; 
-
-} */
-
-.scale-picker-group-item:hover {
-    background-color:DodgerBlue;
-}
-
-
-    
 
 /*  keyboard */
 

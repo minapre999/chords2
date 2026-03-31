@@ -1,6 +1,6 @@
 
 
-import OpenPicker from "/src/components/toolbar/chord-tools/OpenPicker.jsx";
+import ChordPicker from "/src/components/toolbar/chord-tools/ChordPicker.jsx";
 import InversionNavigator from "/src/components/toolbar/chord-tools/InversionNavigator.jsx";
 import FormSSNavigator from "/src/components/toolbar/chord-tools/FormSSNavigator.jsx";
 import NoteMode from "/src/components/toolbar/chord-tools/NoteMode.jsx";
@@ -14,7 +14,7 @@ export default function ChordTools(props) {
 
               <div className="toolbar-divider" />
 
-           <OpenPicker {...props} />
+           <ChordPicker {...props} />
            
         <div className="toolbar-divider" />
 

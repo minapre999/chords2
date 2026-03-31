@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect, useMemo } from "react";
 import Toolbar from "/src/components/toolbar/toolbar.jsx";
 import FretboardSVG from "/src/components/fretboard/FretboardSVG.jsx";
 import "/src/globals.js";
  import ChordForm  from "/src/harmony/harmony-manager.js"
  import {Chord}  from "/src/harmony/harmony-manager.js"
-import ChordInfo from "./ChordInfo.jsx"
+import ChordInfo from "/src/components/chord/ChordInfo.jsx"
 
 
 import ReactDOM from "react-dom/client";
@@ -13,10 +14,11 @@ import RenderData, {RenderNote} from "/src/render-notes.js"
 
 
 
-export default function ChordModule(
-  props
-) { 
+export default function ChordPage(
+ props
+) {
 
+ 
   const {setRenderDataUI, showOpenStringsUI, setShowOpenStringsUI, showInlaysUI, setShowInlaysUI, ...rest} = props
 
 //Always put hooks at the top of the component, before any conditional return.

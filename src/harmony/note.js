@@ -1,21 +1,22 @@
 
+import TuningManager from "/src/harmony/tuning-manager.js"
+import FretboardManager from "/src/harmony/fretboard-manager.js"
 
 // throw new Error("THIS IS THE REAL NOTE.JS");
 
 
 export default class Note {
-  constructor(values = {}, fretboardManager) {
-    this._fretboardManager = fretboardManager;
+  constructor(args = {}) {
 
     // Basic fields
-    this._fret = values.fret ?? undefined;
-    this._interval = values.interval ?? undefined;
-    this._stringNumber = values.stringNumber ?? undefined;
-    this._name = values.name ?? undefined;
+    this._fret = args.fret ?? undefined;
+    this._interval = args.interval ?? undefined;
+    this._stringNumber = args.stringNumber ?? undefined;
+    this._name = args.name ?? null;
 
     // Finger must ALWAYS be a valid array
-    this._finger = Array.isArray(values.finger)
-      ? values.finger
+    this._finger = Array.isArray(args.finger)
+      ? args.finger
       : [{ f: 1 }];
   }
 
@@ -23,16 +24,14 @@ export default class Note {
   // Cloning
   // -----------------------------
   copy() {
-    const clone = new Note({}, this._fretboardManager);
+    const clone = new Note({});
     return Object.assign(clone, JSON.parse(JSON.stringify(this)));
   }
 
   // -----------------------------
   // Accessors
   // -----------------------------
-  get fretboardManager() {
-    return this._fretboardManager;
-  }
+ 
 
   get fret() {
     return this._fret;
@@ -49,7 +48,7 @@ export default class Note {
   }
 
   get name() {
-    if (this._name === undefined) {
+    if (this._name == null) {
       const base = this.stringName;
       if (base?.addSemitones) {
         this._name = base.addSemitones(this.fret);
@@ -65,9 +64,7 @@ export default class Note {
   }
 
   get stringName() {
-    const tuning = this._fretboardManager?.getTuning?.();
-    if (!tuning || !this._stringNumber) return undefined;
-    return tuning[this._stringNumber - 1];
+    return dc.TUNING_MANAGER?.noteNames[this._stringNumber - 1]
   }
 
   get  letter() {
@@ -166,8 +163,8 @@ export default class Note {
     const targ = this._name?.enharmonicFlat?.();
     if (!targ) return;
 
-    const frets = this._fretboardManager?.getNumFrets?.();
-    const tuning = this._fretboardManager?.getTuning?.();
+    const frets = dc.FRETBOARD_MANAGER?.numFrets;
+    const tuning = dc.TUNING_MANAGER?.noteNames;
     if (!frets || !tuning) return;
 
     const positions = [];

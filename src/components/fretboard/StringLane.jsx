@@ -168,7 +168,7 @@ export default function StringLane({
 
       
       // Array.from({ length: numFrets }).map((_, fretIndex) => {
-         if (!chNote) return null;
+        //  if (!chNote) return null;
          
         // const fret = fretIndex + 1;
         const midi = openMidi + fret;

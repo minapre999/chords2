@@ -319,7 +319,7 @@ const base12_notes = [
   but are derived from interval knowledge of the
   major and melodic minor chords */
 
-  const MAJOR_INTERVALS =  {
+ export const MAJOR_INTERVALS =  {
       Major: ['1', '2', '3', '4', '5', '6', '7'],  // major (bright & happy)
       Dorian: ['1', '2', 'b3', '4', '5', '6', 'b7'],  // minor + maj6 (dark & sweet)
       Phrygian: ['1', 'b2', 'b3', '4', '5', 'b6', 'b7'], // minor + b2 (dark & exotic)
@@ -330,7 +330,7 @@ const base12_notes = [
       
   }
   
-  const MM_INTERVALS = { 
+export const MM_INTERVALS = { 
       'Melodic Minor': ['1', '2', 'b3', '4', '5', '6', 'b7'],
       'Lydian Augmented': ['1', '2', '3', '#4', '#5', '6', '7'],
       'Lydian Dominant': ['1', '2', '3', '#11', '5', '6', 'b7'],
@@ -338,12 +338,12 @@ const base12_notes = [
       Altered: ['1', 'b9', '#9', '3', '#11', 'b13', 'b7'],
   }
 
-  const HM_INTERVALS = { 
+ export const HM_INTERVALS = { 
     'Harmonic Minor': ['1', '2', 'b3', '4', '5', 'b6', 'b7'],
     'Phrygian Dominant': ['1', 'b2', '3', '4', '5', 'b6', 'b7'],
 }
 
-  const OTHER_INTERVALS = { 
+ export  const OTHER_INTERVALS = { 
       'Pentatonic Major': ['1', '2', '3',  '5', '6', ],
       'Pentatonic Minor': ['1',  'b3',  '4', '5',  'b7', ],
       'Diminished': ['1', '9', 'b3', '11', '#11',  'b13', '13', 'b7', ],
@@ -353,7 +353,7 @@ const base12_notes = [
       'Pentatonic 7b9': ['1', 'b2', '3', '5', 'b7', ],
   }
 
-const ARPEGGIO_INTERVALS = {
+export const ARPEGGIO_INTERVALS = {
 '7 Arp': ['1', '3', '5', 'b7', ],
 'm7 Arp': ['1', 'b3', '5', 'b7', ],
 'maj7 Arp': ['1', '3', '5', '7', ],
@@ -363,7 +363,7 @@ const ARPEGGIO_INTERVALS = {
 // to the mode
 // the modes are relative to the intervals of the root node
 // (e.g. for Lydian Dominant, it is relative to the Melodic Minor)
-const modeLookupIntervals = {
+export const modeLookupIntervals = {
   Major : ['1', '2', '3', '4', '5', '6', '7'],
   Dorian :  ['b7', '1', '2', 'b3', '4', '5', '6'], 
   Phrygian : ['b6', 'b7', '1', 'b2', 'b3', '4', '5'], 
@@ -392,7 +392,7 @@ const modeLookupIntervals = {
 'Phrygian Dominant' : ['4', '5', 'b6', 'b7', '1', '2', 'b3',],
 }
 
-const QUALITIES = {
+export const QUALITIES = {
 Maj: "Major",
 MM: 'Melodic Minor',
 HM: 'Harmonic Minor',
@@ -409,7 +409,7 @@ ARPmaj7: 'maj7 Arp',
 ARPm7b5: 'm7b5 Arp',
 }
 
-const MODE_LOOKUP_SEMITONES = {
+export const MODE_LOOKUP_SEMITONES = {
   Major: 0,
   Dorian :  10, 
   Phrygian : 8, 
@@ -508,9 +508,6 @@ return key
 
 
 
-String.prototype.noteLetter = function ( ) {
-    return this.toString().replace(/[0-9]/g, '')  // remove numbers
-}
 
 
 
@@ -569,10 +566,10 @@ export default function installStringPrototypes() {
     }
   };
 
+
+  String.prototype.noteLetter = function ( ) {
+    return this.toString().replace(/[0-9]/g, '')  // remove numbers
 }
-
-
-
 
 
 
@@ -756,36 +753,7 @@ String.prototype.addSemitones = function( st ) {
    }
 
 
-// String.prototype.addSemitones = function( st ) {
-//  //   e.g.  Bb3 + 4 semitones:  Bb3->3a, parseInt('3a', 12) + 4 = 50, parseInt(50).toString(12) = 42 -> D4
-//  let wasSharp = false
-//  if( this.indexOf("#") !== -1) {
-//     wasSharp = true
-//     }
-// const str =  this.enharmonicFlat()
-// const num =  str.toBase12()
-// const transInt = parseInt(num, 12) + st
-// let returnStr = transInt.fromBase12( 12)
-// // if taking a letter as argument, remove the octave from the return value
-// if( this.toString().replace(/[0-9]/g, '').length ===  this.toString().length ) {
-//     returnStr = returnStr.replace(/[0-9]/g, '') }
-// if(wasSharp) {
-//     returnStr = returnStr.enharmonicSharp()
-//     }
-// return returnStr
-// }
-
-
-
-/* display the note string in the key
-key argument is fifths format - positive for sharps, negative for flats 
-
-const flats_by_fifths = ['a', '3','8', '1',  '6',  'b',  '4'  ]
-const sharps_by_fifths = [ '6', '1',  '8', '3','a',  '5',  '0' ]
-const flats_by_fifths = ['Bb', 'Eb','Ab', 'Db',  'Gb',  'Cb',  'Fb'  ]               
-const sharps_by_fifths = [ 'F#', 'C#',  'G#', 'D#','A#',  'E#',  'B#' ]       
-*/
-String.prototype.formatForKey = function ( fifths ) {
+   String.prototype.formatForKey = function ( fifths ) {
     const self = this
     let keyStr = undefined
     const fNum = Number(fifths)
@@ -865,6 +833,46 @@ String.prototype.vexflowFormat = function () {
 
   return returnStr
 }
+
+
+
+} // installStringPrototypes
+
+
+
+
+
+
+
+// String.prototype.addSemitones = function( st ) {
+//  //   e.g.  Bb3 + 4 semitones:  Bb3->3a, parseInt('3a', 12) + 4 = 50, parseInt(50).toString(12) = 42 -> D4
+//  let wasSharp = false
+//  if( this.indexOf("#") !== -1) {
+//     wasSharp = true
+//     }
+// const str =  this.enharmonicFlat()
+// const num =  str.toBase12()
+// const transInt = parseInt(num, 12) + st
+// let returnStr = transInt.fromBase12( 12)
+// // if taking a letter as argument, remove the octave from the return value
+// if( this.toString().replace(/[0-9]/g, '').length ===  this.toString().length ) {
+//     returnStr = returnStr.replace(/[0-9]/g, '') }
+// if(wasSharp) {
+//     returnStr = returnStr.enharmonicSharp()
+//     }
+// return returnStr
+// }
+
+
+
+/* display the note string in the key
+key argument is fifths format - positive for sharps, negative for flats 
+
+const flats_by_fifths = ['a', '3','8', '1',  '6',  'b',  '4'  ]
+const sharps_by_fifths = [ '6', '1',  '8', '3','a',  '5',  '0' ]
+const flats_by_fifths = ['Bb', 'Eb','Ab', 'Db',  'Gb',  'Cb',  'Fb'  ]               
+const sharps_by_fifths = [ 'F#', 'C#',  'G#', 'D#','A#',  'E#',  'B#' ]       
+*/
 
 
 

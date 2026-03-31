@@ -3,7 +3,7 @@
   import ChordForm  from "../../harmony/harmony-manager.js"
   import {HarmonyManager, Chord}  from "../../harmony/harmony-manager.js"
 
-export default function QualityPanel({
+export default function ChordQualityPanel({
 
   cfUI,
   setCFUI,
@@ -15,7 +15,7 @@ export default function QualityPanel({
   const [isPanelOpen, setIsPanelOpen] = useState(true);
 const [isOpen, setIsOpen] = useState(true);
 
-  // console.log("\QualityPanel component forceAll: ", forceAll, "\nisOpen:", isOpen, "\ncfUI: ", cfUI, "setCFUI: ", setCFUI)
+  // console.log("\ChordQualityPanel component forceAll: ", forceAll, "\nisOpen:", isOpen, "\ncfUI: ", cfUI, "setCFUI: ", setCFUI)
 
 
 
@@ -70,7 +70,7 @@ const toggle = () => setIsOpen(prev => !prev);
   const spClass = "chord-quality-subpanel subpanel";
 
 
-  // console.log("rendering QualityPanel cfUI: ", cfUI)
+  // console.log("rendering ChordQualityPanel cfUI: ", cfUI)
   return (
     cfUI && (
     <>

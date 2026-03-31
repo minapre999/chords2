@@ -2,20 +2,18 @@ import React, { useState, useEffect, useRef, useMemo } from "react"
 import "bootstrap/dist/js/bootstrap.bundle.min.js"
 import "bootstrap/dist/css/bootstrap.min.css"
 import "./toolbar.css";
-import ChordTools from "/src/components/toolbar/toolbar-pages/chord-tools.jsx";
-import ScaleTools from "/src/components/toolbar/toolbar-pages/scale-tools.jsx";
-import SettingsTools from "/src/components/toolbar/toolbar-pages/settings-tools.jsx";
+import ChordTools from "/src/components/toolbar/toolbar-pages/ChordTools.jsx";
+import ScaleTools from "/src/components/toolbar/toolbar-pages/ScaleTools.jsx";
+import SettingsTools from "/src/components/toolbar/toolbar-pages/SettingsTools.jsx";
 import ZoomControls from "/src/components/toolbar/toolbar-global/zoom-controls.jsx"
 import ColorControls from "/src/components/toolbar/toolbar-global/color-controls.jsx"
 import HeadstockToggle from "/src/components/toolbar/toolbar-global/headstock-toggle.jsx"
 
 
 
-export default function Toolbar({ 
-  page,
-...props 
- 
- }) {
+export default function Toolbar(props ) {
+
+  const {page, ...rest} = props
   return (
     <div className="toolbar">
 

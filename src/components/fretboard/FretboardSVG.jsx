@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
  import "./Fretboard.css";
  import dc from "../../globals.js"
- import ChordDictionary from "../../harmony/cd-manager.js"
- import {CDManager} from "../../harmony/cd-manager.js"
+//  import ChordDictionary from "../../harmony/cd-manager.js"
+//  import {CDManager} from "../../harmony/cd-manager.js"
   import  ChordForm, {Chord}  from "../../harmony/harmony-manager.js"
  import Note from "/src/harmony/note.js"
 import StringLane from "./StringLane.jsx"
@@ -81,7 +81,7 @@ export default function FretboardSVG({
   chordRootUI="C",
   numStrings = 6,
   tuning = STANDARD_TUNING,
-  numFrets = 16,
+  numFrets = dc.FRETBOARD_MANAGER.numFrets,
 
   preferSharps = true,
   interactive = true,

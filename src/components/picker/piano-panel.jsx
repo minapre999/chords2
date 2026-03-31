@@ -1,24 +1,14 @@
 
   import React, { useState, useEffect } from "react";
 
- import ChordForm  from "../../harmony/harmony-manager.js"
-import {HarmonyManager, Chord}  from "../../harmony/harmony-manager.js"
+ import ChordForm  from "/src/harmony/harmony-manager.js"
+import {HarmonyManager, Chord}  from "/src/harmony/harmony-manager.js"
 
 
-export default function PianoPanel({
-  activeSubPanelUI,
-  setActiveSubPanelUI,
-
-   cfUI,
-  setCFUI,
-  onKeyClick,
-  chordRootUI,
-  setChordRootUI,
-  forceAll
-
-}) {
+export default function PianoPanel(props) {
 
 
+const {activeSubPanelUI, setActiveSubPanelUI, forceAll,  chordRootUI, setChordRootUI, cfUI, ...rest} = props
 const [isOpen, setIsOpen] = useState(true);
 
   // console.log("PianoPanel component forceAll: ", forceAll, "isOpen:", isOpen, "setCFUI: ", setCFUI)
@@ -39,14 +29,16 @@ const toggle = () => setIsOpen(prev => !prev);
  
 
 
-const oldCF = cfUI
   const ClickPiano=(root)=>{
-    cfUI.root = root // this was previously set in FretboardSVG render
-    setChordRootUI(root)
- // this doesn't work as eact state updates only fire when the reference changes.
- // would need to make a clone - don't want to do this as chordforms are all linked to chords and harmonies
-    // oldCF.root = root
-    // setCFUI(oldCF)  
+    if(cfUI !== undefined) {
+      cfUI.root = root // this was previously set in FretboardSVG render
+      setChordRootUI(root)
+      }
+    if( scaleChoiceUI !== undefined) {
+      scaleChoiceUI.root = root
+      const clone = scaleChoiceUI.copy()
+      setScaleChoiceUI(clone)
+    }
   }
 
 

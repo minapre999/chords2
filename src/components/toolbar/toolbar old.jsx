@@ -7,7 +7,7 @@ import "./note-mode.css"
 import NoteMode from "./chord-tools/NoteMode.jsx"
 import InversionNavigator from "./inv-navigator.jsx"
 import FormSSNavigator from "./form-ss-navigator.jsx"
-import OpenPicker from "./chord-tools/OpenPicker.jsx"
+import ChordPicker from "./chord-tools/ChordPicker.jsx"
 
 
 export default function Toolbar({ 
@@ -78,7 +78,7 @@ console.log("Rendering InversionNavigator");
 
 
 
-      <OpenPicker  className="toolbar-btn" 
+      <ChordPicker  className="toolbar-btn" 
   
         cfUI={cfUI}
       setCFUI={setCFUI}
@@ -89,7 +89,7 @@ console.log("Rendering InversionNavigator");
 
         >
             <img src="/img/chord-icon.svg" className="toolbar-icon" />
-        </OpenPicker>
+        </ChordPicker>
 
       {/* Fretboard colour
       <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
