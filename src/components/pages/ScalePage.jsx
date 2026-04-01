@@ -7,8 +7,8 @@ import FretboardSVG from "/src/components/fretboard/FretboardSVG.jsx";
 import RenderData, {RenderNote} from "/src/render-notes.js"
 import ScaleInfo from "/src/components/scale/ScaleInfo.jsx"
 import "/src/harmony/scale-manager.js"
-import "/src/components/scale/ScaleModule.css"
-
+import "/src/components/pages/ScalePage.css"
+import ScaleControlPanel from "/src/components/ControlPanel/ScaleControlPanel.jsx"
 
 
 export default function ScalePage( props ) {
@@ -138,48 +138,53 @@ useEffect(() => {
 
 
   
-  return (
+return (
 
     
 <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
         
-  <Toolbar
-    {...props}
-    page="scales"
-    scaleRootUI={scaleRootUI}       setScaleRootUI={setScaleRootUI}
-    scaleModeUI={scaleModeUI}       setScaleModeUI={setScaleModeUI}
-    scaleQualityUI={scaleQualityUI} setScaleQualityUI={setScaleQualityUI}
-    scaleFormUI={scaleFormUI}       setScaleFormUI={setScaleFormUI}
-    scaleNoteName={scaleNoteName}   setScaleNoteName={setScaleNoteName}
-    zoom={zoom}                     setZoom={setZoom}
+    <Toolbar
+      {...props}
+      page="scales"
+      scaleRootUI={scaleRootUI}       setScaleRootUI={setScaleRootUI}
+      scaleModeUI={scaleModeUI}       setScaleModeUI={setScaleModeUI}
+      scaleQualityUI={scaleQualityUI} setScaleQualityUI={setScaleQualityUI}
+      scaleFormUI={scaleFormUI}       setScaleFormUI={setScaleFormUI}
+      scaleNoteName={scaleNoteName}   setScaleNoteName={setScaleNoteName}
+      zoom={zoom}                     setZoom={setZoom}
 
-  />
+    />
 
 
   <div id="content">
- <FretboardSVG
-    {...props}
-    setRenderDataUI={setRenderDataUI}
-    scaleRootUI={scaleRootUI}       setScaleRootUI={setScaleRootUI}
-    scaleModeUI={scaleModeUI}       setScaleModeUI={setScaleModeUI}
-    scaleQualityUI={scaleQualityUI} setScaleQualityUI={setScaleQualityUI}
-    scaleFormUI={scaleFormUI}       setScaleFormUI={setScaleFormUI}
-    scaleNoteName={scaleNoteName}   setScaleNoteName={setScaleNoteName}
-    width={1800}                    height={220}
-    zoom={zoom}                     setZoom={setZoom}
-    // showNoteNamesUI={showNoteNamesUI}
-    // showAllNotesUI={showAllNotesUI}
-    // noteMode={noteMode}
-    />
+    <FretboardSVG
+      {...props}
+      setRenderDataUI={setRenderDataUI}
+      scaleRootUI={scaleRootUI}       setScaleRootUI={setScaleRootUI}
+      scaleModeUI={scaleModeUI}       setScaleModeUI={setScaleModeUI}
+      scaleQualityUI={scaleQualityUI} setScaleQualityUI={setScaleQualityUI}
+      scaleFormUI={scaleFormUI}       setScaleFormUI={setScaleFormUI}
+      scaleNoteName={scaleNoteName}   setScaleNoteName={setScaleNoteName}
+      width={1800}                    height={220}
+      zoom={zoom}                     setZoom={setZoom}
+      // showNoteNamesUI={showNoteNamesUI}
+      // showAllNotesUI={showAllNotesUI}
+      // noteMode={noteMode}
+      />
+      
     
+    <div className="scale-content-wrapper">
+      <ScaleControlPanel />
+
+      <ScaleInfo
+      {...props} 
+        scaleRootUI={scaleRootUI}       setScaleRootUI={setScaleRootUI}
+        scaleModeUI={scaleModeUI}       setScaleModeUI={setScaleModeUI}
+        scaleQualityUI={scaleQualityUI} setScaleQualityUI={setScaleQualityUI}
+        scaleFormUI={scaleFormUI}       setScaleFormUI={setScaleFormUI}
+        />
+    </div>
   </div>
-   <ScaleInfo
-   {...props} 
-    scaleRootUI={scaleRootUI}       setScaleRootUI={setScaleRootUI}
-    scaleModeUI={scaleModeUI}       setScaleModeUI={setScaleModeUI}
-    scaleQualityUI={scaleQualityUI} setScaleQualityUI={setScaleQualityUI}
-    scaleFormUI={scaleFormUI}       setScaleFormUI={setScaleFormUI}
-   />
 </div>
 )
 }

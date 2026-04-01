@@ -1,0 +1,5 @@
+.chord-content-wrapper {
+
+display: flex;
+flex-direction: row;
+}

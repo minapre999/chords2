@@ -1,0 +1,168 @@
+
+/* Pattern group uses monospace for clarity */
+.pattern-group {
+  font-family: monospace;
+}
+
+/* Mute button */
+.mute-btn {
+  margin-top: 0.4rem;
+  padding: 0.35rem 0.6rem;
+  border-radius: 4px;
+  border: 1px solid #cfd2d6;
+  background: #f7f8fa;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.mute-btn:hover {
+  background: #eef0f3;
+  border-color: #b8bcc2;
+}
+
+/* --- Main content area --- */
+.main-content {
+  flex: 1;
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+
+.pattern-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: 0.4rem;
+}
+
+.pattern-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #ffffff;
+  padding: 0.25rem 0.4rem;
+  border: 1px solid #dcdfe3;
+  border-radius: 4px;
+}
+
+.pattern-label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: monospace;
+  font-size: 0.78rem;
+}
+
+.pattern-trash {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.9rem;
+  opacity: 0.6;
+  transition: opacity 0.15s ease;
+}
+
+.pattern-trash:hover {
+  opacity: 1;
+}
+
+.pattern-add {
+  margin-top: 0.4rem;
+  padding: 0.35rem 0.6rem;
+  border-radius: 4px;
+  border: 1px dashed #b8bcc2;
+  background: #f7f8fa;
+  font-size: 0.78rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.pattern-add:hover {
+  background: #eef0f3;
+  border-color: #8f9399;
+}
+
+.pattern-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: 0.4rem;
+}
+
+.pattern-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #ffffff;
+  padding: 0.25rem 0.4rem;
+  border: 1px solid #dcdfe3;
+  border-radius: 4px;
+}
+
+.pattern-label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: monospace;
+  font-size: 0.78rem;
+}
+
+.pattern-trash {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.9rem;
+  opacity: 0.6;
+  transition: opacity 0.15s ease;
+}
+
+.pattern-trash:hover {
+  opacity: 1;
+}
+
+.pattern-add {
+  margin-top: 0.4rem;
+  padding: 0.35rem 0.6rem;
+  border-radius: 4px;
+  border: 1px dashed #b8bcc2;
+  background: #f7f8fa;
+  font-size: 0.78rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.pattern-add:hover {
+  background: #eef0f3;
+  border-color: #8f9399;
+}
+
+.mute-btn {
+  padding: 0.35rem 0.55rem;
+  border-radius: 4px;
+  border: 1px solid #cfd2d6;
+  background: #f7f8fa;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 32px;
+  transition: background 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+}
+
+.mute-btn:hover {
+  background: #eef0f3;
+  border-color: #b8bcc2;
+}
+
+.mute-btn:active {
+  opacity: 0.7;
+}

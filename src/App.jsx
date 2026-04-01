@@ -28,7 +28,7 @@ import { jsPanel } from "jspanel4";
     const scaleEl = document.getElementById("scale-picker");
 console.log("chordEl: ", chordEl, "scaleEl: ", scaleEl)
 
-  console.log("chordEl.jspanel: ", chordEl.jspanel, "scaleEl.jspanel: ", scaleEl.jspanel)
+  // console.log("chordEl.jspanel: ", chordEl.jspanel, "scaleEl.jspanel: ", scaleEl.jspanel)
 
     const chordPanel = chordEl?.jspanel || chordEl?.closest(".jsPanel")?.jspanel;
     const scalePanel = scaleEl?.jspanel || scaleEl?.closest(".jsPanel")?.jspanel;

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useLocation } from "react";
 import { jsPanel } from "jspanel4";
 import ReactDOM from "react-dom/client";
-import "jspanel4/dist/jspanel.css";
+// import "jspanel4/dist/jspanel.css";
 import "/src/components/toolbar/toolbar.css";
 import "/src/globals.js";
 
@@ -9,7 +9,7 @@ import "/src/globals.js";
 
 
 
- import PianoPanel from "/src/components/picker/piano-panel.jsx"
+ import PianoPanel from "/src/components/picker/PianoPanel.jsx"
 import ScaleModePanel from "/src/components/picker/ScaleModePanel.jsx"
 import ScaleFormPanel from "/src/components/picker/ScaleFormPanel.jsx"
 import ScaleFretPanel from "/src/components/picker/ScaleFretPanel.jsx"

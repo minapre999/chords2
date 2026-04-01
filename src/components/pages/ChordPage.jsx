@@ -11,7 +11,9 @@ import ChordInfo from "/src/components/chord/ChordInfo.jsx"
 import ReactDOM from "react-dom/client";
 import {PlayChord} from "/src/sound/Play.js"
 import RenderData, {RenderNote} from "/src/render-notes.js"
+import ChordControlPanel from "/src/components/ControlPanel/ChordControlPanel.jsx"
 
+import "./ChordPage.css"
 
 
 export default function ChordPage(
@@ -208,51 +210,48 @@ const rData = new RenderData()
     <Toolbar
       {...props}
       page="chords"
-      cfUI={cfUI}
-      setCFUI={setCFUI}
-      cfChanged={cfChanged} setCFChanged={setCFChanged}
-
-      chordRootUI={chordRootUI}
-      setChordRootUI={setChordRootUI}
-      chordStringUI={chordStringUI}
-      setChordStringUI={setChordStringUI}
-   
-      zoom={zoom}
-      setZoom={setZoom}
-      showNoteNamesUI={showNoteNamesUI}
-      setShowNoteNamesUI={setShowNoteNamesUI}
-      showAllNotesUI={showAllNotesUI}
-      setShowAllNotesUI={setShowAllNotesUI}
-  
-  
-      noteMode={noteMode}
-      setNoteMode={setNoteMode}
+      cfChanged={cfChanged}                 setCFChanged={setCFChanged}
+      chordRootUI={chordRootUI}             setChordRootUI={setChordRootUI}
+      chordStringUI={chordStringUI}         setChordStringUI={setChordStringUI}
+      zoom={zoom}                           setZoom={setZoom}
+      showNoteNamesUI={showNoteNamesUI}     setShowNoteNamesUI={setShowNoteNamesUI}
+      showAllNotesUI={showAllNotesUI}       setShowAllNotesUI={setShowAllNotesUI}
+      noteMode={noteMode}                   setNoteMode={setNoteMode}
     />
 
 <div id="content">
 
     <FretboardSVG
   {...props}
-
-        cfUI={cfUI}
-      
+      cfUI={cfUI}
       chordRootUI={chordRootUI}
-      width={1800}
+      width={1800}                             
       height={220}
-      fretboardColor={fretboardColor}
+      fretboardColor={fretboardColor}          
       fretboardImage={fretboardImage}
-  
-      zoom={zoom}
-      setZoom={setZoom}
+      zoom={zoom}                              
       showNoteNamesUI={showNoteNamesUI}
       showAllNotesUI={showAllNotesUI}
-   
       noteMode={noteMode}
     />
 
 
+    <div className="chord-content-wrapper">
+      <ChordControlPanel 
+        {...props}
+      cfUI={cfUI}                        setCFUI={setCFUI}
+      cfChanged={cfChanged}                 setCFChanged={setCFChanged}
+      chordRootUI={chordRootUI}             setChordRootUI={setChordRootUI}
+      chordStringUI={chordStringUI}         setChordStringUI={setChordStringUI}
+      zoom={zoom}                           setZoom={setZoom}
+      showNoteNamesUI={showNoteNamesUI}     setShowNoteNamesUI={setShowNoteNamesUI}
+      showAllNotesUI={showAllNotesUI}       setShowAllNotesUI={setShowAllNotesUI}
+      noteMode={noteMode}                   setNoteMode={setNoteMode}
+      />
    
-    <ChordInfo   cfUI={cfUI}  />
+    <ChordInfo   
+      {...props}
+      cfUI={cfUI}  />
 
     {/* {showPanel && (
       <Picker
@@ -262,7 +261,7 @@ const rData = new RenderData()
     )} */}
 
     
-
+</div>
 
 </div> 
   </div>

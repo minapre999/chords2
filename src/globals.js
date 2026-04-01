@@ -11,8 +11,7 @@ var  dcDB = new Dexie("DropChords")
       harmony: "id,symbol", //new schema - harmony / chord / chordform separate
       chord: "id,h_id",
       chordform: "id,ch_id,name,data",
-      tuning: "id,name,notes"
-
+      tuning: "id,name,notes",
       });
 
 await dcDB.open();

@@ -6,10 +6,10 @@ import "/src/components/toolbar/toolbar.css";
 
 import "/src/globals.js";
  import {Chord}  from "/src/harmony/harmony-manager.js"
-import PianoPanel from "/src/components/picker/piano-panel.jsx"
+import PianoPanel from "/src/components/picker/PianoPanel.jsx"
 import ChordQualityPanel from "/src/components/picker/ChordQualityPanel"
-import FormSSPanel from "/src/components/picker/formss-panel.jsx"
-import InversionPanel from "/src/components/picker/inversion-panel.jsx"
+import FormSSPanel from "/src/components/picker/FormSSPanel.jsx"
+import InversionPanel from "/src/components/picker/InversionPanel.jsx"
 import "/src/components/picker/picker-manager.css"
 
 

@@ -1,0 +1,128 @@
+/* --- Layout --- */
+.layout {
+  display: flex;
+  height: 100%;
+}
+
+/* Left 25% accordion panel */
+.accordion {
+  flex: 0 0 25%;
+  width: 300px;
+  background: #f7f8fa;
+  border-right: 1px solid #dcdfe3;
+  padding: 0.5rem;
+  box-sizing: border-box;
+  overflow-y: auto;
+
+  /* Your constraints */
+  max-width: 400px;
+  min-width: 260px;
+}
+
+
+
+/* --- Accordion Items --- */
+.accordion-item {
+  background: #ffffff;
+  border: 1px solid #dcdfe3;
+  border-radius: 6px;
+  margin-bottom: 0.45rem;
+  overflow: hidden;
+  transition: border-color 0.15s ease;
+}
+
+.accordion-item.open {
+  border-color: #b8bcc2;
+}
+
+/* --- Header --- */
+.accordion-header {
+  width: 100%;
+  background: #f2f3f5;
+  border: none;
+  padding: 0.45rem 0.65rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #2a2d31;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s ease;
+}
+
+.accordion-header:hover {
+  background: #e9eaed;
+}
+
+/* Chevron */
+.chevron {
+  font-size: 0.75rem;
+  color: #6a6d72;
+  transition: transform 0.15s ease;
+}
+
+.accordion-item.open .chevron {
+  transform: rotate(90deg);
+}
+
+/* --- Body --- */
+.accordion-body {
+  max-height: 0;
+  overflow: hidden;
+  padding: 0 0.65rem;
+  font-size: 0.8rem;
+  color: #3a3d41;
+  transition:
+    max-height 0.22s ease,
+    padding-bottom 0.22s ease;
+}
+
+.accordion-item.open .accordion-body {
+  max-height: 500px; /* plenty of room */
+  padding-bottom: 0.55rem;
+}
+
+/* --- Controls --- */
+.control-group,
+.radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: 0.4rem;
+}
+
+.control-group label {
+  font-size: 0.78rem;
+  color: #2f3236;
+}
+
+input[type="range"] {
+  width: 100%;
+  accent-color: #4a90e2;
+}
+
+/* Radio buttons */
+.radio-group label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.radio-group input[type="radio"] {
+  accent-color: #4a90e2;
+}
+
+
+
+
+/* --- Main content area --- */
+.main-content {
+  flex: 1;
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
