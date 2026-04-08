@@ -1,17 +1,16 @@
 export default function FretboardSurface({
-  scaledWidth,
-  scaledHeight,
+  width,
+  height,
   numFrets,
   nutX,
   getFretX,
   showInlaysUI,
-  zoom
 }) {
 
     const inlayFrets = [3, 5, 7, 9, 12, 15, 17, 19];
-    const nutWidth = 16 * zoom
-    const fretWidth = 12 * zoom
-    const inlayRadius = 6*zoom
+    const nutWidth = 16 
+    const fretWidth = 12 
+    const inlayRadius = 6
   return (
     <g>
       {/* Rosewood background */}
@@ -34,8 +33,8 @@ export default function FretboardSurface({
       <rect
         x="0"
         y="0"
-        width={scaledWidth}
-        height={scaledHeight}
+        width={width}
+        height={height}
         fill="url(#rosewoodPattern)"
       />
 
@@ -44,7 +43,7 @@ export default function FretboardSurface({
         x={nutX-nutWidth}
         y={0}
         width={nutWidth}
-        height={scaledHeight}
+        height={height}
         fill="#f0f0f0"
         stroke="#999"
         strokeWidth="1.5"
@@ -59,7 +58,7 @@ export default function FretboardSurface({
             x1={x}
             y1={0}
             x2={x}
-            y2={scaledHeight}
+            y2={height}
             stroke="#cfcfcf"
             strokeWidth={fretWidth}
           />
@@ -78,8 +77,8 @@ export default function FretboardSurface({
           if (isDouble) {
             return (
               <g key={fret}>
-                <circle cx={x} cy={scaledHeight * 0.35} r={inlayRadius} fill="#f5f5f5" stroke="#999" />
-                <circle cx={x} cy={scaledHeight * 0.65} r={inlayRadius} fill="#f5f5f5" stroke="#999" />
+                <circle cx={x} cy={height * 0.35} r={inlayRadius} fill="#f5f5f5" stroke="#999" />
+                <circle cx={x} cy={height * 0.65} r={inlayRadius} fill="#f5f5f5" stroke="#999" />
               </g>
             );
           }
@@ -88,7 +87,7 @@ export default function FretboardSurface({
             <circle
               key={fret}
               cx={x}
-              cy={scaledHeight / 2}
+              cy={height / 2}
               r={inlayRadius}
               fill="#f5f5f5"
               stroke="#999"

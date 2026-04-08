@@ -27,7 +27,7 @@ export default function StringLane({
   noteNameFromMidi,
   showAllNotesUI,
   noteMode,
-  zoom
+  
 }) {
 
     if(renderDataUI == null || renderDataUI == undefined) return null
@@ -37,7 +37,7 @@ export default function StringLane({
     if(stringData == null || stringData == undefined) return null
 
   const y = stringY(stringIndex);
-  const stringThickness = dc.TUNING_MANAGER.getStringWidth(stringIndex) * zoom;
+  const stringThickness = dc.TUNING_MANAGER.getStringWidth(stringIndex) ;
   const isWound = stringIndex > 2; // 0,1,2 = wound; 3+ = plain
   const strokeCol = stringIndex > 2 ? bassStringColorUI : stringColorUI;
   const openNoteName = noteNameFromMidi(openMidi, { preferSharps });
@@ -122,12 +122,12 @@ function noteNameFromMidi(midi, { preferSharps = true } = {}) {
           onClick={() => interactive && handleNoteClick(stringIndex, 0)}
           style={{ cursor: interactive ? "pointer" : "default" }}
         >
-          <circle cx={nutX - 32*zoom} cy={y} r={10 * zoom} fill="#fff" stroke="#333" />
+          <circle cx={nutX - 32} cy={y} r={10 } fill="#fff" stroke="#333" />
            (
             <text
-              x={nutX - 32*zoom}
+              x={nutX - 32}
               y={y + 4}
-              fontSize={10 * zoom}
+              fontSize={10 }
               textAnchor="middle"
               fill="#000"
             >
@@ -150,7 +150,7 @@ function noteNameFromMidi(midi, { preferSharps = true } = {}) {
                 <text
                   x={x}
                   y={y + 5}
-                  fontSize={20 * zoom}
+                  fontSize={20 }
                   fill="white"
                   textAnchor="middle"
                 >
@@ -164,7 +164,7 @@ function noteNameFromMidi(midi, { preferSharps = true } = {}) {
                 <text
                   x={x}
                   y={y + 5}
-                  fontSize={20 * zoom}
+                  fontSize={20 }
                   fill="white"
                   textAnchor="middle"
                 >
@@ -220,7 +220,7 @@ const isChordNote =true
               <circle
                 cx={x}
                 cy={y}
-                r={note_data.width* zoom}
+                r={note_data.width}
                 fill={note_data.fillColor}
                 stroke={note_data.strokeColor}
                 strokeWidth={note_data.strokeWidth}
@@ -231,7 +231,7 @@ const isChordNote =true
               <text
                 x={x}
                 y={y + 4}
-                fontSize={note_data.fontSize * zoom}
+                fontSize={note_data.fontSize }
                 textAnchor="middle"
                 fill={note_data.color}
               >

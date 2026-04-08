@@ -1,17 +1,5 @@
 .fretboard-scroll {
   width: 100%;
   overflow-x: auto;
-  /* overflow-y: hidden; */
-  min-width: 0;
-    overflow-y: visible;   /* ← CRITICAL */
-}
-
-.fretboard-center {
-  display: flex;
-  justify-content: center; 
-  min-width: 100%;
-}
-
-.fretboard-geometry {
-  flex: 0 0 auto; /* prevents shrinking */
+  overflow-y: hidden;
 }
