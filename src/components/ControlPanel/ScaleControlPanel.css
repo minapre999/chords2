@@ -1,34 +1,89 @@
-
-/* Pattern group uses monospace for clarity */
-.pattern-group {
-  font-family: monospace;
+.accordion-controls {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.35rem;
+  margin-bottom: 0.5rem;
 }
 
-/* Mute button */
-.mute-btn {
-  margin-top: 0.4rem;
-  padding: 0.35rem 0.6rem;
+.accordion-btn {
+  width: 28px;
+  height: 24px;
   border-radius: 4px;
   border: 1px solid #cfd2d6;
   background: #f7f8fa;
-  font-size: 0.78rem;
   cursor: pointer;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: background 0.15s ease, border-color 0.15s ease;
 }
 
-.mute-btn:hover {
+.accordion-btn:hover {
   background: #eef0f3;
   border-color: #b8bcc2;
 }
 
-/* --- Main content area --- */
+/* -------------------------------------------------------
+   PARENT LAYOUT (ScaleControlPanel)
+------------------------------------------------------- */
+
+  
+.parent-layout {
+      min-height: 0; /* critical */
+
+  display: flex;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
 .main-content {
   flex: 1;
-  padding: 1rem;
+  background: #ffffff;
+  overflow: hidden;
+  position: relative;
+}
+
+
+.subpanel {
+  width: 100%;
+  padding: 0.5rem;
+  box-sizing: border-box;
+}
+
+.subpanel .accordion-item {
+  width: 100%;
   box-sizing: border-box;
 }
 
 
+.sub-panel-column {
+  width: 300px;
+  min-width: 260px;
+  max-width: 400px;
+  background: #f7f8fa;
+  border-left: 1px solid #dcdfe3; /* left if inspector is on left */
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;        /* critical: inspector scrolls independently */
+  box-sizing: border-box;
+    min-height: 0; /* critical */
+  overflow-y: auto;
+  
+}
+
+
+.sub-panel-column > * {
+  border-bottom: 1px solid #dcdfe3;
+}
+
+
+
+/* -------------------------------------------------------
+   PATTERN LIST (ScaleSequencePanel)
+------------------------------------------------------- */
+
 .pattern-list {
   display: flex;
   flex-direction: column;
@@ -86,75 +141,22 @@
   border-color: #8f9399;
 }
 
-.pattern-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  margin-top: 0.4rem;
-}
 
-.pattern-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: #ffffff;
-  padding: 0.25rem 0.4rem;
-  border: 1px solid #dcdfe3;
-  border-radius: 4px;
-}
-
-.pattern-label {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  font-family: monospace;
-  font-size: 0.78rem;
-}
-
-.pattern-trash {
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  font-size: 0.9rem;
-  opacity: 0.6;
-  transition: opacity 0.15s ease;
-}
-
-.pattern-trash:hover {
-  opacity: 1;
-}
-
-.pattern-add {
-  margin-top: 0.4rem;
-  padding: 0.35rem 0.6rem;
-  border-radius: 4px;
-  border: 1px dashed #b8bcc2;
-  background: #f7f8fa;
-  font-size: 0.78rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  transition: background 0.15s ease, border-color 0.15s ease;
-}
-
-.pattern-add:hover {
-  background: #eef0f3;
-  border-color: #8f9399;
-}
+/* -------------------------------------------------------
+   METRONOME MUTE BUTTON (Speaker Icon)
+------------------------------------------------------- */
 
 .mute-btn {
-  padding: 0.35rem 0.55rem;
+  position: relative;
+  width: 36px;
+  height: 32px;
   border-radius: 4px;
   border: 1px solid #cfd2d6;
   background: #f7f8fa;
-  font-size: 1rem;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 32px;
   transition: background 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
 }
 
@@ -166,3 +168,140 @@
 .mute-btn:active {
   opacity: 0.7;
 }
+
+.speaker-icon {
+  color: #2a2d31;
+  pointer-events: none;
+}
+
+/* Slash overlay when muted */
+.speaker-slash {
+  position: absolute;
+  width: 2px;
+  height: 26px;
+  background: #d9534f;
+  transform: rotate(45deg);
+  border-radius: 1px;
+  pointer-events: none;
+}
+
+
+/* Top-level accordion wrapper */
+.top-accordion {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.top-accordion-header:hover {
+  background: #dfe1e4;
+}
+
+/* Chevron */
+.top-accordion-header .chevron {
+  font-size: 0.8rem;
+  color: #6a6d72;
+}
+
+/* Body container */
+.top-accordion-body {
+  /* padding: 0.5rem; */
+  background: #f7f8fa;
+  padding: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+
+
+/* TOP-LEVEL PANEL HEADER */
+
+
+/* Header bar for each top-level panel */
+.top-accordion-header {
+  display: flex;
+  width: 100%;
+  box-sizing: border-box;
+  background: #d4d6da;
+  padding: 0.65rem 0.75rem;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+
+.top-accordion-header:hover {
+  background: #c8cacf;
+}
+
+
+/* Ensure both sub-panels use the same internal width */
+.top-accordion-body {
+  padding: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.scales-panel,
+.sequence-panel {
+  padding: 0.5rem;            /* consistent internal padding */
+  box-sizing: border-box;
+  width: 100%;                /* force full width */
+}
+
+/* Make all accordion items inside both panels match width */
+.scales-panel .accordion-item,
+.sequence-panel .accordion-item {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+
+
+
+/* Top-level accordion wrapper */
+.top-accordion {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* TOP-LEVEL HEADER — must be full width */
+.top-accordion-header {
+  display: flex;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.65rem 0.75rem;
+  background: #d4d6da;
+  font-weight: 700;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Remove padding from wrapper */
+.top-accordion-body.no-pad {
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Subpanel wrapper — NO padding here */
+.subpanel {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Accordion items get the padding instead */
+.subpanel .accordion-item {
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 0.45rem;
+  padding: 0.5rem;
+}
+
+.top-accordion-header {
+  width: 100% !important;
+  display: flex !important;
+  box-sizing: border-box !important;
+}
+

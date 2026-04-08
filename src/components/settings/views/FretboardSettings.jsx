@@ -90,20 +90,7 @@ return (
       chordRootUI={null}
       width={1800*.66}
       height={220*.66}
-    //   fretboardColor={fretboardColor}
-    //   stringColor={stringColor}
-    //   fretboardImage={fretboardImage}
-    //   // onOpenPanel={() => setShowPanel(true)}
-    //   stringColorUI={stringColorUI}
-    //    bassStringColorUI={bassStringColorUI}
-    //   zoom={zoom}
-    //   setZoom={setZoom}
-    //   showNoteNamesUI={showNoteNamesUI}
-    //   showAllNotesUI={showAllNotesUI}
-    //   showOpenStringsUI={showOpenStringsUI}
-    //   showHeadstockUI={showHeadstockUI}
-    //   showInlaysUI={showInlaysUI}
-    //   noteMode={noteMode}
+    
     />
 
 </div>

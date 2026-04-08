@@ -1,4 +1,5 @@
 
+import "bootstrap/dist/css/bootstrap.min.css";
 
 
 
@@ -34,8 +35,8 @@ export default function ChordInfo({
 // console.log("ChordInfo Chord root: ", chordRootUI, "strCF: ", strCF)
 
   return ( cfUI && (
-        <>
-            <div className="mb-4">&nbsp;</div>
+      <>
+        <div className="mb-4">
 
             <div>
             {cfUI.root}
@@ -50,6 +51,7 @@ export default function ChordInfo({
           <div>Chordform id: {cfUI.id}</div>
           <div>Chord id: {cfUI.chord.id}</div>
           <div>Harmony id: {cfUI.chord.harmony.id}</div>
+        </div>
       </>
       )
   );

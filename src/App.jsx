@@ -13,12 +13,14 @@ import { loadSamples } from "./sound/GuitarSampler";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 import TuningManager from "/src/harmony/tuning-manager.js"
 import { jsPanel } from "jspanel4";
+import "./App.css"
 
 
 
  function AppLayout() {
   const location = useLocation();
 
+  
   useEffect(() => {
 
       
@@ -107,7 +109,10 @@ function App() {
 
 
   const [ready, setReady] = useState(false);
-
+// zoom is used by both ChordPage and ScalePage etc, so needs
+  // to be set at common parent level
+    const [zoom, setZoom] = useState(undefined);
+  
 useEffect(() => {
   loadSamples({
     40: "/samples/E2.wav",
@@ -204,8 +209,22 @@ useEffect(() => {
       return () => { cancelled = true };            // 5. Cleanup: mark as unmounted
     }, []);
       
-
-
+const fbProps = {
+  renderDataUI: renderDataUI,
+  setRenderDataUI: setRenderDataUI,
+  showOpenStringsUI: showOpenStringsUI,
+  setShowOpenStringsUI: setShowOpenStringsUI,
+  showInlaysUI: showInlaysUI,
+ setShowInlaysUI: setShowInlaysUI,
+  stringColorUI:stringColorUI,
+  setStringColorUI:setStringColorUI,
+bassStringColorUI:bassStringColorUI,
+   setBassStringColorUI:setBassStringColorUI,
+showHeadstockUI:        showHeadstockUI,
+  setShowHeadstockUI: setShowHeadstockUI,
+  zoom: zoom,     setZoom: setZoom
+                 
+}
 
 
   return (
@@ -219,19 +238,8 @@ useEffect(() => {
             path="/chords"
             element={
               <ChordPage
-                renderDataUI={renderDataUI}
-                setRenderDataUI={setRenderDataUI}
-                showOpenStringsUI={showOpenStringsUI}
-                setShowOpenStringsUI={setShowOpenStringsUI}
-                showInlaysUI={showInlaysUI}
-                setShowInlaysUI={setShowInlaysUI}
-                stringColorUI={stringColorUI}
-                setStringColorUI={setStringColorUI}
-                bassStringColorUI={bassStringColorUI}
-                setBassStringColorUI={setBassStringColorUI}
-                showHeadstockUI={showHeadstockUI}
-                setShowHeadstockUI={setShowHeadstockUI}
-              />
+              {...fbProps}
+                />
             }
           />
 
@@ -239,19 +247,8 @@ useEffect(() => {
             path="/scales"
             element={
               <ScalePage
-                renderDataUI={renderDataUI}
-                setRenderDataUI={setRenderDataUI}
-                showOpenStringsUI={showOpenStringsUI}
-                setShowOpenStringsUI={setShowOpenStringsUI}
-                showInlaysUI={showInlaysUI}
-                setShowInlaysUI={setShowInlaysUI}
-                stringColorUI={stringColorUI}
-                setStringColorUI={setStringColorUI}
-                bassStringColorUI={bassStringColorUI}
-                setBassStringColorUI={setBassStringColorUI}
-                showHeadstockUI={showHeadstockUI}
-                setShowHeadstockUI={setShowHeadstockUI}
-              />
+                {...fbProps}
+                  />
             }
           />
 
@@ -261,16 +258,8 @@ useEffect(() => {
             path="/settings"
             element={
               <SettingsPage
-                showOpenStringsUI={showOpenStringsUI}
-                setShowOpenStringsUI={setShowOpenStringsUI}
-                showInlaysUI={showInlaysUI}
-                setShowInlaysUI={setShowInlaysUI}
-                stringColorUI={stringColorUI}
-                setStringColorUI={setStringColorUI}
-                bassStringColorUI={bassStringColorUI}
-                setBassStringColorUI={setBassStringColorUI}
-                showHeadstockUI={showHeadstockUI}
-                setShowHeadstockUI={setShowHeadstockUI}
+              {...fbProps}
+               
               />
             }
           />

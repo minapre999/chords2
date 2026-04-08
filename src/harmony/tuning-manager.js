@@ -16,6 +16,8 @@ constructor() {
         this._id = null;
         this._name = null
         this._noteNames= [] // array of strings e.g.[E2, A2, ...]
+        this._gaugeMap = [4,5,6,7,8.4,10];
+
     }
 
 get id (){ return this._id }
@@ -29,6 +31,9 @@ get numberOfStrings() {
     return this._noteNames.length
 }
 
+ getStringWidth(i){ 
+    return this._gaugeMap[Math.min(this._gaugeMap.length - 1, i)];
+  }
 
 
 // console.log("fetched data: ",data)

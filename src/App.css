@@ -183,25 +183,11 @@
   }
 }
 
-.fretboard-scroll {
-  width: 100%;              /* or a fixed width if you prefer */
-  overflow-x: auto;         /* horizontal scrolling */
-  overflow-y: hidden;       /* no vertical scroll */
-  white-space: nowrap;      /* prevents wrapping */
-  scrollbar-width: thin;    /* Firefox */
 
-  border: 6px solid blue;
-}
 
-.fretboard-scroll::-webkit-scrollbar {
-  height: 8px;              /* horizontal scrollbar height */
-}
-
-.fretboard-scroll::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 4px;
-}
-
-.fretboard-scroll::-webkit-scrollbar-thumb:hover {
-  background: #555;
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden; /* critical */
 }

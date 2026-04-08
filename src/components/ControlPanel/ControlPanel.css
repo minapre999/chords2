@@ -6,7 +6,7 @@
 
 /* Left 25% accordion panel */
 .accordion {
-  flex: 0 0 25%;
+  /* flex: 0 0 25%;
   width: 300px;
   background: #f7f8fa;
   border-right: 1px solid #dcdfe3;
@@ -15,9 +15,26 @@
   overflow-y: auto;
 
   /* Your constraints */
-  max-width: 400px;
-  min-width: 260px;
+  /* max-width: 400px;
+  min-width: 260px;  */
 }
+/* -------------------------------------------------------
+   ACCORDION (clean, unified, no inset padding)
+------------------------------------------------------- */
+
+.accordion {
+  width: 100%;
+  padding: 0;                 /* critical: removes inset that caused width mismatch */
+  margin: 0;
+  background: #f7f8fa;
+  box-sizing: border-box;
+}
+
+
+
+
+
+
 
 
 
@@ -35,13 +52,17 @@
   border-color: #b8bcc2;
 }
 
-/* --- Header --- */
+/* -------------------------------------------------------
+   ACCORDION HEADER (sub-panel headers)
+------------------------------------------------------- */
+
 .accordion-header {
-  width: 100%;
+  display: flex;              /* ensures full width */
+  width: 100%;                /* forces full width */
+  box-sizing: border-box;     /* padding stays inside width */
   background: #f2f3f5;
-  border: none;
   padding: 0.45rem 0.65rem;
-  display: flex;
+  border: none;
   justify-content: space-between;
   align-items: center;
   font-size: 0.82rem;
@@ -56,6 +77,8 @@
   background: #e9eaed;
 }
 
+
+
 /* Chevron */
 .chevron {
   font-size: 0.75rem;
@@ -67,22 +90,85 @@
   transform: rotate(90deg);
 }
 
-/* --- Body --- */
+
+/* -------------------------------------------------------
+   ACCORDION BASE
+------------------------------------------------------- */
+
+
+/* Accordion item container */
+.accordion-item {
+  background: #ffffff;
+  border: 1px solid #dcdfe3;
+  border-radius: 6px;
+  margin-bottom: 0.45rem;
+  overflow: hidden;
+  transition: border-color 0.15s ease;
+}
+
+.accordion-item.open {
+  border-color: #b8bcc2;
+}
+
+
+/* Chevron */
+.chevron {
+  font-size: 0.75rem;
+  color: #6a6d72;
+  transition: transform 0.15s ease;
+}
+
+.accordion-item.open .chevron {
+  transform: rotate(90deg);
+}
+
+/* Body */
 .accordion-body {
   max-height: 0;
   overflow: hidden;
   padding: 0 0.65rem;
   font-size: 0.8rem;
   color: #3a3d41;
-  transition:
-    max-height 0.22s ease,
-    padding-bottom 0.22s ease;
+  transition: max-height 0.22s ease, padding-bottom 0.22s ease;
 }
 
 .accordion-item.open .accordion-body {
-  max-height: 500px; /* plenty of room */
+  max-height: 500px;
   padding-bottom: 0.55rem;
 }
+
+
+/* -------------------------------------------------------
+   ACCORDION CONTROLS (Open All / Close All)
+------------------------------------------------------- */
+
+.accordion-controls {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.35rem;
+  margin-bottom: 0.5rem;
+}
+
+.accordion-btn {
+  width: 28px;
+  height: 24px;
+  border-radius: 4px;
+  border: 1px solid #cfd2d6;
+  background: #f7f8fa;
+  cursor: pointer;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.accordion-btn:hover {
+  background: #eef0f3;
+  border-color: #b8bcc2;
+}
+
+
 
 /* --- Controls --- */
 .control-group,

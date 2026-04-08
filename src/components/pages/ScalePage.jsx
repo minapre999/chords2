@@ -13,13 +13,23 @@ import ScaleControlPanel from "/src/components/ControlPanel/ScaleControlPanel.js
 
 export default function ScalePage( props ) {
 
-  const {setRenderDataUI, showOpenStringsUI, setShowOpenStringsUI, showInlaysUI, setShowInlaysUI, ...rest} = props
+  const {zoom, setZoom, setRenderDataUI, showOpenStringsUI,
+     setShowOpenStringsUI, showInlaysUI, setShowInlaysUI, 
+     ...rest} = props
 
     // active scale note being displayed / played
   const [scaleNoteName, setScaleNoteName] = useState(null)
   const [ready, setReady] = useState(false);
   const [scaleChoiceUI, setScaleChoiceUI] = useState(null);
-  const [zoom, setZoom] = useState(1);
+
+    // zoom persistence - zoom is used for scales so persist as different variable
+   useEffect(() => {
+       if( !isNaN(Number(zoom))) {
+         console.log("setting scale zoom to ", zoom)
+       localStorage.setItem("scaleZoom", zoom);}
+     }, [zoom]);
+   
+
   const [scaleChanged, setScaleChanged] = useState(1)
 /* too many problems using objects as useState.  It requires deep cloning for react to recognise change
 This is causing issues with lag in interface possible due to React seeing a new reference every timne
@@ -46,6 +56,11 @@ useEffect(() => {
 
 
 useEffect(() => {
+    const zoomVal = isNaN(Number(localStorage.getItem("scaleZoom"))) ? 1 : localStorage.getItem("scaleZoom")
+    // console.log("zoomVal from storage on page load", zoomVal)
+    setZoom(zoomVal)  
+
+
   let cancelled = false;   // 1. Track whether the component is still mounted
   if( dc.SCALE_MANAGER == null) dc.SCALE_MANAGER = new ScaleManager() 
 

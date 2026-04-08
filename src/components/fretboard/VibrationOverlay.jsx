@@ -1,14 +1,23 @@
+import TuningManager  from "/src/harmony/tuning-manager";
+import "/src/globals.js"
+
 export default function VibrationOverlay({
   vibratingString,
   width,
   height,
   stringY,
   getStringWidth,
-  getVibrationAmplitude
+  
 }) {
   if (vibratingString === null) return null;
 
   const y = stringY(vibratingString);
+  
+  const getVibrationAmplitude = (stringIndex) => {
+    const amplitudes = [6, 5, 4, 3, 2, 1];
+    return amplitudes[stringIndex] ?? 2;
+  };
+
   const amp = getVibrationAmplitude(vibratingString);
 
   return (
@@ -31,7 +40,7 @@ export default function VibrationOverlay({
           x2={width}
           y2={y}
           stroke="#ffffff88"
-          strokeWidth={getStringWidth(vibratingString)}
+          strokeWidth={dc.TUNING_MANAGER.getStringWidth(vibratingString)}
           strokeLinecap="round"
         >
           <animateTransform

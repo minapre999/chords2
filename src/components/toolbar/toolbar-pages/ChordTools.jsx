@@ -12,9 +12,10 @@ export default function ChordTools(props) {
         <InversionNavigator {...props} />
         <FormSSNavigator {...props} />
 
-              <div className="toolbar-divider" />
+              {/* <div className="toolbar-divider" /> */}
 
-           <ChordPicker {...props} />
+
+           {/* <ChordPicker {...props} /> */}
            
         <div className="toolbar-divider" />
 

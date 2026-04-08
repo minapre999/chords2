@@ -21,7 +21,8 @@ export default function ChordPage(
 ) {
 
  
-  const {setRenderDataUI, showOpenStringsUI, setShowOpenStringsUI, showInlaysUI, setShowInlaysUI, ...rest} = props
+  const {zoom, setZoom, setRenderDataUI, showOpenStringsUI,
+     setShowOpenStringsUI, showInlaysUI, setShowInlaysUI, ...rest} = props
 
 //Always put hooks at the top of the component, before any conditional return.
    const [fretboardColor, setFretboardColor] = useState("#4a2619");
@@ -33,7 +34,6 @@ export default function ChordPage(
 
   const [openMarkers, setOpenMarkers] = useState(true);
   const [showAllNotesUI, setShowAllNotesUI] = useState(false);
-  const [zoom, setZoom] = useState(1);
 const [displayMode, setDisplayMode] = useState("singleInversion") // dislay one at a time or all at once
 const [cfUI, setCFUI] = useState(null)
 const [cfChanged, setCFChanged] = useState(null)
@@ -41,19 +41,38 @@ const [chordRootUI, setChordRootUI] = useState("C")
 const [chordStringUI, setChordStringUI] = useState("1") // "D2:1"
 const [noteMode, setNoteMode] = useState("note");
 
-
-
    const [ready, setReady] = useState(false);
+
+  // zoom persistence - zoom is used for scales so persist as different variable
+  
+  
+  useEffect(() => {
+    if( !isNaN(Number(zoom))) {
+      console.log("storing chord zoom as ", zoom)
+    localStorage.setItem("chordZoom", zoom);}
+  }, [zoom]);
 
      // Open markers persistence
   useEffect(() => {
     localStorage.setItem("openMarkers", openMarkers);
   }, [openMarkers]);
 
-  useEffect(() => {
+ 
+
+ 
+
+
+ useEffect(() => {
     const saved = localStorage.getItem("openMarkers");
     if (saved !== null) setOpenMarkers(saved === "true");
+
+   
+    // console.log("stored zoom item found on page load: ", localStorage.getItem("chordZoom"))
+    const zoomVal = isNaN(Number(localStorage.getItem("chordZoom"))) ? 1 : localStorage.getItem("chordZoom")
+    // console.log("zoomVal from storage on page load", zoomVal)
+    setZoom(zoomVal)    
   }, []); // runs once only
+
 
 
  useEffect(() => {
@@ -202,56 +221,45 @@ const rData = new RenderData()
 //   return names[idx];
 // }
 
+const chordProps = {
+  page: "chords",
+    cfUI: cfUI,                       setCFUI:setCFUI,
+          cfChanged: cfChanged,                 setCFChanged: setCFChanged,
+      chordRootUI: chordRootUI,            setChordRootUI: setChordRootUI,
+      chordStringUI: chordStringUI,        setChordStringUI: setChordStringUI,
+      showNoteNamesUI: showNoteNamesUI,     setShowNoteNamesUI: setShowNoteNamesUI,
+      showAllNotesUI: showAllNotesUI,       setShowAllNotesUI: setShowAllNotesUI,
+      noteMode: noteMode,                  setNoteMode: setNoteMode,
 
+}
 
   return (
   <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
  
     <Toolbar
       {...props}
-      page="chords"
-      cfChanged={cfChanged}                 setCFChanged={setCFChanged}
-      chordRootUI={chordRootUI}             setChordRootUI={setChordRootUI}
-      chordStringUI={chordStringUI}         setChordStringUI={setChordStringUI}
-      zoom={zoom}                           setZoom={setZoom}
-      showNoteNamesUI={showNoteNamesUI}     setShowNoteNamesUI={setShowNoteNamesUI}
-      showAllNotesUI={showAllNotesUI}       setShowAllNotesUI={setShowAllNotesUI}
-      noteMode={noteMode}                   setNoteMode={setNoteMode}
+      {...chordProps}
     />
 
 <div id="content">
 
     <FretboardSVG
   {...props}
-      cfUI={cfUI}
-      chordRootUI={chordRootUI}
-      width={1800}                             
-      height={220}
-      fretboardColor={fretboardColor}          
-      fretboardImage={fretboardImage}
-      zoom={zoom}                              
-      showNoteNamesUI={showNoteNamesUI}
-      showAllNotesUI={showAllNotesUI}
-      noteMode={noteMode}
+  {...chordProps}
+
     />
 
 
     <div className="chord-content-wrapper">
       <ChordControlPanel 
         {...props}
-      cfUI={cfUI}                        setCFUI={setCFUI}
-      cfChanged={cfChanged}                 setCFChanged={setCFChanged}
-      chordRootUI={chordRootUI}             setChordRootUI={setChordRootUI}
-      chordStringUI={chordStringUI}         setChordStringUI={setChordStringUI}
-      zoom={zoom}                           setZoom={setZoom}
-      showNoteNamesUI={showNoteNamesUI}     setShowNoteNamesUI={setShowNoteNamesUI}
-      showAllNotesUI={showAllNotesUI}       setShowAllNotesUI={setShowAllNotesUI}
-      noteMode={noteMode}                   setNoteMode={setNoteMode}
+          {...chordProps}
+
       />
    
     <ChordInfo   
       {...props}
-      cfUI={cfUI}  />
+       {...chordProps}  />
 
     {/* {showPanel && (
       <Picker

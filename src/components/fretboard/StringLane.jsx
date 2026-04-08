@@ -1,5 +1,7 @@
-import  Note  from "../../harmony/note.js";
-import  PlayNote  from "../../sound/Play.js";
+
+import "/src/globals.js"
+import TuningManager from "/src/harmony/tuning-manager.js"
+import  Note  from "/src/harmony/note.js";
 
 export default function StringLane({
    renderDataUI,
@@ -24,21 +26,37 @@ export default function StringLane({
   getStringWidth,
   noteNameFromMidi,
   showAllNotesUI,
-  noteMode
+  noteMode,
+  zoom
 }) {
 
     if(renderDataUI == null || renderDataUI == undefined) return null
 
   const stringData = renderDataUI.string(stringIndex+1)
 
+    if(stringData == null || stringData == undefined) return null
 
   const y = stringY(stringIndex);
-  const stringThickness = getStringWidth(stringIndex);
+  const stringThickness = dc.TUNING_MANAGER.getStringWidth(stringIndex) * zoom;
   const isWound = stringIndex > 2; // 0,1,2 = wound; 3+ = plain
   const strokeCol = stringIndex > 2 ? bassStringColorUI : stringColorUI;
   const openNoteName = noteNameFromMidi(openMidi, { preferSharps });
   // The chordform note for this string (if any)
   const chNote = cf?.getNoteForString(stringIndex+1) || null;
+
+
+
+function noteNameFromMidi(midi, { preferSharps = true } = {}) {
+
+  const NOTE_NAMES_SHARPS = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+  const NOTE_NAMES_FLATS  = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"];
+
+
+  const names = preferSharps ? NOTE_NAMES_SHARPS : NOTE_NAMES_FLATS;
+  const idx = ((midi % 12) + 12) % 12;
+  return names[idx];
+}
+
 
   return (
     <g>
@@ -104,12 +122,12 @@ export default function StringLane({
           onClick={() => interactive && handleNoteClick(stringIndex, 0)}
           style={{ cursor: interactive ? "pointer" : "default" }}
         >
-          <circle cx={nutX - 18} cy={y} r={10} fill="#fff" stroke="#333" />
+          <circle cx={nutX - 32*zoom} cy={y} r={10 * zoom} fill="#fff" stroke="#333" />
            (
             <text
-              x={nutX - 18}
+              x={nutX - 32*zoom}
               y={y + 4}
-              fontSize={10}
+              fontSize={10 * zoom}
               textAnchor="middle"
               fill="#000"
             >
@@ -132,7 +150,7 @@ export default function StringLane({
                 <text
                   x={x}
                   y={y + 5}
-                  fontSize={20}
+                  fontSize={20 * zoom}
                   fill="white"
                   textAnchor="middle"
                 >
@@ -146,7 +164,7 @@ export default function StringLane({
                 <text
                   x={x}
                   y={y + 5}
-                  fontSize={20}
+                  fontSize={20 * zoom}
                   fill="white"
                   textAnchor="middle"
                 >
@@ -202,7 +220,7 @@ const isChordNote =true
               <circle
                 cx={x}
                 cy={y}
-                r={note_data.width}
+                r={note_data.width* zoom}
                 fill={note_data.fillColor}
                 stroke={note_data.strokeColor}
                 strokeWidth={note_data.strokeWidth}
@@ -213,7 +231,7 @@ const isChordNote =true
               <text
                 x={x}
                 y={y + 4}
-                fontSize={note_data.fontSize}
+                fontSize={note_data.fontSize * zoom}
                 textAnchor="middle"
                 fill={note_data.color}
               >
