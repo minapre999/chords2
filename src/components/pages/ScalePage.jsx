@@ -123,13 +123,14 @@ useEffect(() => {
 
     const scale = sDict.scaleWithQualityAndForm(scaleQualityUI,scaleFormUI)
     scale.mode = scaleModeUI
-    scale.root= scaleRootUI
+    scale.setRoot( scaleRootUI)
      
 
   const rData = new RenderData()
    
     if (scale?.id !== undefined) {
-      //  console.log("getting render data for scale: ", scale)   
+       console.log("getting render data for scale ", scale, " with id: ", scale.id, 
+        " root: ", scale.root , " form: ", scale.form)   
       scale.notes.forEach((n)=>{
   
           let fillColor = 'gray'
@@ -151,7 +152,8 @@ useEffect(() => {
           })
   
    // if this doesn't work may need to create a boolean primitive to flag needs rendering
-          setRenderDataUI( rData);
+        console.log("SCALE RENDER DATA: ", rData)
+        setRenderDataUI( rData);
       }      
 
     }, [ready, scaleModeUI, scaleQualityUI, scaleFormUI, scaleRootUI]);
@@ -168,7 +170,13 @@ useEffect(() => {
   }
 
 
+const scaleProps={
+  scaleRootUI: scaleRootUI, setScaleRootUI: setScaleRootUI,
+  scaleModeUI: scaleModeUI, setScaleModeUI: setScaleModeUI,
+  scaleQualityUI: scaleQualityUI, setScaleQualityUI: setScaleQualityUI,
+  scaleFormUI: scaleFormUI, setScaleFormUI: setScaleFormUI,
 
+}
   
 return (
 
@@ -178,12 +186,9 @@ return (
         
     <Toolbar
       {...props}
+     {...scaleProps}
       page="scales"
-      scaleRootUI={scaleRootUI}       setScaleRootUI={setScaleRootUI}
-      scaleModeUI={scaleModeUI}       setScaleModeUI={setScaleModeUI}
-      scaleQualityUI={scaleQualityUI} setScaleQualityUI={setScaleQualityUI}
-      scaleFormUI={scaleFormUI}       setScaleFormUI={setScaleFormUI}
-      scaleNoteName={scaleNoteName}   setScaleNoteName={setScaleNoteName}
+     ScaleNoteName={scaleNoteName}   setScaleNoteName={setScaleNoteName}
       zoom={zoom}                     setZoom={setZoom}
 
     />
@@ -192,11 +197,9 @@ return (
   <div className="page-content">
     <FretboardSVG
       {...props}
+           {...scaleProps}
+
       setRenderDataUI={setRenderDataUI}
-      scaleRootUI={scaleRootUI}       setScaleRootUI={setScaleRootUI}
-      scaleModeUI={scaleModeUI}       setScaleModeUI={setScaleModeUI}
-      scaleQualityUI={scaleQualityUI} setScaleQualityUI={setScaleQualityUI}
-      scaleFormUI={scaleFormUI}       setScaleFormUI={setScaleFormUI}
       scaleNoteName={scaleNoteName}   setScaleNoteName={setScaleNoteName}
       width={1800}                    height={220}
       zoom={zoom}                     setZoom={setZoom}
@@ -208,15 +211,15 @@ return (
       
     
     <div className="scale-content-wrapper">
-      <ScaleControlPanel />
+      <ScaleControlPanel 
+      {...props} 
+      {...scaleProps}
+      />
 
       <ScaleInfo
       {...props} 
-        scaleRootUI={scaleRootUI}       setScaleRootUI={setScaleRootUI}
-        scaleModeUI={scaleModeUI}       setScaleModeUI={setScaleModeUI}
-        scaleQualityUI={scaleQualityUI} setScaleQualityUI={setScaleQualityUI}
-        scaleFormUI={scaleFormUI}       setScaleFormUI={setScaleFormUI}
-        />
+      {...scaleProps}
+  />
     </div>
   </div>
 </div>

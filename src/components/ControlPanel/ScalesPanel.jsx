@@ -1,12 +1,13 @@
 
+import { useState } from "react"
 import "./ScaleControlPanel.css"
+import ScaleRootPanel from "./scale-panels/ScaleRootPanel.jsx"
+import ScaleModePanel from "./scale-panels/ScaleModePanel.jsx"
+import ScaleFormPanel from "./scale-panels/ScaleFormPanel.jsx"
 
-import AccordionItem from "./AccordionItem";
-import { useState } from "react";
+import AccordionItem from "./AccordionItem"
 
-export default function ScalesPanel({
-     className = "",
-     }) {
+export default function ScalesPanel(props) {
       const [openItems, setOpenItems] = useState(new Set(["root"]));
 
   const toggle = (name) => {
@@ -30,33 +31,17 @@ export default function ScalesPanel({
       <div className="row g-3 scale-grid">
 
         <div className="col-12 col-md-6">
-          <div className="scale-tile">
-            <div className="scale-tile-header">Root</div>
-            <div className="scale-tile-body">
-              {/* Root controls */}
-              Root content…
-            </div>
-          </div>
+          <ScaleRootPanel {...props} />
         </div>
 
         <div className="col-12 col-md-6">
-          <div className="scale-tile">
-            <div className="scale-tile-header">Scale</div>
-            <div className="scale-tile-body">
-              {/* Scale controls */}
-              Scale content…
-            </div>
-          </div>
+                       <ScaleModePanel {...props} />
         </div>
 
         <div className="col-12 col-md-6">
-          <div className="scale-tile">
-            <div className="scale-tile-header">Form</div>
-            <div className="scale-tile-body">
-              {/* Form controls */}
-              Form content…
-            </div>
-          </div>
+          <div className="col-12 col-md-6">
+                       <ScaleFormPanel {...props} />
+        </div>
         </div>
 
         <div className="col-12 col-md-6">

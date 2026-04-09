@@ -8,6 +8,9 @@
 
 .chord-content-wrapper {
 
-display: flex;
 flex-direction: row;
+display: flex;
+  flex: 1;
+  min-height: 0;
+
 }
