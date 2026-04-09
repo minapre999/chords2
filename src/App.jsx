@@ -109,10 +109,11 @@ function App() {
 
 
   const [ready, setReady] = useState(false);
-// zoom is used by both ChordPage and ScalePage etc, so needs
-  // to be set at common parent level
-    const [zoom, setZoom] = useState(undefined);
   
+ 
+
+
+
 useEffect(() => {
   loadSamples({
     40: "/samples/E2.wav",
@@ -222,7 +223,6 @@ bassStringColorUI:bassStringColorUI,
    setBassStringColorUI:setBassStringColorUI,
 showHeadstockUI:        showHeadstockUI,
   setShowHeadstockUI: setShowHeadstockUI,
-  zoom: zoom,     setZoom: setZoom
                  
 }
 

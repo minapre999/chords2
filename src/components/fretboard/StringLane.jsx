@@ -12,7 +12,7 @@ export default function StringLane({
   bassStringColorUI,
   stringColorUI,
   showNoteNamesUI,
-  openMarkers,
+  openMarkersUI,
 
    cfUI,
   interactive,
@@ -122,10 +122,10 @@ function noteNameFromMidi(midi, { preferSharps = true } = {}) {
           onClick={() => interactive && handleNoteClick(stringIndex, 0)}
           style={{ cursor: interactive ? "pointer" : "default" }}
         >
-          <circle cx={nutX - 32} cy={y} r={10 } fill="#fff" stroke="#333" />
+          <circle cx={nutX - 24} cy={y} r={10 } fill="#fff" stroke="#333" />
            (
             <text
-              x={nutX - 32}
+              x={nutX - 24}
               y={y + 4}
               fontSize={10 }
               textAnchor="middle"
@@ -138,7 +138,7 @@ function noteNameFromMidi(midi, { preferSharps = true } = {}) {
       )}
 
       {/* === OPEN / MUTED MARKERS (O / X) === */}
-      {openMarkers && cfUI && (
+      {openMarkersUI && cfUI && (
         <g className="open-muted-markers">
           {(() => {
             if (!chNote) return null;

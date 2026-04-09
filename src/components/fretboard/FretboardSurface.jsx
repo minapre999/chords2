@@ -40,7 +40,7 @@ export default function FretboardSurface({
 
       {/* Nut */}
       <rect
-        x={nutX-nutWidth}
+        x={nutX-nutWidth/2}
         y={0}
         width={nutWidth}
         height={height}

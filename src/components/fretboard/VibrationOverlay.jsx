@@ -1,66 +1,67 @@
-import TuningManager  from "/src/harmony/tuning-manager";
-import "/src/globals.js"
+import { useLayoutEffect, useRef } from "react";
 
 export default function VibrationOverlay({
   vibratingString,
+  vibeTick,
   width,
-  height,
   stringY,
   getStringWidth,
-  
+  onDone
 }) {
-  if (vibratingString === null) return null;
+  const lineRef = useRef(null);
+
+  useLayoutEffect(() => {
+    if (vibratingString == null || !lineRef.current) return;
+
+    const start = performance.now();
+    const duration = 300;
+    const ampByString = [8, 7, 6, 5, 4, 3];
+    const amp = ampByString[vibratingString] ?? 4;
+
+    let raf;
+
+    const animate = (t) => {
+      const p = (t - start) / duration;
+      if (p >= 1) {
+        lineRef.current.setAttribute("y1", y);
+        lineRef.current.setAttribute("y2", y);
+          onDone?.();   // 🔥 remove overlay
+
+        return;
+      }
+   
+
+
+      const decay = 1 - p;
+      const offset = Math.sin(p * Math.PI * 6) * amp * decay;
+
+      lineRef.current.setAttribute("y1", y + offset);
+      lineRef.current.setAttribute("y2", y + offset);
+
+      raf = requestAnimationFrame(animate);
+    };
+
+    const y = stringY(vibratingString);
+    raf = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(raf);
+  }, [vibratingString, vibeTick]);
+
+  if (vibratingString == null) return null;
 
   const y = stringY(vibratingString);
-  
-  const getVibrationAmplitude = (stringIndex) => {
-    const amplitudes = [6, 5, 4, 3, 2, 1];
-    return amplitudes[stringIndex] ?? 2;
-  };
-
-  const amp = getVibrationAmplitude(vibratingString);
 
   return (
-    <svg
-      width={width}
-      height={height}
-      style={{
-        position: "absolute",
-        top: 0,
-        left: 0,
-        pointerEvents: "none",
-        overflow: "visible",
-        zIndex: 10,
-      }}
-    >
-      <g>
-        <line
-          x1="0"
-          y1={y}
-          x2={width}
-          y2={y}
-          stroke="#ffffff88"
-          strokeWidth={dc.TUNING_MANAGER.getStringWidth(vibratingString)}
-          strokeLinecap="round"
-        >
-          <animateTransform
-            attributeName="transform"
-            type="translate"
-            values={`
-              0 0;
-              0 -${amp};
-              0 ${amp};
-              0 -${amp * 0.6};
-              0 ${amp * 0.6};
-              0 -${amp * 0.3};
-              0 ${amp * 0.3};
-              0 0
-            `}
-            dur="0.35s"
-            repeatCount="1"
-          />
-        </line>
-      </g>
-    </svg>
+    <g pointerEvents="none">
+      <line
+        ref={lineRef}
+        x1={0}
+        y1={y}
+        x2={width}
+        y2={y}
+        stroke="#ffffffaa"
+        strokeWidth={getStringWidth(vibratingString)}
+        strokeLinecap="round"
+      />
+    </g>
   );
 }

@@ -90,6 +90,8 @@ return (
       chordRootUI={null}
       width={1800*.66}
       height={220*.66}
+      zoomScope="fretboard-settings"
+
     
     />
 

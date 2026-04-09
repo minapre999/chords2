@@ -17,7 +17,7 @@ export default function Toolbar({
     showNoteNamesUI, setShowNoteNamesUI,
     showOpenStringsUI, setShowOpenStringsUI,
     zoom, setZoom,
-    openMarkers, setOpenMarkers,
+    openMarkersUI, setOpenMarkersUI,
     showHeadstockUI, setShowHeadstockUI,
     showInlaysUI, setShowInlaysUI,
     activeChord, setActiveChord,
@@ -207,8 +207,8 @@ console.log("Rendering InversionNavigator");
 <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
   <input
     type="checkbox"
-    checked={openMarkers}
-    onChange={(e) => setOpenMarkers(e.target.checked)}
+    checked={openMarkersUI}
+    onChange={(e) => setOpenMarkersUI(e.target.checked)}
   />
   Show open/muted markers
 </label>

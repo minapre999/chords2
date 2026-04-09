@@ -10,7 +10,7 @@ export default function StringLane({
   bassStringColorUI,
   stringColorUI,
   showNoteNamesUI,
-  openMarkers,
+  openMarkersUI,
 
    cfUI,
   interactive,
@@ -120,7 +120,7 @@ export default function StringLane({
       )}
 
       {/* === OPEN / MUTED MARKERS (O / X) === */}
-      {openMarkers && cfUI && (
+      {openMarkersUI && cfUI && (
         <g className="open-muted-markers">
           {(() => {
             if (!chNote) return null;

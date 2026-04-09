@@ -21,7 +21,7 @@ export default function ChordPage(
 ) {
 
  
-  const {zoom, setZoom, setRenderDataUI, showOpenStringsUI,
+  const { setRenderDataUI, showOpenStringsUI,
      setShowOpenStringsUI, showInlaysUI, setShowInlaysUI, ...rest} = props
 
 //Always put hooks at the top of the component, before any conditional return.
@@ -32,7 +32,7 @@ export default function ChordPage(
   const [showNoteNamesUI, setShowNoteNamesUI] = useState(true);
 
 
-  const [openMarkers, setOpenMarkers] = useState(true);
+  const [openMarkersUI, setOpenMarkersUI] = useState(true);
   const [showAllNotesUI, setShowAllNotesUI] = useState(false);
 const [displayMode, setDisplayMode] = useState("singleInversion") // dislay one at a time or all at once
 const [cfUI, setCFUI] = useState(null)
@@ -43,19 +43,33 @@ const [noteMode, setNoteMode] = useState("note");
 
    const [ready, setReady] = useState(false);
 
+
+
   // zoom persistence - zoom is used for scales so persist as different variable
   
-  
+  const zoomScope="chord-module"
+  const storageKey = `fretboard.zoom.${zoomScope}`
+  const [zoom, setZoom] = useState(() => {
+    const stored = localStorage.getItem(storageKey);
+    return stored ? Number(stored) : 1;
+  });
+
   useEffect(() => {
-    if( !isNaN(Number(zoom))) {
-      console.log("storing chord zoom as ", zoom)
-    localStorage.setItem("chordZoom", zoom);}
-  }, [zoom]);
+    localStorage.setItem(storageKey, zoom);
+  }, [zoom, storageKey]);
+
+
+  
+  // useEffect(() => {
+  //   if( !isNaN(Number(zoom))) {
+  //     console.log("storing chord zoom as ", zoom)
+  //   localStorage.setItem("chordZoom", zoom);}
+  // }, [zoom]);
 
      // Open markers persistence
   useEffect(() => {
-    localStorage.setItem("openMarkers", openMarkers);
-  }, [openMarkers]);
+    localStorage.setItem("openMarkersUI", openMarkersUI);
+  }, [openMarkersUI]);
 
  
 
@@ -63,14 +77,14 @@ const [noteMode, setNoteMode] = useState("note");
 
 
  useEffect(() => {
-    const saved = localStorage.getItem("openMarkers");
-    if (saved !== null) setOpenMarkers(saved === "true");
+    const saved = localStorage.getItem("openMarkersUI");
+    if (saved !== null) setOpenMarkersUI(saved === "true");
 
    
     // console.log("stored zoom item found on page load: ", localStorage.getItem("chordZoom"))
-    const zoomVal = isNaN(Number(localStorage.getItem("chordZoom"))) ? 1 : localStorage.getItem("chordZoom")
+    // const zoomVal = isNaN(Number(localStorage.getItem("chordZoom"))) ? 1 : localStorage.getItem("chordZoom")
     // console.log("zoomVal from storage on page load", zoomVal)
-    setZoom(zoomVal)    
+    // setZoom(zoomVal)    
   }, []); // runs once only
 
 
@@ -230,6 +244,7 @@ const chordProps = {
       showNoteNamesUI: showNoteNamesUI,     setShowNoteNamesUI: setShowNoteNamesUI,
       showAllNotesUI: showAllNotesUI,       setShowAllNotesUI: setShowAllNotesUI,
       noteMode: noteMode,                  setNoteMode: setNoteMode,
+      openMarkersUI: openMarkersUI,         setOpenMarkersUI: setOpenMarkersUI,
 
 }
 
@@ -239,6 +254,8 @@ const chordProps = {
     <Toolbar
       {...props}
       {...chordProps}
+        zoom={zoom} setZoom={setZoom}
+
     />
 
 <div id="content">
@@ -246,6 +263,7 @@ const chordProps = {
     <FretboardSVG
   {...props}
   {...chordProps}
+   zoom={zoom} setZoom={setZoom}
 
     />
 

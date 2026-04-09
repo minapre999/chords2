@@ -56,36 +56,48 @@ export default function FretboardSVG(
   // width = 1400,
   // height = 180,
  zoom = 1,
-  showHeadstockUI
+  showHeadstockUI,
   
 } = props
 
 
-  const [selected, setSelected] = useState(null);
-  const [vibratingString, setVibratingString] = useState(null);
+
+
+
+
+
+const [selected, setSelected] = useState(null);
+const [vibratingString, setVibratingString] = useState(null);
+const [vibeTick, setVibeTick] = useState(0);
+
+const clearVibration = () => {
+  setVibratingString(null);
+};
+
+
 
   // const scaledWidth = width * zoom;
 
 // Visual customisation UI state
 
-  const normalizedTuning = dc.TUNING_MANAGER.midi
+const normalizedTuning = dc.TUNING_MANAGER.midi
 
-  const nutX = 35;
-   let width = 1400
-  let height = 180
-  const stringSpacing = height / (numStrings + 1);
-  const stringY = (string) => stringSpacing * (string+1);
-  const fretSpacing = (width - nutX) / numFrets;
+const nutX = 35;
+let width = 1400
+let height = 180
+const stringSpacing = height / (numStrings + 1);
+const stringY = (string) => stringSpacing * (string+1);
+const fretSpacing = (width - nutX) / numFrets;
 const getFretX = (fret) => nutX  + fretSpacing * fret;
 const fretboardLength = getFretX(numFrets);
-  const headstockWidth = 180;
-  width = fretboardLength + headstockWidth
+const headstockWidth = 180;
+width = fretboardLength + headstockWidth
 
-  const scaledWidth = (fretboardLength + headstockWidth) * zoom;
+const scaledWidth = (fretboardLength + headstockWidth) * zoom;
 const scaledHeight = height * zoom;
 
   const gaugeMap = [4,5,6,7,8.4,10];
-  const getStringWidth = (i) => gaugeMap[Math.min(gaugeMap.length - 1, i)] * zoom;
+  const getStringWidth = (i) => gaugeMap[Math.min(gaugeMap.length - 1, i)];
 
 
 
@@ -103,7 +115,9 @@ const scaledHeight = height * zoom;
 
     setSelected(info);
     setVibratingString(stringIndex);
-    setTimeout(() => setVibratingString(null), 300);
+    setVibeTick(t => t + 1);
+
+
 
     if (onNoteClick) onNoteClick(info);
   };
@@ -181,15 +195,7 @@ return (
       {/* ================= FRETBOARD ================= */}
       <g >
 
-        {/* === VIBRATION OVERLAY === */}
-        <VibrationOverlay
-          {...props}
-          vibratingString={vibratingString}
-          width={fretboardLength}
-          height={height}
-          stringY={stringY}
-          getStringWidth={getStringWidth}
-        />
+      
 
         {/* === MAIN FRETBOARD SURFACE === */}
         <FretboardSurface
@@ -222,6 +228,19 @@ return (
           />
         ))}
       </g>
+
+        {/* === VIBRATION OVERLAY === */}
+
+      <VibrationOverlay
+    vibratingString={vibratingString}
+    vibeTick={vibeTick}
+    width={fretboardLength}
+    stringY={stringY}
+    getStringWidth={getStringWidth}
+    onDone={clearVibration}
+  />
+
+  
     </svg>
   </div>
 );

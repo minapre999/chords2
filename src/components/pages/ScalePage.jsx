@@ -13,9 +13,26 @@ import ScaleControlPanel from "/src/components/ControlPanel/ScaleControlPanel.js
 
 export default function ScalePage( props ) {
 
-  const {zoom, setZoom, setRenderDataUI, showOpenStringsUI,
+  const { setRenderDataUI, showOpenStringsUI,
      setShowOpenStringsUI, showInlaysUI, setShowInlaysUI, 
      ...rest} = props
+
+
+
+       // zoom persistence - zoom is used for scales so persist as different variable
+       
+       const zoomScope="scale-module"
+       const storageKey = `fretboard.zoom.${zoomScope}`
+       const [zoom, setZoom] = useState(() => {
+         const stored = localStorage.getItem(storageKey);
+         return stored ? Number(stored) : 1;
+       });
+     
+       useEffect(() => {
+         localStorage.setItem(storageKey, zoom);
+       }, [zoom, storageKey]);
+     
+
 
     // active scale note being displayed / played
   const [scaleNoteName, setScaleNoteName] = useState(null)
@@ -23,11 +40,11 @@ export default function ScalePage( props ) {
   const [scaleChoiceUI, setScaleChoiceUI] = useState(null);
 
     // zoom persistence - zoom is used for scales so persist as different variable
-   useEffect(() => {
-       if( !isNaN(Number(zoom))) {
-         console.log("setting scale zoom to ", zoom)
-       localStorage.setItem("scaleZoom", zoom);}
-     }, [zoom]);
+  //  useEffect(() => {
+  //      if( !isNaN(Number(zoom))) {
+  //        console.log("setting scale zoom to ", zoom)
+  //      localStorage.setItem("scaleZoom", zoom);}
+  //    }, [zoom]);
    
 
   const [scaleChanged, setScaleChanged] = useState(1)
@@ -56,9 +73,9 @@ useEffect(() => {
 
 
 useEffect(() => {
-    const zoomVal = isNaN(Number(localStorage.getItem("scaleZoom"))) ? 1 : localStorage.getItem("scaleZoom")
+    // const zoomVal = isNaN(Number(localStorage.getItem("scaleZoom"))) ? 1 : localStorage.getItem("scaleZoom")
     // console.log("zoomVal from storage on page load", zoomVal)
-    setZoom(zoomVal)  
+    // setZoom(zoomVal)  
 
 
   let cancelled = false;   // 1. Track whether the component is still mounted
@@ -182,6 +199,7 @@ return (
       scaleNoteName={scaleNoteName}   setScaleNoteName={setScaleNoteName}
       width={1800}                    height={220}
       zoom={zoom}                     setZoom={setZoom}
+
       // showNoteNamesUI={showNoteNamesUI}
       // showAllNotesUI={showAllNotesUI}
       // noteMode={noteMode}

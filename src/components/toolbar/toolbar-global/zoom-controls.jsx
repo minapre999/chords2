@@ -1,8 +1,10 @@
+import  { useState, useEffect,  } from "react";
+
+export default function ZoomControls(props ) {
+      
+  const{zoom,  setZoom, ...rest}=props
 
 
-export default function ZoomControls({ zoom, setZoom }) {
-      zoom, 
-    setZoom
   return (
   
     <>
