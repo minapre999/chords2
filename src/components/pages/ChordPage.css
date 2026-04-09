@@ -1,3 +1,11 @@
+
+.page-content{
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
 .chord-content-wrapper {
 
 display: flex;

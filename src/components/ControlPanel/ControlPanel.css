@@ -1,23 +1,15 @@
 /* --- Layout --- */
-.layout {
+/* .layout {
   display: flex;
   height: 100%;
+} */
+.layout {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
 }
 
-/* Left 25% accordion panel */
-.accordion {
-  /* flex: 0 0 25%;
-  width: 300px;
-  background: #f7f8fa;
-  border-right: 1px solid #dcdfe3;
-  padding: 0.5rem;
-  box-sizing: border-box;
-  overflow-y: auto;
 
-  /* Your constraints */
-  /* max-width: 400px;
-  min-width: 260px;  */
-}
 /* -------------------------------------------------------
    ACCORDION (clean, unified, no inset padding)
 ------------------------------------------------------- */

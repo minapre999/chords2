@@ -249,7 +249,8 @@ const chordProps = {
 }
 
   return (
-  <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+  <div className="page-wrapper"
+  style={{ display: "flex", flexDirection: "column",   height: "100%", gap: 20 }}>
  
     <Toolbar
       {...props}
@@ -258,7 +259,7 @@ const chordProps = {
 
     />
 
-<div id="content">
+<div className="page-content">
 
     <FretboardSVG
   {...props}

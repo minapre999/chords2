@@ -173,7 +173,8 @@ useEffect(() => {
 return (
 
     
-<div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+<div className="page-wrapper"
+ style={{ display: "flex", flexDirection: "column", gap: 20 }}>
         
     <Toolbar
       {...props}
@@ -188,7 +189,7 @@ return (
     />
 
 
-  <div id="content">
+  <div className="page-content">
     <FretboardSVG
       {...props}
       setRenderDataUI={setRenderDataUI}

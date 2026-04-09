@@ -6,68 +6,42 @@ import "./ScaleControlPanel.css"
 
 
 
-export default function ScaleControlPanel({ children }) {
-  const [openTop, setOpenTop] = useState(new Set(["scales", "sequence"]));
-
-  const toggleTop = (name) => {
-    setOpenTop(prev => {
-      const next = new Set(prev);
-      next.has(name) ? next.delete(name) : next.add(name);
-      return next;
-    });
-  };
+export default function ScaleControlPanel(props
+  ) {
+   const {children, ...rest} = props 
+   const [activeTab, setActiveTab] = useState("scale");
 
   return (
-    <div className="parent-layout">
+    <div className='scales-panel'>
 
-    
-      <div className="sub-panel-column">
+      {/* TAB BAR */}
+      <div className="tab-bar">
+        <button
+          className={`tab ${activeTab === "scale" ? "active" : ""}`}
+          onClick={() => setActiveTab("scale")}
+        >
+          Scale
+        </button>
 
-
-
-        {/* TOP-LEVEL: SCALES */}
-        <div className="top-accordion">
-          <button
-            className="top-accordion-header"
-            onClick={() => toggleTop("scales")}
-          >
-            <span>Scales</span>
-            <span className="chevron">{openTop.has("scales") ? "▾" : "▸"}</span>
-          </button>
-
-          {openTop.has("scales") && (
-
-            <div className="top-accordion-body no-pad">
-              <ScalesPanel />
-            </div>
-          )}
-        </div>
-
-        {/* TOP-LEVEL: SCALE SEQUENCE */}
-        <div className="top-accordion">
-          <button
-            className="top-accordion-header"
-            onClick={() => toggleTop("sequence")}
-          >
-            <span>Scale Sequence</span>
-            <span className="chevron">{openTop.has("sequence") ? "▾" : "▸"}</span>
-          </button>
-
-          {openTop.has("sequence") && (
-            <div className="top-accordion-body no-pad">
-              <ScaleSequencePanel />
-            </div>
-          )}
-        </div>
-
+        <button
+          className={`tab ${activeTab === "sequence" ? "active" : ""}`}
+          onClick={() => setActiveTab("sequence")}
+        >
+          Scale Sequence
+        </button>
       </div>
 
-
-        <div className="main-content">
-        {children}
+      {/* TAB CONTENT */}
+      <div className="tab-content">
+        {activeTab === "scale" && (
+          <ScalesPanel {...props} />
+              )}
+        {activeTab === "sequence" && (
+          <ScaleSequencePanel {...props} />
+            )}
       </div>
-
 
     </div>
   );
+
 }

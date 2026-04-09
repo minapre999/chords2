@@ -1,4 +1,6 @@
 
+import "./ScaleControlPanel.css"
+
 import AccordionItem from "./AccordionItem";
 import { useState } from "react";
 
@@ -24,62 +26,50 @@ export default function ScalesPanel({
   };
 
   return (
-    
-    <div className={`accordion scales-panel ${className}`}>
-      {/* OPEN/CLOSE ALL */}
-      <div className="accordion-controls">
-        <button className="accordion-btn" onClick={openAll} title="Open all">▾</button>
-        <button className="accordion-btn" onClick={closeAll} title="Close all">▴</button>
+    <div className="container-fluid px-0">
+      <div className="row g-3 scale-grid">
+
+        <div className="col-12 col-md-6">
+          <div className="scale-tile">
+            <div className="scale-tile-header">Root</div>
+            <div className="scale-tile-body">
+              {/* Root controls */}
+              Root content…
+            </div>
+          </div>
+        </div>
+
+        <div className="col-12 col-md-6">
+          <div className="scale-tile">
+            <div className="scale-tile-header">Scale</div>
+            <div className="scale-tile-body">
+              {/* Scale controls */}
+              Scale content…
+            </div>
+          </div>
+        </div>
+
+        <div className="col-12 col-md-6">
+          <div className="scale-tile">
+            <div className="scale-tile-header">Form</div>
+            <div className="scale-tile-body">
+              {/* Form controls */}
+              Form content…
+            </div>
+          </div>
+        </div>
+
+        <div className="col-12 col-md-6">
+          <div className="scale-tile">
+            <div className="scale-tile-header">Fret</div>
+            <div className="scale-tile-body">
+              {/* Fret controls */}
+              Fret content…
+            </div>
+          </div>
+        </div>
+
       </div>
-
-      {/* ROOT */}
-      <AccordionItem
-        title="Root"
-        open={openItems.has("root")}
-        onToggle={() => toggle("root")}
-      >
-        <div className="control-group">
-          {/* your root controls here */}
-          Root content…
-        </div>
-      </AccordionItem>
-
-      {/* SCALE */}
-      <AccordionItem
-        title="Scale"
-        open={openItems.has("scale")}
-        onToggle={() => toggle("scale")}
-      >
-        <div className="control-group">
-          {/* your scale controls here */}
-          Scale content…
-        </div>
-      </AccordionItem>
-
-      {/* FORM */}
-      <AccordionItem
-        title="Form"
-        open={openItems.has("form")}
-        onToggle={() => toggle("form")}
-      >
-        <div className="control-group">
-          {/* your form controls here */}
-          Form content…
-        </div>
-      </AccordionItem>
-
-      {/* FRET */}
-      <AccordionItem
-        title="Fret"
-        open={openItems.has("fret")}
-        onToggle={() => toggle("fret")}
-      >
-        <div className="control-group">
-          {/* your fret controls here */}
-          Fret content…
-        </div>
-      </AccordionItem>
-
     </div>
   );
 }
