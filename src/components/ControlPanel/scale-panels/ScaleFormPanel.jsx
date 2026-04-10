@@ -17,9 +17,9 @@ let scaleForms = dc.SCALE_MANAGER.activeDict.scaleFormNames(scaleQualityUI)
   console.log("rendering Scale Form panel, scaleFormUI: ", scaleFormUI)
  return (
    scaleFormUI && scaleQualityUI && (
-    <div className="scale-tile">
-            <div className="scale-tile-header">Form</div>
-            <div className="scale-tile-body">
+    <div className="grid-tile">
+            <div className="grid-tile-header">Form</div>
+            <div className="grid-tile-body">
               {/* Root controls */}
 
 

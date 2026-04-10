@@ -91,9 +91,13 @@ const fretSpacing = (width - nutX) / numFrets;
 const getFretX = (fret) => nutX  + fretSpacing * fret;
 const fretboardLength = getFretX(numFrets);
 const headstockWidth = 180;
-width = fretboardLength + headstockWidth
+width = fretboardLength 
+console.log("showHeadstockUI: ", showHeadstockUI)
+if(showHeadstockUI) {
+        width+= headstockWidth
+        } 
 
-const scaledWidth = (fretboardLength + headstockWidth) * zoom;
+const scaledWidth = width * zoom;
 const scaledHeight = height * zoom;
 
   const gaugeMap = [4,5,6,7,8.4,10];
@@ -136,6 +140,12 @@ if( cfUI ) {
 
 const scrollRef = useRef(null);
 
+const viewBoxX = showHeadstockUI ? -headstockWidth : 0;
+const viewBoxWidth = showHeadstockUI
+  ? fretboardLength + headstockWidth
+  : fretboardLength;
+
+
 
 return (
   <div
@@ -144,10 +154,10 @@ return (
     style={{ width: "100%", overflowX: "auto", overflowY: "hidden" }}
   >
    <svg
-      width={scaledWidth}
-      height={scaledHeight}
-      viewBox={`-${headstockWidth} 0 ${fretboardLength + headstockWidth} ${height}`}
-    >
+  width={scaledWidth}
+  height={scaledHeight}
+  viewBox={`${viewBoxX} 0 ${viewBoxWidth} ${height}`}
+>
 
       {/* ================= HEADSTOCK ================= */}
       {showHeadstockUI && (

@@ -8,7 +8,7 @@ import RenderData, {RenderNote} from "/src/render-notes.js"
 import ScaleInfo from "/src/components/scale/ScaleInfo.jsx"
 import "/src/harmony/scale-manager.js"
 import "/src/components/pages/ScalePage.css"
-import ScaleControlPanel from "/src/components/ControlPanel/ScaleControlPanel.jsx"
+import ScaleControlTab from "/src/components/ControlPanel/scale-panels/ScaleControlTab.jsx"
 
 
 export default function ScalePage( props ) {
@@ -211,7 +211,7 @@ return (
       
     
     <div className="scale-content-wrapper">
-      <ScaleControlPanel 
+      <ScaleControlTab 
       {...props} 
       {...scaleProps}
       />

@@ -1,10 +1,9 @@
 
 import { useState } from "react"
-import "./ScaleControlPanel.css"
-import ScaleRootPanel from "./scale-panels/ScaleRootPanel.jsx"
-import ScaleModePanel from "./scale-panels/ScaleModePanel.jsx"
-import ScaleFormPanel from "./scale-panels/ScaleFormPanel.jsx"
-import ScalePositionPanel from "./scale-panels/ScalePositionPanel.jsx"
+import ScaleRootPanel from "./ScaleRootPanel.jsx"
+import ScaleModePanel from "./ScaleModePanel.jsx"
+import ScaleFormPanel from "./ScaleFormPanel.jsx"
+import ScalePositionPanel from "./ScalePositionPanel.jsx"
 
 
 

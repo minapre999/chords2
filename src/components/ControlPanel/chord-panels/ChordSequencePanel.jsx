@@ -1,8 +1,5 @@
 import { useState, useEffect } from "react";
-import { patternsDB } from "./patternsDB";
-import "./ControlPanel.css"
-import "./ScaleSequencePanel.css"
-import "./ScaleControlPanel.css"
+import "../ControlPanel.css"
 
 
 
@@ -13,8 +10,11 @@ export default function ChordSequencePanel(
   return (
     <div className="container-fluid px-0">
       <div className="row g-3 scale-grid">
+      <div className="col-12 col-md-4">
+          <div className="grid-tile"></div>
+          chord sequence
+          </div>
 
-      chord sequence
       </div>
     </div>
   );

@@ -43,17 +43,12 @@ if( cfUI === null){ return null}
   { note: "B", class: "white-key b" },
 ];
 
-// console.log("rendering piano with cfUI: " , cfUI)
 
- const spId = "piano-sp";
-  const spClass = "root-subpanel subpanel";
-
-  
  return (
   chordRootUI && (
-     <div className="scale-tile">
-            <div className="scale-tile-header">Root</div>
-            <div className="scale-tile-body"></div>
+     <div className="grid-tile">
+            <div className="grid-tile-header">Root</div>
+            <div className="grid-tile-body"></div>
     
     {/* <div id={spId} className={spClass}> */}
 

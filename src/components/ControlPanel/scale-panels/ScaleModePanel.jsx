@@ -24,9 +24,9 @@ const modeGroups = [
   
  return (
    scaleModeUI && (
-    <div className="scale-tile">
-            <div className="scale-tile-header">Scale</div>
-            <div className="scale-tile-body">
+    <div className="grid-tile">
+            <div className="grid-tile-header">Scale</div>
+            <div className="grid-tile-body">
               {/* Root controls */}
 
 

@@ -4,6 +4,8 @@
 import "/src/globals.js"
 import Scale, { ScaleDictionary } from "/src/harmony/scale-manager";
 import "/src/components/ControlPanel/ControlPanel.css"
+import "./ScalePositionPanel.css"
+
 
 export default function ScalePositionPanel(props) {
 
@@ -37,9 +39,9 @@ const frets = [1,2,3,4,5,6,7,8,9,10,11,12,13]
   // console.log("rendering Scale position panel, scaleFormUI: ", scaleFormUI)
  return (
    scaleFormUI && scaleQualityUI && (
-    <div className="scale-tile">
-            <div className="scale-tile-header">Position</div>
-            <div className="scale-tile-body">
+    <div className="grid-tile">
+            <div className="grid-tile-header">Position</div>
+            <div className="grid-tile-body">
               {/* Root controls */}
 
 

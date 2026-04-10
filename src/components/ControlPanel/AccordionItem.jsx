@@ -1,5 +1,5 @@
 
-
+import  "./AccordionItem.css"
 
 
 export default function AccordionItem({ title, children, open, onToggle }) {

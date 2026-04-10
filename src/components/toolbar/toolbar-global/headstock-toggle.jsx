@@ -2,7 +2,7 @@
 
 export default function HeadstockToggle({ 
     showHeadstockUI, 
-    etShowHeadstockUI }) {
+    setShowHeadstockUI }) {
   
 
   return (

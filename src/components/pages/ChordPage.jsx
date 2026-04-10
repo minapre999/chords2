@@ -3,15 +3,14 @@ import React, { useState, useEffect, useMemo } from "react";
 import Toolbar from "/src/components/toolbar/toolbar.jsx";
 import FretboardSVG from "/src/components/fretboard/FretboardSVG.jsx";
 import "/src/globals.js";
- import ChordForm  from "/src/harmony/harmony-manager.js"
- import {Chord}  from "/src/harmony/harmony-manager.js"
+ import ChordForm, {Chord}  from "/src/harmony/harmony-manager.js"
 import ChordInfo from "/src/components/chord/ChordInfo.jsx"
 
 
 import ReactDOM from "react-dom/client";
 import {PlayChord} from "/src/sound/Play.js"
 import RenderData, {RenderNote} from "/src/render-notes.js"
-import ChordControlPanel from "/src/components/ControlPanel/ChordControlPanel.jsx"
+import ChordControlTab from "/src/components/ControlPanel/chord-panels/ChordControlTab.jsx"
 
 import "./ChordPage.css"
 
@@ -269,7 +268,7 @@ const chordProps = {
 
 
     <div className="chord-content-wrapper">
-      <ChordControlPanel 
+      <ChordControlTab 
         {...props}
           {...chordProps}
 

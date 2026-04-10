@@ -34,9 +34,9 @@ const ClickPiano=(root)=>{
   
  return (
    scaleRootUI && (
-    <div className="scale-tile">
-            <div className="scale-tile-header">Root</div>
-            <div className="scale-tile-body">
+    <div className="grid-tile">
+            <div className="grid-tile-header">Root</div>
+            <div className="grid-tile-body">
               {/* Root controls */}
 
     <div className="root-grid-container grid-container">

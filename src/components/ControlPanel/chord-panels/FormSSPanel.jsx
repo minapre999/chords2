@@ -32,9 +32,9 @@ const activeCF = cfUI
     cfUI && (
     <>
      
-          <div className="scale-tile">
-            <div className="scale-tile-header">Form and String Set</div>
-            <div className="scale-tile-body"></div>
+          <div className="grid-tile">
+            <div className="grid-tile-header">Form and String Set</div>
+            <div className="grid-tile-body"></div>
 
 
  {(

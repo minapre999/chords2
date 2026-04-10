@@ -1,9 +1,8 @@
 import { useState, useEffect } from "react";
-import AccordionItem from "./AccordionItem";
-import { patternsDB } from "./patternsDB";
-import "./ControlPanel.css"
+import { patternsDB } from "../patternsDB";
+import "../ControlPanel.css"
 import "./ScaleSequencePanel.css"
-import "./ScaleControlPanel.css"
+import "./ScaleControlTab.css"
 
 
 
@@ -84,7 +83,7 @@ export default function ScaleSequencePanel({
 
         {/* SCALE TEMPO */}
         <div className="col-12 col-md-4">
-          <div className="scale-tile">
+          <div className="grid-tile">
             <div className="control-group">
               <label>BPM: {bpm}</label>
               <input
@@ -120,9 +119,9 @@ export default function ScaleSequencePanel({
 
         {/* RHYTHM */}
         <div className="col-12 col-md-4">
-  <div className="scale-tile">
-    <div className="scale-tile-header">Scale tempo</div>
-    <div className="scale-tile-body">
+  <div className="grid-tile">
+    <div className="grid-tile-header">Scale tempo</div>
+    <div className="grid-tile-body">
       {/* tempo controls */}
     </div>
   </div>
@@ -133,9 +132,9 @@ export default function ScaleSequencePanel({
 
 
         <div className="col-12 col-md-4">
-          <div className="scale-tile">
-                <div className="scale-tile-header">Rhythm</div>
-                  <div className="scale-tile-body">
+          <div className="grid-tile">
+                <div className="grid-tile-header">Rhythm</div>
+                  <div className="grid-tile-body">
 
                   <div className="radio-group">
                     <label>
@@ -170,7 +169,7 @@ export default function ScaleSequencePanel({
         </div>
         {/* DIRECTION */}
         <div className="col-12 col-md-4">
-          <div className="scale-tile">
+          <div className="grid-tile">
             <div className="radio-group">
               <label>
                 <input
@@ -213,7 +212,7 @@ export default function ScaleSequencePanel({
 
         {/* PATTERN */}
         <div className="col-12 col-md-4">
-          <div className="scale-tile">
+          <div className="grid-tile">
             <div className="pattern-list">
               {allPatterns.map(p => (
                 <div className="pattern-row" key={p.builtIn ? p.value : p.id}>
@@ -251,7 +250,7 @@ export default function ScaleSequencePanel({
 
         {/* METRONOME */}
         <div className="col-12 col-md-4">
-          <div className="scale-tile">
+          <div className="grid-tile">
             <div className="control-group">
               <label>Level: {metronomeLevel}</label>
               <input

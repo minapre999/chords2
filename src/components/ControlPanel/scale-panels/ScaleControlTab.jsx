@@ -1,12 +1,12 @@
 import { useState } from "react";
 import ScaleSequencePanel from "./ScaleSequencePanel";
 import ScalesPanel from "./ScalesPanel";
-import "./ControlPanel.css"
-import "./ScaleControlPanel.css"
+import "../ControlPanel.css"
+import "./ScaleControlTab.css"
 
 
 
-export default function ScaleControlPanel(props
+export default function ScaleControlTab(props
   ) {
     const [activeTab, setActiveTab] = useState("scale");
 

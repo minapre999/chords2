@@ -10,33 +10,56 @@ setCFChanged
 
 }) {
 
-        if( cfUI == null) return null
+  if( cfUI == null) return null
+  const oldPos = cfUI.position
 
-        const uniqueFSS =   [...new Set(dc.HARMONY_MANAGER.chordforms.map(cf=>{return cf.form_ss}))] // unique FSS
-        const total = uniqueFSS.length
-        const index = uniqueFSS.findIndex((fSS) => cfUI.form_ss === fSS)
+      const uniqueFSS =   [...new Set(dc.HARMONY_MANAGER.chordforms.map(cf=>{return cf.form_ss}))] // unique FSS
+      const total = uniqueFSS.length
+      const index = uniqueFSS.findIndex((fSS) => cfUI.form_ss === fSS)
 
-         const onNext=()=>{
-            const fSS = uniqueFSS[index+1]
-             const i = cfUI.form_ss.indexOf(":")
-            const string = fSS.slice(i+1, i+2)
-            const form =  fSS.slice(0, i)
-
-            const nextCF = cfUI.chord.getChordform({ inversion:cfUI.inversion, form:form, string:string, root:cfUI.root } )
-            setCFUI(nextCF)
-            setCFChanged(nextCF.id)
-        }
-
-        const onPrev=()=>{
-            const fSS = uniqueFSS[index-1]
+      const onNext=()=>{
+          const fSS = uniqueFSS[index+1]
             const i = cfUI.form_ss.indexOf(":")
-            const string = fSS.slice(i+1, i+2)
-            const form =  fSS.slice(0, i)
+          const string = fSS.slice(i+1, i+2)
+          const form =  fSS.slice(0, i)
 
-            const nextCF = cfUI.chord.getChordform({ inversion:cfUI.inversion, form:form, string:string, root:cfUI.root } )
-            setCFUI(nextCF)
-            setCFChanged(nextCF.id)
-        }
+          // get all inversion for the form:ss and 
+          // set the chord form to the one closes to the old position
+          const arr = cfUI.chord.getChordforms({form:form, string:string, root:cfUI.root})
+          const closest = {dist: 100, cf: null}
+          for (let cf of arr) {
+            const diff = Math.abs(cf.position - oldPos)
+            if( diff < closest.dist){
+                closest.dist = diff
+                closest.cf = cf
+                }
+              } // for
+          // const nextCF = cfUI.chord.getChordform({ inversion:cfUI.inversion, form:form, string:string, root:cfUI.root } )
+          setCFUI(closest.cf)
+          setCFChanged(closest.cf.id)
+      }
+
+      const onPrev=()=>{
+          const fSS = uniqueFSS[index-1]
+          const i = cfUI.form_ss.indexOf(":")
+          const string = fSS.slice(i+1, i+2)
+          const form =  fSS.slice(0, i)
+
+          // get all inversion for the form:ss and 
+          // set the chord form to the one closes to the old position
+          const arr = cfUI.chord.getChordforms({form:form, string:string, root:cfUI.root})
+          const closest = {dist: 100, cf: null}
+          for (let cf of arr) {
+            const diff = Math.abs(cf.position - oldPos)
+            if( diff < closest.dist){
+                closest.dist = diff
+                closest.cf = cf
+                }
+              } // for
+          // const nextCF = cfUI.chord.getChordform({ inversion:cfUI.inversion, form:form, string:string, root:cfUI.root } )
+          setCFUI(closest.cf)
+          setCFChanged(closest.cf.id)
+      }
 
 // console.log("Rendering FormSSNavigator");
   return (

@@ -47,18 +47,14 @@ const{cfUI, setCFUI, ...rest}=props
   const dominant = chords.filter( (ch)=> ch.isDominant() && ch.chordforms.length )
   const minor = chords.filter( (ch)=>ch.isMinor() && ch.chordforms.length )
 
-  const spId = "quality-sp";
-  const spClass = "chord-quality-subpanel subpanel";
-
-
   // console.log("rendering ChordQualityPanel cfUI: ", cfUI)
   return (
     cfUI && (
     <>
      
-        <div className="scale-tile">
-            <div className="scale-tile-header">Chord Quality</div>
-            <div className="scale-tile-body"></div>
+        <div className="grid-tile">
+            <div className="grid-tile-header">Chord Quality</div>
+            <div className="grid-tile-body"></div>
 
 
  { (

@@ -13,8 +13,6 @@ export default function InversionPanel(
 
   if( cfUI == null) return null
 
-  const spId = "inversion-sp";
-  const spClass = "inversion-subpanel subpanel";
 
  
   const oldCF = cfUI
@@ -33,9 +31,9 @@ export default function InversionPanel(
   // console.log("sorted arrInv: ", arrInv)
   return (
     <>
-      <div className="scale-tile">
-            <div className="scale-tile-header">Inversion</div>
-            <div className="scale-tile-body"></div>
+      <div className="grid-tile">
+            <div className="grid-tile-header">Inversion</div>
+            <div className="grid-tile-body"></div>
 
         
  { (

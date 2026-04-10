@@ -34,26 +34,3 @@
 }
   
 
-
-.tab-content {
-  /* flex: 1; */
-  overflow-y: auto;
-    min-height: 0; /* critical for flexbox scrolling */
-
-  padding-right: 4px; /* prevents scrollbar overlap */
-  /* height: 300px; */
-}
-
-
-
-
-
-
-/* Grid width only (layout concern) */
-.scale-grid {
-  max-width: 80vw;
-}
-
-.chords-panel .scale-grid {
-  max-width: 50vw;
-}
