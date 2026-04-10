@@ -9,65 +9,47 @@ import PianoPanel from "./chord-panels/PianoPanel.jsx"
 import ChordQualityPanel from "./chord-panels/ChordQualityPanel"
 import FormSSPanel from "./chord-panels/FormSSPanel.jsx"
 import InversionPanel from "./chord-panels/InversionPanel.jsx"
-  
- 
+import ChordsPanel from "./ChordsPanel.jsx"
+ import ChordSequencePanel from "./ChordSequencePanel.jsx"
 
 
-export default function ChordControlPanel(props) {
-  // Option A: Only one accordion item open at a time
-  const [openItem, setOpenItem] = useState("tempo");
-  const toggle = (name) => setOpenItem(prev => (prev === name ? null : name));
 
+export default function ChordControlPanel(props
+  ) {
+    const [activeTab, setActiveTab] = useState("chord");
 
   return (
-    <div className="layout">
-      <div className="accordion">
+    <div className='chords-panel'>
 
-        {/* Chord Root */}
-        <AccordionItem
-          title="Root"
-          open={openItem === "chord-root"}
-          onToggle={() => toggle("chord-root")}
+      {/* TAB BAR */}
+      <div className="tab-bar">
+        <button
+          className={`tab ${activeTab === "chord" ? "active" : ""}`}
+          onClick={() => setActiveTab("chord")}
         >
-         <PianoPanel  {...props}  />
-        </AccordionItem>
+          Chord
+        </button>
 
-  {/* CHORD QUALITY */}
-        <AccordionItem
-          title="Quality"
-          open={openItem === "quality"}
-          onToggle={() => toggle("quality")}
+        <button
+          className={`tab ${activeTab === "sequence" ? "active" : ""}`}
+          onClick={() => setActiveTab("sequence")}
         >
-         
-       <ChordQualityPanel  {...props}  />
-        </AccordionItem>
-
-  {/* CHORD FORM */}
-        <AccordionItem
-          title="Form"
-          open={openItem === "form"}
-          onToggle={() => toggle("form")}
-        >
-         
-       <FormSSPanel  {...props}  />
-        </AccordionItem>
-
-        {/* INVERSION */}
-        <AccordionItem
-          title="Inversion"
-          open={openItem === "inversion"}
-          onToggle={() => toggle("inversion")}
-        >
-         
-       <InversionPanel  {...props}  />
-        </AccordionItem>
-
-       
-
+          Sequence
+        </button>
       </div>
 
-    
+      {/* TAB CONTENT */}
+      <div className="tab-content">
+        {activeTab === "chord" && (
+          <ChordsPanel {...props} />
+              )}
+        {activeTab === "sequence" && (
+          <ChordSequencePanel {...props} />
+            )}
+      </div>
+
     </div>
   );
+
 }
 

@@ -8,10 +8,7 @@ import "./ScaleControlPanel.css"
 
 export default function ScaleControlPanel(props
   ) {
-   const {children, ...rest} = props 
     const [activeTab, setActiveTab] = useState("scale");
-
-
 
   return (
     <div className='scales-panel'>

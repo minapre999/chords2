@@ -4,12 +4,14 @@
  import ChordForm  from "/src/harmony/harmony-manager.js"
 import {HarmonyManager, Chord}  from "/src/harmony/harmony-manager.js"
 import "/src/components/ControlPanel/keyboard.css";
+import "/src/components/ControlPanel/ControlPanel.css";
 
 
 export default function PianoPanel(props) {
 
 
-const {activeSubPanelUI, setActiveSubPanelUI, forceAll,  chordRootUI, setChordRootUI, cfUI, ...rest} = props
+const {activeSubPanelUI, setActiveSubPanelUI,
+    chordRootUI, setChordRootUI, cfUI, ...rest} = props
 
 
   const ClickPiano=(root)=>{
@@ -25,7 +27,7 @@ const {activeSubPanelUI, setActiveSubPanelUI, forceAll,  chordRootUI, setChordRo
   }
 
 
-
+if( cfUI === null){ return null}
   const KEYS = [
   { note: "C", class: "white-key c" },
   { note: "C#", class: "black-key c_sharp" },
@@ -48,15 +50,18 @@ const {activeSubPanelUI, setActiveSubPanelUI, forceAll,  chordRootUI, setChordRo
 
   
  return (
-  cfUI && (
+  chordRootUI && (
+     <div className="scale-tile">
+            <div className="scale-tile-header">Root</div>
+            <div className="scale-tile-body"></div>
     
-    
-    <div id={spId} className={spClass}>
+    {/* <div id={spId} className={spClass}> */}
 
   
  { (
-  <div className="root-grid-container grid-container">
-      <div className="keyboard">
+   <div className="root-grid-container grid-container">
+       <div className="grid-group">
+          <div className="keyboard">
         {KEYS.map(k => (
           <div
             key={k.note}
@@ -66,6 +71,7 @@ const {activeSubPanelUI, setActiveSubPanelUI, forceAll,  chordRootUI, setChordRo
             <span>{k.note}</span>
           </div>
         ))}
+      </div>
       </div>
       </div>
  )}

@@ -2,33 +2,14 @@
 
   import ChordForm  from "../../../harmony/harmony-manager.js"
   import {HarmonyManager, Chord}  from "../../../harmony/harmony-manager.js"
+import "/src/components/ControlPanel/ControlPanel.css";
 
-export default function ChordQualityPanel({
+export default function ChordQualityPanel(
+  props
+  ) {
 
-  cfUI,
-  setCFUI,
-  onKeyClick,
-  forceAll
-}) {
-
-
-  const [isPanelOpen, setIsPanelOpen] = useState(true);
-const [isOpen, setIsOpen] = useState(true);
-
-  // console.log("\ChordQualityPanel component forceAll: ", forceAll, "\nisOpen:", isOpen, "\ncfUI: ", cfUI, "setCFUI: ", setCFUI)
-
-
-
- // Respond to global force command
-  useEffect(() => {
-    if (forceAll === "open") setIsOpen(true);
-    if (forceAll === "close") setIsOpen(false);
-  }, [forceAll]);
-
-const toggle = () => setIsOpen(prev => !prev);
-
+const{cfUI, setCFUI, ...rest}=props
  
-
   let chord = null
   let newCF = null
   const ClickChordQuality=(chordId)=>{
@@ -75,18 +56,20 @@ const toggle = () => setIsOpen(prev => !prev);
     cfUI && (
     <>
      
-        <div id={spId} className={spClass}>
-      
+        <div className="scale-tile">
+            <div className="scale-tile-header">Chord Quality</div>
+            <div className="scale-tile-body"></div>
 
- {isOpen  && (
-          <div className="quality-grid-container grid-container">
-            <div id="major" className="chord-picker-group picker-group">
+
+ { (
+          <div className="grid-container">
+            <div id="major" className="grid-group">
               
               {major.map(ch => (
                 <div
                   key={ch.id}
 
-                  className={`chord-picker-group-item picker-group-item ${ch.id == cfUI.chord.id ? "selected" : ""}`}
+                  className={`grid-group-item ${ch.id == cfUI.chord.id ? "selected" : ""}`}
                   data-chord={ch.id}
                   onClick={() => ClickChordQuality(ch.id)}
                 >
@@ -95,11 +78,11 @@ const toggle = () => setIsOpen(prev => !prev);
               ))}
             </div>
 
-             <div id="dominant" className="chord-picker-group picker-group">
+             <div id="dominant" className=" grid-group">
               {dominant.map(ch => (
                 <div
                   key={ch.id}
-                  className={`chord-picker-group-item picker-group-item ${ch.id == cfUI.chord.id ? "selected" : ""}`}
+                  className={`grid-group-item ${ch.id == cfUI.chord.id ? "selected" : ""}`}
                   data-chord={ch.id}
                   onClick={() => ClickChordQuality(ch.id)}
                 >
@@ -108,11 +91,11 @@ const toggle = () => setIsOpen(prev => !prev);
               ))}
             </div>
 
-             <div id="minor" className="chord-picker-group picker-group">
+             <div id="minor" className=" grid-group">
               {minor.map(ch => (
                 <div
                   key={ch.id}
-                  className={`chord-picker-group-item picker-group-item ${ch == cfUI.chord.id ? "selected" : ""}`}
+                  className={`grid-group-item ${ch == cfUI.chord.id ? "selected" : ""}`}
                   data-chord={ch.id}
                   onClick={() => ClickChordQuality(ch.id)}
                 >

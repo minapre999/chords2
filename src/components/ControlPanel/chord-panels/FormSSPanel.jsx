@@ -1,79 +1,62 @@
+import React, { useState, useEffect } from "react";
 
- import React, { useState,useEffect } from "react";
-
-
-export default function InversionPanel({
-
-
-  cfUI,
-  setCFUI,
-
-  activeSubPanelUI,
-  setActiveSubPanelUI,
-  message,
-  onKeyClick,
-  forceAll
-}) {
-
-    const [isPanelOpen, setIsPanelOpen] = useState(true);
-const [isOpen, setIsOpen] = useState(true);
- // Respond to global force command
-  useEffect(() => {
-    if (forceAll === "open") setIsOpen(true);
-    if (forceAll === "close") setIsOpen(false);
-  }, [forceAll]);
+import ChordForm, {HarmonyManager, Chord}  from "/src/harmony/harmony-manager.js"
+import "/src/globals.js"
+import "/src/components/ControlPanel/ControlPanel.css";
 
 
-  if( cfUI == null) return null
-
-    const toggle = () => setIsOpen(prev => !prev);
+export default function FormSSPanel(
+  props
+  ) {
+  
+  const {cfUI, setCFUI, ...rest} = props
 
 
 
-  const spId = "inversion-sp";
-  const spClass = "inversion-subpanel subpanel";
+   const ClickFormSS=(fssId)=>{
+    const i = fssId.indexOf(":")
+    const string = fssId.slice(i+1, i+2)
+    const form =  fssId.slice(0, i)
 
- 
-  const oldCF = cfUI
-// console.log("inversion pane oldCF: ", oldCF)
-  const ClickInversion=(inv)=>{
-    const newCF = oldCF?.chord.getChordform({quality: oldCF.quality, string:  oldCF.string, form: oldCF.form, inversion: inv})
-    newCF.root = oldCF?.root
+   
+    const newCF = cfUI.chord.getChordform({quality: cfUI.quality, 
+                                                  string:  string, 
+                                                  form: form, 
+                                                  inversion: cfUI.inversion})
     setCFUI(newCF)  
   }
 
-  let arrInv = [...new Set(oldCF.chord.chordforms.map(cf=>{return cf.inversion}))] // unique inversions
-  // console.log("arrInv: ", arrInv)
-  arrInv = arrInv.sort((a,b)=>{ return  a.toLowerCase().charCodeAt(0) - b.toLowerCase().charCodeAt(0) } )
-
- 
-  // console.log("sorted arrInv: ", arrInv)
+const uniqueFSS =   [...new Set(dc.HARMONY_MANAGER.chordforms.map(cf=>{return cf.form_ss}))] // unique FSS
+const activeCF = cfUI
   return (
+    cfUI && (
     <>
      
-        <div id={spId} className={spClass}>
-         
+          <div className="scale-tile">
+            <div className="scale-tile-header">Form and String Set</div>
+            <div className="scale-tile-body"></div>
 
- {isOpen && (
-        <div className="inversion-container grid-container">
-            <div class="inversion-picker-group picker-group">
 
-                   {arrInv.map(inv => (
+ {(
+        <div className="grid-container">
+          <div id="form-ss" className="chord-grid-group grid-group">
+
+          {uniqueFSS.map(fss => (
                 <div
-                  key={inv}
+                  key={fss}
 
-                  className={`chord-form-ss-item picker-group-item ${inv == oldCF.inversion ? "selected" : ""}`}
-                  onClick={() => ClickInversion(inv)}
+                  className={`chord-form-ss-item grid-group-item ${fss == activeCF.form_ss ? "selected" : ""}`}
+                  onClick={() => ClickFormSS(fss)}
                 >
-                  {inv}
+                  {fss}
                 </div>
               ))}
 
-
-            </div>
+          </div>
         </div>
             )}
     </div>
   </>
+    )
   );
 }

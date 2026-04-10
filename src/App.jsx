@@ -17,70 +17,8 @@ import "./App.css"
 
 
 
+
  function AppLayout() {
-  const location = useLocation();
-
-  
-  useEffect(() => {
-
-      
-
-
-    const chordEl = document.getElementById("chord-picker");
-    const scaleEl = document.getElementById("scale-picker");
-console.log("chordEl: ", chordEl, "scaleEl: ", scaleEl)
-
-  // console.log("chordEl.jspanel: ", chordEl.jspanel, "scaleEl.jspanel: ", scaleEl.jspanel)
-
-    const chordPanel = chordEl?.jspanel || chordEl?.closest(".jsPanel")?.jspanel;
-    const scalePanel = scaleEl?.jspanel || scaleEl?.closest(".jsPanel")?.jspanel;
-console.log("chordPanel: ", chordPanel, "scalePanel: ", scalePanel)
-    // ---- ROUTE LOGIC ----
-
-    if (location.pathname === "/scales") {
-      if (scaleEl) {
-        scaleEl.style.display = "";
-        scaleEl.style.pointerEvents = "auto";
-        scaleEl.style.opacity = "1";
-        if (scalePanel) {
-            scalePanel.content.innerHTML = chordPanel.content.innerHTML;
-          scalePanel.reposition();
-          scalePanel.front();
-          scalePanel.status = "normalized";
-          }
-
-      }
-
-      if (chordEl) {
-        chordEl.style.display = "none";
-        if (chordPanel) chordPanel.status = "hidden";
-
-      }
-    }
-
-    if (location.pathname === "/chords") {
-      if (chordEl) {
-        chordEl.style.display = "";
-        chordEl.style.pointerEvents = "auto";
-        chordEl.style.opacity = "1";
-  if (chordPanel) {
-      chordPanel.content.innerHTML = chordPanel.content.innerHTML;
-          chordPanel.reposition();
-          chordPanel.front();
-          chordPanel.status = "normalized";
-          }      }
-
-      if (scaleEl) {
-        scaleEl.style.display = "none";
-        if (scalePanel) scalePanel.status = "hidden";
-      }
-    }
-
-    if (location.pathname === "/") {
-      if (chordEl) chordEl.style.display = "none";
-      if (scaleEl) scaleEl.style.display = "none";
-    }
-  }, [location.pathname]);
 
   return (
     <div className="app-layout">
@@ -89,9 +27,6 @@ console.log("chordPanel: ", chordPanel, "scalePanel: ", scalePanel)
     </div>
   );
 }
-
-
-
 
 
 

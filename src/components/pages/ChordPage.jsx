@@ -249,8 +249,7 @@ const chordProps = {
 }
 
   return (
-  <div className="page-wrapper"
-  style={{ display: "flex", flexDirection: "column",   height: "100%", gap: 20 }}>
+  <div style={{ display: "flex", flexDirection: "column",   height: "100%", gap: 20 }}>
  
     <Toolbar
       {...props}

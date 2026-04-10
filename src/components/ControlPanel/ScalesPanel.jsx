@@ -6,13 +6,9 @@ import ScaleModePanel from "./scale-panels/ScaleModePanel.jsx"
 import ScaleFormPanel from "./scale-panels/ScaleFormPanel.jsx"
 import ScalePositionPanel from "./scale-panels/ScalePositionPanel.jsx"
 
-import AccordionItem from "./AccordionItem"
+
 
 export default function ScalesPanel(props) {
-      const [openItems, setOpenItems] = useState(new Set(["root"]));
-
- 
-
 
   return (
     <div className="container-fluid px-0">

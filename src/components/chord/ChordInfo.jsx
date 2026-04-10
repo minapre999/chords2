@@ -1,5 +1,6 @@
 
 import "bootstrap/dist/css/bootstrap.min.css";
+import "./ChordInfo.css";
 
 
 
@@ -36,9 +37,10 @@ export default function ChordInfo({
 
   return ( cfUI && (
       <>
-        <div className="mb-4">
+        <div className="chord-info mb-4 
+      ">
 
-            <div>
+            <div className="root">
             {cfUI.root}
             <span
               dangerouslySetInnerHTML={{

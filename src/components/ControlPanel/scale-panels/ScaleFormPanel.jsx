@@ -26,7 +26,7 @@ let scaleForms = dc.SCALE_MANAGER.activeDict.scaleFormNames(scaleQualityUI)
     <div className="form-grid-container grid-container">
       <div className="forms">
 
-            <div className="chord-picker-group grid-group">
+            <div className="chord-grid-group grid-group">
               {scaleForms.map(f => (
                 <div
                   key={f}

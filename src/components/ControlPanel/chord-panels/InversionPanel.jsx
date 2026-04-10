@@ -2,30 +2,14 @@
  import React, { useState,useEffect } from "react";
 
 import ChordForm , {HarmonyManager, Chord} from "/src/harmony/harmony-manager.js"
+import "/src/components/ControlPanel/ControlPanel.css";
 
-export default function InversionPanel({
+export default function InversionPanel(
+  props) {
 
-  cfUI,
-  setCFUI,
+ const {cfUI, setCFUI, ...rest}=props
 
-  activeSubPanelUI,
-  setActiveSubPanelUI,
-  message,
-  onKeyClick,
-  forceAll
-}) {
-
-    const [isPanelOpen, setIsPanelOpen] = useState(true);
-const [isOpen, setIsOpen] = useState(true);
- // Respond to global force command
-  useEffect(() => {
-    if (forceAll === "open") setIsOpen(true);
-    if (forceAll === "close") setIsOpen(false);
-  }, [forceAll]);
-
-
-    const toggle = () => setIsOpen(prev => !prev);
-
+   
 
   if( cfUI == null) return null
 
@@ -49,18 +33,20 @@ const [isOpen, setIsOpen] = useState(true);
   // console.log("sorted arrInv: ", arrInv)
   return (
     <>
-     
-        <div id={spId} className={spClass}>
+      <div className="scale-tile">
+            <div className="scale-tile-header">Inversion</div>
+            <div className="scale-tile-body"></div>
+
         
- {isOpen && (
-        <div className="inversion-container grid-container">
-            <div class="inversion-picker-group picker-group">
+ { (
+        <div className="root-grid-container grid-container">
+       <div className="grid-group">
 
                    {arrInv.map(inv => (
                 <div
                   key={inv}
 
-                  className={`chord-form-ss-item picker-group-item ${inv == oldCF.inversion ? "selected" : ""}`}
+                  className={`chord-form-ss-item grid-group-item ${inv == oldCF.inversion ? "selected" : ""}`}
                   onClick={() => ClickInversion(inv)}
                 >
                   {inv}
@@ -72,6 +58,7 @@ const [isOpen, setIsOpen] = useState(true);
         </div>
             )}
     </div>
+
   </>
   );
 }
