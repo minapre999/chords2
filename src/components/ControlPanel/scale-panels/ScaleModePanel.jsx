@@ -30,15 +30,15 @@ const modeGroups = [
               {/* Root controls */}
 
 
-    <div className="quality-picker-container picker-container">
+    <div className="quality-grid-container grid-container">
       <div className="modes">
 
       {modeGroups.map((group, idx) => (
-            <div key={idx} className="chord-picker-group picker-group">
+            <div key={idx} className="chord-grid-group grid-group">
               {group.map(s => (
                 <div
                   key={s}
-                  className={`picker-group-item ${s == scaleModeUI ? "selected" : ""}`}
+                  className={`grid-group-item ${s == scaleModeUI ? "selected" : ""}`}
                   onClick={() => setScaleModeUI(s)}
                 >
                   {s}

@@ -3,30 +3,13 @@
 
  import ChordForm  from "/src/harmony/harmony-manager.js"
 import {HarmonyManager, Chord}  from "/src/harmony/harmony-manager.js"
+import "/src/components/ControlPanel/keyboard.css";
 
 
 export default function PianoPanel(props) {
 
 
 const {activeSubPanelUI, setActiveSubPanelUI, forceAll,  chordRootUI, setChordRootUI, cfUI, ...rest} = props
-const [isOpen, setIsOpen] = useState(true);
-
-  // console.log("PianoPanel component forceAll: ", forceAll, "isOpen:", isOpen, "setCFUI: ", setCFUI)
-
-
-
-
- // Respond to global force command
-  useEffect(() => {
-    if (forceAll === "open") setIsOpen(true);
-    if (forceAll === "close") setIsOpen(false);
-  }, [forceAll]);
-  
-  
-const toggle = () => setIsOpen(prev => !prev);
-
-
- 
 
 
   const ClickPiano=(root)=>{
@@ -71,8 +54,8 @@ const toggle = () => setIsOpen(prev => !prev);
     <div id={spId} className={spClass}>
 
   
- {isOpen  && (
-  <div className="root-picker-container picker-container">
+ { (
+  <div className="root-grid-container grid-container">
       <div className="keyboard">
         {KEYS.map(k => (
           <div

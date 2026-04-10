@@ -333,11 +333,11 @@ copy() {
 
     
 
-    /*
-    transformedPosition - transformed to take into account root and mode
-    */
-    transformedPosition() {
+/*
+transformedPosition - transformed to take into account root and mode
+*/
 
+transformedPosition() {
 
         let fretTranspose = transpose_lookup[this.root]
             + MODE_LOOKUP_SEMITONES[this.mode]
@@ -1034,150 +1034,177 @@ modeNamesForChord(chord) {
         return this.activeScale
     }
 
-// strDir is "next" or "prev"
-setFormFromFret2( newFret, strDir, loop=true){
-        const self = this
-        let scale = this.getActiveScale()
-        let mode = scale.mode
-        let root = scale.getRoot()
-        let quality = scale.quality
-        let scales = []
-        let scaleQual = "Maj"
-        if (Object.keys(MAJOR_INTERVALS).indexOf(mode) !== -1) {
-            scaleQual = "Maj"
-        }
-        else if (Object.keys(MM_INTERVALS).indexOf(mode) !== -1) {
-            scaleQual = "MM"
-        }
-        else if (Object.keys(HM_INTERVALS).indexOf(mode) !== -1) {
-            scaleQual = "HM"
-        }
+// // strDir is "next" or "prev"
+// setFormFromFret2( newFret, strDir, loop=true){
+//         const self = this
+//         let scale = this.getActiveScale()
+//         let mode = scale.mode
+//         let root = scale.getRoot()
+//         let quality = scale.quality
+//         let scales = []
+//         let scaleQual = "Maj"
+//         if (Object.keys(MAJOR_INTERVALS).indexOf(mode) !== -1) {
+//             scaleQual = "Maj"
+//         }
+//         else if (Object.keys(MM_INTERVALS).indexOf(mode) !== -1) {
+//             scaleQual = "MM"
+//         }
+//         else if (Object.keys(HM_INTERVALS).indexOf(mode) !== -1) {
+//             scaleQual = "HM"
+//         }
 
-        else if (mode == "Pentatonic Major") { scaleQual = "PMAJ"} 
-        else if (mode == "Pentatonic Minor") { scaleQual = "PMIN"} 
-        else if (mode == "Minor Blues") { scaleQual = "MINORBLUE"} 
-        else if (mode == "Major Blues") { scaleQual = "MAJORBLUE"} 
-        else if (mode == "Pentatonic 7b9") { scaleQual = 'PENT7b9'} 
-        else if (mode == "Diminished") { scaleQual = "DIM"; } 
-        else if (mode == "Whole Tone") { scaleQual = "WT"} 
-        else if (mode == "7 Arp") { scaleQual = 'ARP7'} 
-        else if (mode == "m7 Arp") { scaleQual = 'ARPm7'} 
-        else if (mode == "maj7 Arp") { scaleQual = 'ARPmaj7'} 
-        else if (mode == "m7b5 Arp") { scaleQual = 'ARPm7b5'} 
+//         else if (mode == "Pentatonic Major") { scaleQual = "PMAJ"} 
+//         else if (mode == "Pentatonic Minor") { scaleQual = "PMIN"} 
+//         else if (mode == "Minor Blues") { scaleQual = "MINORBLUE"} 
+//         else if (mode == "Major Blues") { scaleQual = "MAJORBLUE"} 
+//         else if (mode == "Pentatonic 7b9") { scaleQual = 'PENT7b9'} 
+//         else if (mode == "Diminished") { scaleQual = "DIM"; } 
+//         else if (mode == "Whole Tone") { scaleQual = "WT"} 
+//         else if (mode == "7 Arp") { scaleQual = 'ARP7'} 
+//         else if (mode == "m7 Arp") { scaleQual = 'ARPm7'} 
+//         else if (mode == "maj7 Arp") { scaleQual = 'ARPmaj7'} 
+//         else if (mode == "m7b5 Arp") { scaleQual = 'ARPm7b5'} 
 
-        let forms = this.scaleFormNames(scaleQual)
-        for (const formName of forms) {
-          const scale = self.scaleWithQualityAndForm(scaleQual, formName);
-          scale.setRoot(root);
-          scale.setMode(mode);
-          scales.push(scale);
-        }
+//         let forms = this.scaleFormNames(scaleQual)
+//         for (const formName of forms) {
+//           const scale = self.scaleWithQualityAndForm(scaleQual, formName);
+//           scale.setRoot(root);
+//           scale.setMode(mode);
+//           scales.push(scale);
+//         }
 
 
 
-        scales.sort( (a, b) => {
-            if(strDir == "next") {  return a.transformedPosition() - b.transformedPosition()  }
-            else { return b.transformedPosition() - a.transformedPosition()  }
+//         scales.sort( (a, b) => {
+//             if(strDir == "next") {  return a.transformedPosition() - b.transformedPosition()  }
+//             else { return b.transformedPosition() - a.transformedPosition()  }
             
-            })
+//             })
 
-      for (let i = 0; i < scales.length; i++) {
-        const nextScale = scales[i];
+//       for (let i = 0; i < scales.length; i++) {
+//         const nextScale = scales[i];
 
-        if (strDir === "next" && nextScale.transformedPosition() >= newFret) {
-          self.setActiveScale(nextScale);
-          break; // jQuery's "return false"
-        }
+//         if (strDir === "next" && nextScale.transformedPosition() >= newFret) {
+//           self.setActiveScale(nextScale);
+//           break; // jQuery's "return false"
+//         }
 
-        if (strDir === "prev" && nextScale.transformedPosition() <= newFret) {
-          self.setActiveScale(nextScale);
-          break; // jQuery's "return false"
-        }
+//         if (strDir === "prev" && nextScale.transformedPosition() <= newFret) {
+//           self.setActiveScale(nextScale);
+//           break; // jQuery's "return false"
+//         }
 
-        // If we reached the last scale and looping is enabled
-        if (i === scales.length - 1 && loop === true) {
-          self.setActiveScale(scales[0]);
-        }
-      }
+//         // If we reached the last scale and looping is enabled
+//         if (i === scales.length - 1 && loop === true) {
+//           self.setActiveScale(scales[0]);
+//         }
+//       }
 
    
+//     }
+
+
+
+// required args:  args.fret, args.root, args.quality, args.mode
+getScaleNearestFret(args) {
+// console.log("getScaleNearestFret args: ", args)
+let scales = this.scalesWithQuality(args.quality )
+const nearest = { fret: 100, scale: null };
+
+for (let scale of scales) {
+  scale.root=args.root
+  scale.mode=args.mode
+  const position = scale.transformedPosition();
+  // console.log("transformedPosition: ", position)
+  const diff = Math.abs(position - args.fret);
+  // console.log("DIFF: ", diff)
+  if( diff < nearest.fret ) {
+    nearest.fret = diff
+    nearest.scale = scale
+    // console.log("setting nearest: ", nearest)
     }
+  if (diff === 0) {
+      // found it - return immediately
+         return scale
+        }
 
-
-
-
-    // ignoreForm arg added which is flag to ingore the form when calculated nearest form
-  setFormFromFret(fret, ignoreActive = true) {
-
-  let scale = this.getActiveScale();
-  const mode = scale.mode
-  const root = scale.getRoot();
-
-  // Determine scale quality category from mode
-  let scaleQual = "Maj";
-
-  if (Object.keys(MAJOR_INTERVALS).includes(mode)) {
-    scaleQual = "Maj";
-  } else if (Object.keys(MM_INTERVALS).includes(mode)) {
-    scaleQual = "MM";
-  } else if (Object.keys(HM_INTERVALS).includes(mode)) {
-    scaleQual = "HM";
-  } else if (mode === "Pentatonic Major") {
-    scaleQual = "PMAJ";
-  } else if (mode === "Pentatonic Minor") {
-    scaleQual = "PMIN";
-  } else if (mode === "Minor Blues") {
-    scaleQual = "MINORBLUE";
-  } else if (mode === "Major Blues") {
-    scaleQual = "MAJORBLUE";
-  } else if (mode === "Pentatonic 7b9") {
-    scaleQual = "PENT7b9";
-  } else if (mode === "Diminished") {
-    scaleQual = "DIM";
-  } else if (mode === "Whole Tone") {
-    scaleQual = "WT";
-  } else if (mode === "7 Arp") {
-    scaleQual = "ARP7";
-  } else if (mode === "m7 Arp") {
-    scaleQual = "ARPm7";
-  } else if (mode === "maj7 Arp") {
-    scaleQual = "ARPmaj7";
-  } else if (mode === "m7b5 Arp") {
-    scaleQual = "ARPm7b5";
   }
 
-  // Find nearest form by comparing transformed positions
-  const forms = this.scaleFormNames(scaleQual);
-  const nearest = { fret: 100, id: undefined };
-  const activeForm = this.activeScale.form;
-
-  for (const formName of forms) {
-
-    scale = this.scaleWithQualityAndForm(scaleQual, formName);
-    scale.setRoot(root);
-    scale.setMode(mode);
-
-    const position = scale.transformedPosition();
-    const diff = Math.abs(position - fret);
-
-    if (diff < nearest.fret) {
-      if (!(ignoreActive === true && activeForm === formName)) {
-        nearest.fret = diff;
-        nearest.id = scale.id;
-      }
-    }
-
-    if (position === fret) break;
-  }
-
-  // Apply the selected scale
-  const chosen = this.scaleWithId(nearest.id);
-  if (chosen) {
-    this.activeScale = chosen;
-  }
-
-  return this;
+return nearest.scale
 }
+
+//     // ignoreForm arg added which is flag to ingore the form when calculated nearest form
+//   setFormFromFret(fret, ignoreActive = true) {
+
+//   let scale = this.getActiveScale();
+//   const mode = scale.mode
+//   const root = scale.getRoot();
+
+//   // Determine scale quality category from mode
+//   let scaleQual = "Maj";
+
+//   if (Object.keys(MAJOR_INTERVALS).includes(mode)) {
+//     scaleQual = "Maj";
+//   } else if (Object.keys(MM_INTERVALS).includes(mode)) {
+//     scaleQual = "MM";
+//   } else if (Object.keys(HM_INTERVALS).includes(mode)) {
+//     scaleQual = "HM";
+//   } else if (mode === "Pentatonic Major") {
+//     scaleQual = "PMAJ";
+//   } else if (mode === "Pentatonic Minor") {
+//     scaleQual = "PMIN";
+//   } else if (mode === "Minor Blues") {
+//     scaleQual = "MINORBLUE";
+//   } else if (mode === "Major Blues") {
+//     scaleQual = "MAJORBLUE";
+//   } else if (mode === "Pentatonic 7b9") {
+//     scaleQual = "PENT7b9";
+//   } else if (mode === "Diminished") {
+//     scaleQual = "DIM";
+//   } else if (mode === "Whole Tone") {
+//     scaleQual = "WT";
+//   } else if (mode === "7 Arp") {
+//     scaleQual = "ARP7";
+//   } else if (mode === "m7 Arp") {
+//     scaleQual = "ARPm7";
+//   } else if (mode === "maj7 Arp") {
+//     scaleQual = "ARPmaj7";
+//   } else if (mode === "m7b5 Arp") {
+//     scaleQual = "ARPm7b5";
+//   }
+
+//   // Find nearest form by comparing transformed positions
+//   const forms = this.scaleFormNames(scaleQual);
+//   const nearest = { fret: 100, id: undefined };
+//   const activeForm = this.activeScale.form;
+
+//   for (const formName of forms) {
+
+//     scale = this.scaleWithQualityAndForm(scaleQual, formName);
+//     scale.setRoot(root);
+//     scale.setMode(mode);
+
+//     const position = scale.transformedPosition();
+//     const diff = Math.abs(position - fret);
+
+//     if (diff < nearest.fret) {
+//       if (!(ignoreActive === true && activeForm === formName)) {
+//         nearest.fret = diff;
+//         nearest.id = scale.id;
+//       }
+//     }
+
+//     if (position === fret) break;
+//   }
+
+//   // Apply the selected scale
+//   const chosen = this.scaleWithId(nearest.id);
+//   if (chosen) {
+//     this.activeScale = chosen;
+//   }
+
+//   return this;
+// }
 
 
 

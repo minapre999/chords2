@@ -3,7 +3,7 @@
 
 import "/src/globals.js"
 import Scale, { ScaleDictionary } from "/src/harmony/scale-manager";
-
+import "/src/components/ControlPanel/keyboard.css";
 
 export default function ScaleRootPanel(props) {
 
@@ -39,19 +39,21 @@ const ClickPiano=(root)=>{
             <div className="scale-tile-body">
               {/* Root controls */}
 
-    <div className="root-picker-container picker-container">
-      <div className="keyboard">
-        {KEYS.map(k => (
-          <div
-            key={k.note}
-            className={`key ${k.class} 
-            ${scaleRootUI  === k.note ? "selected" : ""}`}
-            // 
-            onClick={() => ClickPiano(k.note)}
-          >
-            <span>{k.note}</span>
+    <div className="root-grid-container grid-container">
+       <div className="grid-group">
+          <div className="keyboard">
+              {KEYS.map(k => (
+                <div
+                  key={k.note}
+                  className={`key ${k.class} 
+                  ${scaleRootUI  === k.note ? "selected" : ""}`}
+                  // 
+                  onClick={() => ClickPiano(k.note)}
+                >
+                  <span>{k.note}</span>
+                </div>
+              ))}
           </div>
-        ))}
          </div>
         </div>
       </div>

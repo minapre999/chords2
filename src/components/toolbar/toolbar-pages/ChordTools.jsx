@@ -1,6 +1,6 @@
 
 
-import ChordPicker from "/src/components/toolbar/chord-tools/ChordPicker.jsx";
+// import ChordPicker from "/src/components/toolbar/chord-tools/ChordPicker.jsx";
 import InversionNavigator from "/src/components/toolbar/chord-tools/InversionNavigator.jsx";
 import FormSSNavigator from "/src/components/toolbar/chord-tools/FormSSNavigator.jsx";
 import NoteMode from "/src/components/toolbar/chord-tools/NoteMode.jsx";

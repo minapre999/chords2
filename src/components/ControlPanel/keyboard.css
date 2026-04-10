@@ -1,0 +1,92 @@
+
+/*  keyboard */
+
+
+
+.keyboard {
+    /* height: 100%; */
+    /* width: 100%; */
+
+    display: flex;
+    margin: auto;
+    justify-content: center;
+    /* background-color: #111; */
+    /* transform: scale(0.9,0.9); */
+
+}
+
+
+
+.keyboard  .key {
+    
+    float: left;
+    position: relative;
+}
+
+.keyboard  .key {
+   border: 1px solid grey; 
+}
+
+.keyboard  .key > span {
+    position: absolute;
+    bottom: 0;
+    left: 5px;
+    user-select: none; 
+}
+
+.keyboard  .key:hover {
+   transform: translateY(1px) translateY(1px) ;
+}
+.keyboard  .white-key {
+    /* height: 50px; */
+    /* width: 25px; */
+    min-width: 25px;
+    min-height: 50px;
+    z-index: 1;
+    border-top: 1px solid #aaa;
+    border-bottom: 1px solid #aaa;
+    border-left: 1px solid #aaa;
+    background-color: #cbcbcb;
+}
+
+
+.keyboard .e {
+    border-right: none !important;
+}
+
+.keyboard  .black-key {
+    min-height: 31px;
+    min-width: 13.5px;
+    height: 31px;
+    width: 13.5px;
+    z-index: 2;
+    border: 1px solid #5c5a5a !important;
+    background-color: #222;
+} 
+
+.keyboard  .black-key > span {
+font-size: 9px;
+left: 0px;
+top: 8px;
+color: #cbcbcb;
+}
+.a, .b, .d, .e, .g, .black-key {
+    margin: 0 0 0 -8px;
+}
+.keyboard > .key:last-child {
+    border-right: 1px solid #aaa;
+}
+
+.keyboard .key.selected > span {
+    color: #139afc;
+font-weight: bold;
+}
+
+/* .keyboard .key.black-key.selected > span {
+    color: #84a9bc;
+font-weight: bold;
+} */
+
+
+
+

@@ -1,7 +1,6 @@
 
  import React, { useState,useEffect } from "react";
 
-import ChordForm, {HarmonyManager, Chord}   from "/src/harmony/harmony-manager.js"
 
 export default function InversionPanel({
 
@@ -56,7 +55,7 @@ const [isOpen, setIsOpen] = useState(true);
          
 
  {isOpen && (
-        <div className="inversion-container picker-container">
+        <div className="inversion-container grid-container">
             <div class="inversion-picker-group picker-group">
 
                    {arrInv.map(inv => (

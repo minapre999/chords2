@@ -79,7 +79,7 @@ const toggle = () => setIsOpen(prev => !prev);
       
 
  {isOpen  && (
-          <div className="quality-picker-container picker-container">
+          <div className="quality-grid-container grid-container">
             <div id="major" className="chord-picker-group picker-group">
               
               {major.map(ch => (

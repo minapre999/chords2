@@ -53,7 +53,7 @@ const [isOpen, setIsOpen] = useState(true);
         <div id={spId} className={spClass}>
         
  {isOpen && (
-        <div className="inversion-container picker-container">
+        <div className="inversion-container grid-container">
             <div class="inversion-picker-group picker-group">
 
                    {arrInv.map(inv => (

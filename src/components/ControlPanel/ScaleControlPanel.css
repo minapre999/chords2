@@ -54,31 +54,3 @@
   max-width: 80vw;
 }
 
-/* Tile surface — SAME as accordion-item */
-.scale-tile {
-  background: #ffffff;
-  border: 1px solid #dcdfe3;
-  border-radius: 6px;
-  padding: 0.55rem 0.65rem;
-  height: 100%;
-  box-sizing: border-box;
-}
-
-/* Tile header — SAME visual language as accordion-header */
-.scale-tile-header {
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: #2a2d31;
-  margin-bottom: 0.35rem;
-  padding-bottom: 0.25rem;
-  border-bottom: 1px solid #e1e4e8;
-}
-
-/* Tile body — SAME as accordion-body text */
-.scale-tile-body {
-  font-size: 0.8rem;
-  color: #3a3d41;
-}
-
-
-

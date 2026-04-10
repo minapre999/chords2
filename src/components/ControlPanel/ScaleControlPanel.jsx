@@ -29,7 +29,7 @@ export default function ScaleControlPanel(props
           className={`tab ${activeTab === "sequence" ? "active" : ""}`}
           onClick={() => setActiveTab("sequence")}
         >
-          Scale Sequence
+          Sequence
         </button>
       </div>
 
