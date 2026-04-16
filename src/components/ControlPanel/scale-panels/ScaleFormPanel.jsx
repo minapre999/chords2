@@ -14,7 +14,7 @@ const {scaleFormUI, setScaleFormUI, scaleQualityUI,...rest}=props
 
 let scaleForms = dc.SCALE_MANAGER.activeDict.scaleFormNames(scaleQualityUI) 
            
-  console.log("rendering Scale Form panel, scaleFormUI: ", scaleFormUI)
+  // console.log("rendering Scale Form panel, scaleFormUI: ", scaleFormUI)
  return (
    scaleFormUI && scaleQualityUI && (
     <div className="grid-tile">

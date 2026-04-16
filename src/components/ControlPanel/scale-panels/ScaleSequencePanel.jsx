@@ -31,7 +31,9 @@ export default function ScaleSequencePanel({
   metronomeLevel,
   setMetronomeLevel,
   metronomeMuted,
-  setMetronomeMuted
+  setMetronomeMuted,
+  scaleSequenceUI,
+  setScaleSequenceUI,
 }) {
   // MULTI-OPEN ACCORDION
   const [openItems, setOpenItems] = useState(new Set(["tempo"]));
@@ -44,13 +46,7 @@ export default function ScaleSequencePanel({
     });
   };
 
-  const openAll = () => {
-    setOpenItems(new Set(["tempo", "rhythm", "direction", "pattern", "metronome"]));
-  };
-
-  const closeAll = () => {
-    setOpenItems(new Set());
-  };
+ 
 
   // Custom patterns from Dexie
   const [customPatterns, setCustomPatterns] = useState([]);
@@ -81,9 +77,33 @@ export default function ScaleSequencePanel({
     <div className="container-fluid px-0">
       <div className="row g-3 scale-grid">
 
+
+ {/* SCALE TEMPO */}
+        {/* <div className="col-12 col-md-4">
+          <div className="grid-tile">
+          <div className="grid-tile-header">Sequencing</div>
+         <div className="grid-tile-body">
+
+      <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <input
+          type="checkbox"
+          checked={scaleSequenceUI}
+          onChange={(e) => setScaleSequenceUI(e.target.checked)}
+        />
+        Enable scale sequencing
+      </label>
+
+
+
+          </div>
+        </div>
+      </div> */}
         {/* SCALE TEMPO */}
         <div className="col-12 col-md-4">
           <div className="grid-tile">
+          <div className="grid-tile-header">Tempo</div>
+         <div className="grid-tile-body">
+
             <div className="control-group">
               <label>BPM: {bpm}</label>
               <input
@@ -116,16 +136,9 @@ export default function ScaleSequencePanel({
             </div>
           </div>
         </div>
-
-        {/* RHYTHM */}
-        <div className="col-12 col-md-4">
-  <div className="grid-tile">
-    <div className="grid-tile-header">Scale tempo</div>
-    <div className="grid-tile-body">
-      {/* tempo controls */}
-    </div>
-  </div>
-</div>
+      </div>
+    
+    
 
 
 
@@ -170,6 +183,10 @@ export default function ScaleSequencePanel({
         {/* DIRECTION */}
         <div className="col-12 col-md-4">
           <div className="grid-tile">
+               <div className="grid-tile-header">Direction</div>
+                  <div className="grid-tile-body">
+
+
             <div className="radio-group">
               <label>
                 <input
@@ -209,10 +226,13 @@ export default function ScaleSequencePanel({
             </div>
           </div>
         </div>
-
+    </div>
         {/* PATTERN */}
         <div className="col-12 col-md-4">
           <div className="grid-tile">
+            <div className="grid-tile-header">Pattern</div>
+                  <div className="grid-tile-body">
+
             <div className="pattern-list">
               {allPatterns.map(p => (
                 <div className="pattern-row" key={p.builtIn ? p.value : p.id}>
@@ -247,10 +267,14 @@ export default function ScaleSequencePanel({
             </div>
           </div>
         </div>
-
+</div>
         {/* METRONOME */}
         <div className="col-12 col-md-4">
           <div className="grid-tile">
+             <div className="grid-tile-header">Pattern</div>
+                  <div className="grid-tile-body">
+
+
             <div className="control-group">
               <label>Level: {metronomeLevel}</label>
               <input
@@ -270,7 +294,7 @@ export default function ScaleSequencePanel({
             </div>
           </div>
         </div>
-
+      </div>
       </div>
     </div>
   );

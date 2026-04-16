@@ -1,18 +1,19 @@
 import { useState, useEffect,  } from "react"
 import { BrowserRouter, Routes, Route, Outlet, useLocation } from "react-router-dom";
+import * as Tone from "tone";
 import HomePage from "/src/components/pages/HomePage.jsx";
 import ScalePage from "/src/components/pages/ScalePage.jsx";
 import ChordPage from "/src/components/pages/ChordPage.jsx";
 import SettingsPage from "/src/components/pages/SettingsPage.jsx";
 import LeadSheetPage from "/src/components/pages/LeadSheetPage.jsx";
+import NavigationBar from "/src/components/navbar/NavigationBar.jsx";
+
 import "./globals.js"
 import SettingsModule from "/src/components/settings/SettingsModule.jsx";
 import LeadSheetModule from "/src/components/ls/LeadSheetModule.jsx";
-import NavigationBar from "/src/components/navbar/navigation-bar.jsx";
 import { loadSamples } from "./sound/GuitarSampler";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 import TuningManager from "/src/harmony/tuning-manager.js"
-import { jsPanel } from "jspanel4";
 import "./App.css"
 
 
@@ -45,20 +46,40 @@ function App() {
 
   const [ready, setReady] = useState(false);
   
- 
-
+  const [scaleSampler, setScaleSampler] = useState(null);
 
 
 useEffect(() => {
-  loadSamples({
-    40: "/samples/E2.wav",
-    45: "/samples/A2.wav",
-    50: "/samples/D3.wav",
-    55: "/samples/G3.wav",
-    59: "/samples/B3.wav",
-    64: "/samples/E4.wav",
-  });
+
+
+const loadSampler = async () => {
+    await Tone.start();
+
+    const s = new Tone.Sampler(
+      {
+        E2: "/samples/guitar-acoustic/E2.ogg",
+        A2: "/samples/guitar-acoustic/A2.ogg",
+        D3: "/samples/guitar-acoustic/D3.ogg",
+        G3: "/samples/guitar-acoustic/G3.ogg",
+        B3: "/samples/guitar-acoustic/B3.ogg",
+        E4: "/samples/guitar-acoustic/E4.ogg",
+        A4: "/samples/guitar-acoustic/A4.ogg",
+        D5: "/samples/guitar-acoustic/D5.ogg",
+
+      },
+      () => console.log("Sampler loaded")
+    ).toDestination();
+
+    s.volume.value = +6;
+
+    setScaleSampler(s);
+  };
+
+ loadSampler()
+
 }, []);
+
+
 
 //     const [page, setPage] = useState("chords");
 // /*
@@ -145,6 +166,8 @@ useEffect(() => {
       return () => { cancelled = true };            // 5. Cleanup: mark as unmounted
     }, []);
       
+
+
 const fbProps = {
   renderDataUI: renderDataUI,
   setRenderDataUI: setRenderDataUI,
@@ -161,6 +184,11 @@ showHeadstockUI:        showHeadstockUI,
                  
 }
 
+const audioProps = {
+  scaleSampler: scaleSampler, setScaleSampler: setScaleSampler
+}
+
+
 
   return (
     <BrowserRouter>
@@ -173,7 +201,7 @@ showHeadstockUI:        showHeadstockUI,
             path="/chords"
             element={
               <ChordPage
-              {...fbProps}
+              {...fbProps} {...audioProps}
                 />
             }
           />
@@ -182,7 +210,7 @@ showHeadstockUI:        showHeadstockUI,
             path="/scales"
             element={
               <ScalePage
-                {...fbProps}
+                {...fbProps} {...audioProps}
                   />
             }
           />
@@ -193,7 +221,7 @@ showHeadstockUI:        showHeadstockUI,
             path="/settings"
             element={
               <SettingsPage
-              {...fbProps}
+              {...fbProps} {...audioProps}
                
               />
             }

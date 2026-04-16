@@ -59,6 +59,8 @@ export default class Note {
     }
     return this._name;
   }
+
+  
   set name(n) {
     this._name = n;
   }

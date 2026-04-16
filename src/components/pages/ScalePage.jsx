@@ -9,12 +9,12 @@ import ScaleInfo from "/src/components/scale/ScaleInfo.jsx"
 import "/src/harmony/scale-manager.js"
 import "/src/components/pages/ScalePage.css"
 import ScaleControlTab from "/src/components/ControlPanel/scale-panels/ScaleControlTab.jsx"
-
+import * as Tone from "tone";
 
 export default function ScalePage( props ) {
 
-  const { setRenderDataUI, showOpenStringsUI,
-     setShowOpenStringsUI, showInlaysUI, setShowInlaysUI, 
+  const { renderDataUI, setRenderDataUI, showOpenStringsUI,
+     setShowOpenStringsUI, showInlaysUI, setShowInlaysUI, scaleSampler, setScaleSampler,
      ...rest} = props
 
 
@@ -38,6 +38,14 @@ export default function ScalePage( props ) {
   const [scaleNoteName, setScaleNoteName] = useState(null)
   const [ready, setReady] = useState(false);
   const [scaleChoiceUI, setScaleChoiceUI] = useState(null);
+  /*scaleSequenceUI
+   'sequence', 'block'
+   scale synth only applicalbe to sequential view
+  */
+  const [scaleSequenceUI, setScaleSequenceUI]= useState(false)
+  // currentNote is active note of scale being sequenced
+  const [currentNote, setCurrentNote] = useState(null)
+
 
     // zoom persistence - zoom is used for scales so persist as different variable
   //  useEffect(() => {
@@ -47,8 +55,8 @@ export default function ScalePage( props ) {
   //    }, [zoom]);
    
 
-  const [scaleChanged, setScaleChanged] = useState(1)
-/* too many problems using objects as useState.  It requires deep cloning for react to recognise change
+
+  /* too many problems using objects as useState.  It requires deep cloning for react to recognise change
 This is causing issues with lag in interface possible due to React seeing a new reference every timne
 and re-rerending
 Best solution is to only store primitives in the useState
@@ -59,16 +67,30 @@ const [scaleRootUI, setScaleRootUI] = useState("C")
 const [scaleFormUI, setScaleFormUI] = useState("1")
 
 
-useEffect(() => {
-  // console.log("Effect triggered: chordRootUI =", chordRootUI);
 
-  try {
+useEffect(() => {
+    if (!scaleSampler) return;
+    if( !renderDataUI ) return;
+
+   // seqRef.current = new Tone.Sequence(
  
-    // PlayNote(scaleNote);
-  } catch (e) {
-    // console.error("Effect error:", e);
-  }
-}, [scaleNoteName]);
+   const renderNotes = renderDataUI.renderNotes
+   console.log("useEffect scaleSampler, renderNotes: ", renderNotes)
+   const notes = renderDataUI.notes
+   console.log("useEffect scaleSampler, notes array: ", notes)
+    new Tone.Sequence((time, note) => {
+        scaleSampler.triggerAttackRelease(note.name, "8n", time);
+
+        Tone.Draw.schedule(() => {
+          setCurrentNote(note);
+        }, time);
+      },
+      notes,
+      "8n"
+    ).start(0);
+
+  }, [scaleSampler]);
+
 
 
 
@@ -129,6 +151,8 @@ useEffect(() => {
   const rData = new RenderData()
    
     if (scale?.id !== undefined) {
+      rData.activeNote = null // for sequential playing
+
        console.log("getting render data for scale ", scale, " with id: ", scale.id, 
         " root: ", scale.root , " form: ", scale.form)   
       scale.notes.forEach((n)=>{
@@ -175,7 +199,8 @@ const scaleProps={
   scaleModeUI: scaleModeUI, setScaleModeUI: setScaleModeUI,
   scaleQualityUI: scaleQualityUI, setScaleQualityUI: setScaleQualityUI,
   scaleFormUI: scaleFormUI, setScaleFormUI: setScaleFormUI,
-
+scaleSequenceUI: scaleSequenceUI, setScaleSequenceUI: setScaleSequenceUI,
+currentNote: currentNote, setCurrentNote: setCurrentNote
 }
   
 return (
@@ -197,7 +222,7 @@ return (
   <div className="page-content">
     <FretboardSVG
       {...props}
-           {...scaleProps}
+      {...scaleProps}
 
       setRenderDataUI={setRenderDataUI}
       scaleNoteName={scaleNoteName}   setScaleNoteName={setScaleNoteName}

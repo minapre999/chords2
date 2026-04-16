@@ -27,7 +27,7 @@ export default function StringLane({
   noteNameFromMidi,
   showAllNotesUI,
   noteMode,
-  
+  currentNote,
 }) {
 
     if(renderDataUI == null || renderDataUI == undefined) return null
@@ -199,7 +199,10 @@ function noteNameFromMidi(midi, { preferSharps = true } = {}) {
         const left = getFretX(fret - 1);
         const right = Math.min(getFretX(fret), width);
         const x = (left + right) / 2;
-        
+
+// let isScaleNote = false
+const isActive = currentNote?.fret == fret && currentNote?.stringNumber-1 == stringIndex ? true : false
+
 const isChordNote =true
         // const isChordNote =
         //   cfUI &&
@@ -227,6 +230,17 @@ const isChordNote =true
               />
             )}
 
+      {(isActive ) && (
+              <circle
+                cx={x}
+                cy={y}
+                r={note_data.width}
+                fill={'white'}
+                stroke={'red'}
+                strokeWidth={'26'}
+              />
+            )}
+
             {(isChordNote || showAllNotesUI) && (
               <text
                 x={x}
@@ -238,6 +252,11 @@ const isChordNote =true
                 {noteName}
               </text>
             )}
+
+
+            
+
+
           </g>
         );
       })} 

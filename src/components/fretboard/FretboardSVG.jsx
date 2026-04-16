@@ -92,7 +92,7 @@ const getFretX = (fret) => nutX  + fretSpacing * fret;
 const fretboardLength = getFretX(numFrets);
 const headstockWidth = 180;
 width = fretboardLength 
-console.log("showHeadstockUI: ", showHeadstockUI)
+// console.log("showHeadstockUI: ", showHeadstockUI)
 if(showHeadstockUI) {
         width+= headstockWidth
         } 
