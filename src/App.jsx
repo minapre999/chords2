@@ -48,18 +48,16 @@ function App() {
   
 const [scaleSampler, setScaleSampler] = useState(null);
 const [showHarmonyNotesUI, setShowHarmonyNotesUI] = useState( true) // show root, third, etc in different colours
-const [arrFillColorUI, setArrFillColorUI] = useState( [ 'gray', 'gray', 'gray', 'gray', 'gray'] )
-const [arrFontColorUI, setarrFontColorUI] = useState( [ 'white', 'white', 'white', 'white', 'white'] )
-const [arrFontSizeUI, setArrFontSizeUI] = useState( [ 12, 12, 12, 12, 12] )
-const [arrStrokeColorUI, setArrStrokeColorUI] = useState( [ 'black', 'black', 'black', 'black', 'black'] )
-const [strokeWidthUI, setStrokeWidthUI] = useState( 2 )
-const [arrWidthUI, setArrWidthUI]= useState( [ 18, 18, 18, 18, 18] )
-const [activeFontSizeUI, setActiveFontSizeUI] = useState(18)
-const [activeFillColorUI, setActiveFillColorUI] = useState('red')
-const [activeFontColorUI, setActiveTextColorUI] = useState('black')
-const [activeStrokeColorUI, setActiveStrokeColorUI] = useState('black')
-const [activeStrokeWidthUI, setActiveStrokeWidthUI] = useState( 2 )
-const [activeWidthUI, setActiveWidthUI] = useState(27)
+
+
+
+
+
+
+           
+
+
+
     /*                                        
     arrFillColorUI - five element array of fill colors for default, root, third, fifth, seventh notes
   arrFontColorUI - five element array of text colors for default, root, third, fifth, seventh notes
@@ -161,6 +159,123 @@ useEffect(() => {
 
 const [renderDataUI, setRenderDataUI] = useState(null);
 
+
+const [arrWidthUI, setArrWidthUI] = useState(() => {
+  const saved = localStorage.getItem("arrWidthUI");
+  return saved ? JSON.parse(saved) : [15, 15, 15, 15, 15];
+});
+
+useEffect(() => {
+  localStorage.setItem("arrWidthUI", JSON.stringify(arrWidthUI));
+}, [arrWidthUI]);
+
+
+const [arrFillColorUI, setArrFillColorUI] = useState(() => {
+  const saved = localStorage.getItem("arrFillColorUI");
+  return saved ? JSON.parse(saved) : [ 'gray', 'gray', 'gray', 'gray', 'gray'] ;
+});
+useEffect(() => {
+  localStorage.setItem("arrFillColorUI", JSON.stringify(arrFillColorUI));
+}, [arrFillColorUI]);
+
+const [arrStrokeColorUI, setArrStrokeColorUI] = useState(() => {
+  const saved = localStorage.getItem("arrStrokeColorUI");
+  return saved ? JSON.parse(saved) : [ 'black', 'black', 'black', 'black', 'black'] ;
+});
+useEffect(() => {
+  localStorage.setItem("arrStrokeColorUI", JSON.stringify(arrStrokeColorUI));
+}, [arrStrokeColorUI]);
+
+const [arrFontColorUI, setarrFontColorUI] = useState(() => {
+  const saved = localStorage.getItem("arrFontColorUI");
+  return saved ? JSON.parse(saved) : [ 'white', 'white', 'white', 'white', 'white'] ;
+});
+useEffect(() => {
+  localStorage.setItem("arrFontColorUI", JSON.stringify(arrFontColorUI));
+}, [arrFontColorUI]);
+
+
+const [arrFontSizeUI, setArrFontSizeUI] = useState(() => {
+  const saved = localStorage.getItem("arrFontSizeUI");
+  return saved ? JSON.parse(saved) : [ 12, 12, 12, 12, 12]  ;
+});
+useEffect(() => {
+  localStorage.setItem("arrFontSizeUI", JSON.stringify(arrFontSizeUI));
+}, [arrFontSizeUI]);
+
+
+
+const [activeFillColorUI, setActiveFillColorUI] = useState(() => {
+  const saved = localStorage.getItem("activeFillColorUI");
+  return saved ? saved : 'red';
+});
+useEffect(() => {
+  localStorage.setItem("activeFillColorUI", activeFillColorUI);
+}, [activeFillColorUI]);
+
+
+const [activeFontColorUI, setActiveTextColorUI] = useState(() => {
+  const saved = localStorage.getItem("activeFontColorUI");
+  return saved ? saved : 'black';
+});
+useEffect(() => {
+  localStorage.setItem("activeFontColorUI", activeFontColorUI);
+}, [activeFontColorUI]);
+
+
+const [activeFontSizeUI, setActiveFontSizeUI] = useState(() => {
+  const saved = localStorage.getItem("activeFontSizeUI");
+  return saved ? saved : 18;
+});
+useEffect(() => {
+  localStorage.setItem("activeFontSizeUI", activeFontSizeUI);
+}, [activeFontSizeUI]);
+
+
+const [strokeWidthUI, setStrokeWidthUI] = useState(() => {
+  const saved = localStorage.getItem("strokeWidthUI");
+  return saved ? saved : 2;
+});
+useEffect(() => {
+  localStorage.setItem("strokeWidthUI", strokeWidthUI);
+}, [strokeWidthUI]);
+
+
+const [activeStrokeColorUI, setActiveStrokeColorUI] = useState(() => {
+  const saved = localStorage.getItem("activeStrokeColorUI");
+  return saved ? saved : 'black';
+});
+useEffect(() => {
+  localStorage.setItem("activeStrokeColorUI", activeStrokeColorUI);
+}, [activeStrokeColorUI]);
+
+
+const [activeStrokeWidthUI, setActiveStrokeWidthUI] = useState(() => {
+  const saved = localStorage.getItem("activeStrokeWidthUI");
+  return saved ? saved : 3;
+});
+useEffect(() => {
+  localStorage.setItem("activeStrokeWidthUI", activeStrokeWidthUI);
+}, [activeStrokeWidthUI]);
+
+
+const [activeWidthUI, setActiveWidthUI] = useState(() => {
+  const saved = localStorage.getItem("activeWidthUI");
+  return saved ? saved : 22;
+});
+useEffect(() => {
+  localStorage.setItem("activeWidthUI", activeWidthUI);
+}, [activeWidthUI]);
+
+const [currentNote, setCurrentNote] = useState(null)
+
+
+
+
+
+
+
+
 //   /*
 //   setRenderNotes: eact requires you to create a new array when updating state. Never mutate the existing one.
 // adding an item: setRenderNotes(prev => [...prev, newRN]);
@@ -208,6 +323,7 @@ activeStrokeColorUI: activeStrokeColorUI, setActiveStrokeColorUI: setActiveStrok
 activeStrokeWidthUI: activeStrokeWidthUI, setActiveStrokeWidthUI: setActiveStrokeWidthUI,
 activeWidthUI: activeWidthUI, setActiveWidthUI: setActiveWidthUI,
 showHarmonyNotesUI : showHarmonyNotesUI, setShowHarmonyNotesUI: setShowHarmonyNotesUI,
+currentNote: currentNote, setCurrentNote: setCurrentNote,
 }
 
 const audioProps = {

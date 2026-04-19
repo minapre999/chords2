@@ -15,6 +15,7 @@ export default function ScalePage( props ) {
 
   const { renderDataUI, setRenderDataUI, showOpenStringsUI,
      setShowOpenStringsUI, showInlaysUI, setShowInlaysUI, scaleSampler, setScaleSampler,
+     currentNote, setCurrentNote,
      ...rest} = props
 
 
@@ -44,7 +45,7 @@ export default function ScalePage( props ) {
   */
   const [scaleSequenceUI, setScaleSequenceUI]= useState(false)
   // currentNote is active note of scale being sequenced
-  const [currentNote, setCurrentNote] = useState(null)
+
 
 
     // zoom persistence - zoom is used for scales so persist as different variable
@@ -91,7 +92,7 @@ const scaleProps={
   directionUI: directionUI, setDirectionUI: setDirectionUI,
   rhythmUI: rhythmUI, setRhythmUI: setRhythmUI,
 
-  currentNote: currentNote, setCurrentNote: setCurrentNote
+  // currentNote: currentNote, setCurrentNote: setCurrentNote
 }
 
 
@@ -203,8 +204,8 @@ useEffect(() => {
     if (scale?.id !== undefined) {
       rData.activeNote = null // for sequential playing
 
-       console.log("getting render data for scale ", scale, " with id: ", scale.id, 
-        " root: ", scale.root , " form: ", scale.form)   
+      //  console.log("getting render data for scale ", scale, " with id: ", scale.id, 
+        // " root: ", scale.root , " form: ", scale.form)   
       scale.notes.forEach((n)=>{
  
          
@@ -216,7 +217,7 @@ useEffect(() => {
           })
   
    // if this doesn't work may need to create a boolean primitive to flag needs rendering
-        console.log("SCALE RENDER DATA: ", rData)
+        // console.log("SCALE RENDER DATA: ", rData)
         setRenderDataUI( rData);
       }      
 

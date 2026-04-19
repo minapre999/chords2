@@ -10,7 +10,7 @@ It also serves as data layer for sequencing
 
 export  class RenderNote {
    constructor(options = {}) {
-    console.log("render note options: ")
+    // console.log("render note options: ")
     // Destructure the options object.
     // Each field has its own default value.
     const {
@@ -25,7 +25,7 @@ export  class RenderNote {
     this._text = text
    this._interval = interval
    this._subdivision = subdivision
-    console.log("render note: ", this)
+    // console.log("render note: ", this)
   }
 
     get note(){return this._note}
