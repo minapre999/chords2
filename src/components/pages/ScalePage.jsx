@@ -65,31 +65,81 @@ const [scaleQualityUI, setScaleQualityUI] = useState("Maj")
 const [scaleModeUI, setScaleModeUI] = useState("Major")
 const [scaleRootUI, setScaleRootUI] = useState("C")
 const [scaleFormUI, setScaleFormUI] = useState("1")
+const [noteValueUI, setNoteValueUI] = useState("eighth")
+const [patternUI, setPatternUI] = useState("sequential")
+const [tempoUI, setTempoUI] = useState(120)
+const [swingUI, setSwingUI] = useState(0.1)
+const [metronomeLevelUI, setMetronomeLevelUI] = useState("0.6")
+const [metronomeMutedUI, setMetronomeMutedUI] = useState(true)
+const [directionUI, setDirectionUI] = useState("asc") // "asc", "desc", "asc-desc", "desc-asc"
+const [rhythmUI, setRhythmUI] = useState("straight") // "straight", "swing", "triplet", 
+const seqRef = useRef(null);
+
+
+const scaleProps={
+  scaleRootUI: scaleRootUI, setScaleRootUI: setScaleRootUI,
+  scaleModeUI: scaleModeUI, setScaleModeUI: setScaleModeUI,
+  scaleQualityUI: scaleQualityUI, setScaleQualityUI: setScaleQualityUI,
+  scaleFormUI: scaleFormUI, setScaleFormUI: setScaleFormUI,
+  scaleSequenceUI: scaleSequenceUI, setScaleSequenceUI: setScaleSequenceUI,
+  patternUI: patternUI, setPatternUI: setPatternUI,
+  tempoUI: tempoUI, setTempoUI: setTempoUI,
+  swingUI: swingUI, setSwingUI: setSwingUI,
+  noteValueUI: noteValueUI, setNoteValueUI: setNoteValueUI,
+  metronomeLevelUI: metronomeLevelUI, setMetronomeLevelUI: setMetronomeLevelUI,
+  metronomeMutedUI: metronomeMutedUI, setMetronomeMutedUI: setMetronomeMutedUI,
+  directionUI: directionUI, setDirectionUI: setDirectionUI,
+  rhythmUI: rhythmUI, setRhythmUI: setRhythmUI,
+
+  currentNote: currentNote, setCurrentNote: setCurrentNote
+}
 
 
 
 useEffect(() => {
+    console.log("useEffect for scale renderData.  directionUI is: ", directionUI," patternUI is: ", patternUI )
     if (!scaleSampler) return;
     if( !renderDataUI ) return;
 
-   // seqRef.current = new Tone.Sequence(
+      renderDataUI.setProps(scaleProps)
+
+      // 1. STOP AND DISPOSE ANY EXISTING SEQUENCE
+  if (seqRef.current) {
+    seqRef.current.stop();
+    seqRef.current.dispose();
+    seqRef.current = null;
+  }
+
+
+  
+  // 2. CREATE NEW SEQUENCE
  
-   const renderNotes = renderDataUI.renderNotes
-   console.log("useEffect scaleSampler, renderNotes: ", renderNotes)
-   const notes = renderDataUI.notes
-   console.log("useEffect scaleSampler, notes array: ", notes)
-    new Tone.Sequence((time, note) => {
-        scaleSampler.triggerAttackRelease(note.name, "8n", time);
+  // const renderNotes = renderDataUI.renderNotes
+  //  const notes = [...scaleNotes, ...[...scaleNotes].reverse()]
+  //  console.log("useEffect scaleSampler, notes array: ", notes)
+
+   // need to reset transport, otherwise the first note doesn’t play the first time 
+   // //because the Transport is already running before the sequence is created. 
+   
+const renderNotes = renderDataUI.renderNotes
+console.log("renderNotes to be played: ", renderNotes)
+  const transport = Tone.getTransport();
+  transport.stop();
+  transport.position = 0;
+console.log("resequencing ...")
+   seqRef.current =  new Tone.Sequence((time, rn) => {
+    //  console.log("time: ", time, "rn: ", rn)
+        scaleSampler.triggerAttackRelease(rn.note.name, rn.subdivision, time);
 
         Tone.Draw.schedule(() => {
-          setCurrentNote(note);
+          setCurrentNote(rn.note);
         }, time);
       },
-      notes,
-      "8n"
+      renderNotes,
+      // "8n"
     ).start(0);
 
-  }, [scaleSampler]);
+  }, [renderDataUI, scaleSampler, directionUI, patternUI]);
 
 
 
@@ -148,7 +198,7 @@ useEffect(() => {
     scale.setRoot( scaleRootUI)
      
 
-  const rData = new RenderData()
+  const rData = new RenderData(scaleProps)
    
     if (scale?.id !== undefined) {
       rData.activeNote = null // for sequential playing
@@ -156,22 +206,12 @@ useEffect(() => {
        console.log("getting render data for scale ", scale, " with id: ", scale.id, 
         " root: ", scale.root , " form: ", scale.form)   
       scale.notes.forEach((n)=>{
-  
-          let fillColor = 'gray'
-          // if(n.interval=="1" ) { fillColor = dc.ROOT_NOTE_COLOR}  
-          //     else if(n.interval=="3"){ fillColor=dc.THIRD_NOTE_COLOR}  
-          //     else if(n.interval=="5"){ fillColor=dc.FIFTH_NOTE_COLOR}  
-          //     else if(n.interval=="7"){ fillColor=dc.SEVENTH_NOTE_COLOR} 
+ 
+         
   
           let text = n.letter 
 
-          // let text = ""
-            // if(noteMode == "note") { text = n.letter } 
-            //   else if (noteMode == "interval"){text= n.interval } 
-            //   else if (noteMode == "fingering"){ text= n.finger }
-  
-            let color = 'white'
-            const rn = new RenderNote({fillColor: fillColor, note: n, color: color, width: 18, text: text })
+          const rn = new RenderNote({note: n, text: text ,})
           rData.add(rn, n.stringNumber)
           })
   
@@ -194,14 +234,7 @@ useEffect(() => {
   }
 
 
-const scaleProps={
-  scaleRootUI: scaleRootUI, setScaleRootUI: setScaleRootUI,
-  scaleModeUI: scaleModeUI, setScaleModeUI: setScaleModeUI,
-  scaleQualityUI: scaleQualityUI, setScaleQualityUI: setScaleQualityUI,
-  scaleFormUI: scaleFormUI, setScaleFormUI: setScaleFormUI,
-scaleSequenceUI: scaleSequenceUI, setScaleSequenceUI: setScaleSequenceUI,
-currentNote: currentNote, setCurrentNote: setCurrentNote
-}
+
   
 return (
 

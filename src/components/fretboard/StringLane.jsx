@@ -28,6 +28,19 @@ export default function StringLane({
   showAllNotesUI,
   noteMode,
   currentNote,
+  showHarmonyNotesUI,
+  arrFontSizeUI,
+  arrFillColorUI,
+  arrFontColorUI,
+  arrStrokeColorUI,
+  arrWidthUI,
+  activeFontSizeUI,
+  activeFillColorUI,
+  activeFontColorUI,
+  activeStrokeColorUI,
+activeWidthUI,
+strokeWidthUI,
+activeStrokeWidthUI,
 }) {
 
     if(renderDataUI == null || renderDataUI == undefined) return null
@@ -200,7 +213,7 @@ function noteNameFromMidi(midi, { preferSharps = true } = {}) {
         const right = Math.min(getFretX(fret), width);
         const x = (left + right) / 2;
 
-// let isScaleNote = false
+// isActive for current note being sequenced
 const isActive = currentNote?.fret == fret && currentNote?.stringNumber-1 == stringIndex ? true : false
 
 const isChordNote =true
@@ -223,10 +236,10 @@ const isChordNote =true
               <circle
                 cx={x}
                 cy={y}
-                r={note_data.width}
-                fill={note_data.fillColor}
-                stroke={note_data.strokeColor}
-                strokeWidth={note_data.strokeWidth}
+                r={arrWidthUI[0]}
+                fill={arrFillColorUI[0]}
+                stroke={arrStrokeColorUI[0]}
+                strokeWidth={strokeWidthUI}
               />
             )}
 
@@ -234,20 +247,32 @@ const isChordNote =true
               <circle
                 cx={x}
                 cy={y}
-                r={note_data.width}
-                fill={'white'}
-                stroke={'red'}
-                strokeWidth={'26'}
+                r={activeWidthUI}
+                fill={activeFillColorUI}
+                stroke={activeStrokeColorUI}
+                strokeWidth={activeStrokeWidthUI}
               />
             )}
 
-            {(isChordNote || showAllNotesUI) && (
+        {isActive  && (
               <text
                 x={x}
                 y={y + 4}
-                fontSize={note_data.fontSize }
+                fontSize={activeFontSizeUI }
                 textAnchor="middle"
-                fill={note_data.color}
+                fill={activeFontColorUI}
+              >
+                {noteName}
+              </text>
+            )}
+            
+            {(!isActive && (isChordNote || showAllNotesUI)) && (
+              <text
+                x={x}
+                y={y + 4}
+                fontSize={arrFontSizeUI[0] }
+                textAnchor="middle"
+                fill={arrFontColorUI[0]}
               >
                 {noteName}
               </text>

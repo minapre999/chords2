@@ -2,35 +2,14 @@ import React, { useState, useEffect, useRef, useMemo } from "react"
 
 import FretboardSVG from "/src/components/fretboard/FretboardSVG.jsx"
 import "./FretboardSettings.css"
-export default function FretboardSettings(props){
+export default function HarmonySettings(props){
 
       const {   showOpenStringsUI, setShowOpenStringsUI,
                 showInlaysUI,setShowInlaysUI,
                 stringColorUI, setStringColorUI, 
                 bassStringColorUI, setBassStringColorUI,
                 showHeadstockUI,setShowHeadstockUI, 
-                arrFillColorUI,  setArrFillColorUI,
-                arrStrokeColorUI, setArrStrokeColorUI,
-                arrFontColorUI,arrFontSizeUI,  arrWidthUI, strokeWidthUI,
-                activeFontSizeUI, activeFillColorUI, activeFontColorUI, activeStrokeColorUI, activeStrokeWidthUI, activeWidthUI, 
-                showHarmonyNotesUI,
                 ...rest } = props
-
-
-     const   ChangeNoteColor=(sel)=>{
-                const myArr = [...arrFillColorUI]
-                myArr[0] = sel
-                console.log("setting note color to: ", sel, myArr)
-                setArrFillColorUI(myArr)
-                }
-
-  const   ChangeNoteStrokeColor=(sel)=>{
-                const myArr = [...arrStrokeColorUI]
-                myArr[0] = sel
-                console.log("setting note color to: ", sel, myArr)
-                setArrStrokeColorUI(myArr)
-                }
-
 
 return (
 <div id="fb-set-wrapper">
@@ -70,9 +49,6 @@ return (
         Show inlays
       </label>
     
-    <div>
-
-  
      {/* String colours  - toolbar sends update to the parent */}
       <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
         Treble strings colour:
@@ -81,7 +57,6 @@ return (
           value={stringColorUI}
 
           onChange={(e) => setStringColorUI(e.target.value)}
-    
         />
       </label>
 
@@ -94,34 +69,7 @@ return (
         />
       </label>
 
-     </div>
-
-
-     <div>
-
    
-  {/* note colours  - toolbar sends update to the parent */}
-      <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
-        Note colour:
-        <input
-          type="color"
-          value={arrFillColorUI[0]}
-          
-           onChange={(e) => ChangeNoteColor(e.target.value)}
-        />
-      </label>
-
-      <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
-        Note border colour:
-        <input
-          type="color"
-          value={arrStrokeColorUI[0]}
-           onChange={(e) => ChangeNoteStrokeColor(e.target.value)}
-          
-        />
-      </label>
-
-  </div>
 
 
     <div />

@@ -3,40 +3,39 @@ import { patternsDB } from "../patternsDB";
 import "../ControlPanel.css"
 import "./ScaleSequencePanel.css"
 import "./ScaleControlTab.css"
+import * as Tone from "tone";
 
 
 
 // Built-in patterns
 const BUILT_IN_PATTERNS = [
-  "1-2-3-4",
+  "sequential",
+  "1-3",
   "1-2-3",
+  "1-2-3-4",
   "1-3-2-4",
   "1-3-4-2",
   "1-5-7-4",
   "1-4-3-7"
 ];
 
-export default function ScaleSequencePanel({
+export default function ScaleSequencePanel(props ) {
+
+const {
   className="",
-  bpm,
-  setBpm,
-  noteValue,
-  setNoteValue,
-  rhythm,
-  setRhythm,
-  direction,
-  setDirection,
-  pattern,
-  setPattern,
-  metronomeLevel,
-  setMetronomeLevel,
-  metronomeMuted,
-  setMetronomeMuted,
-  scaleSequenceUI,
-  setScaleSequenceUI,
-}) {
-  // MULTI-OPEN ACCORDION
-  const [openItems, setOpenItems] = useState(new Set(["tempo"]));
+  noteValueUI,setNoteValueUI,
+  tempoUI,   setTempoUI,
+  swingUI,   setSwingUI,
+  rhythmUI,   setRhythmUI,
+  directionUI, setDirectionUI,
+  patternUI,    setPatternUI,
+  metronomeLevelUI,setMetronomeLevelUI,
+  metronomeMutedUI,setMetronomeMutedUI,
+  scaleSequenceUI, setScaleSequenceUI,
+  ...rest
+} = props
+
+
 
   const toggle = (name) => {
     setOpenItems(prev => {
@@ -105,21 +104,24 @@ export default function ScaleSequencePanel({
          <div className="grid-tile-body">
 
             <div className="control-group">
-              <label>BPM: {bpm}</label>
+              <label>BPM: {tempoUI}</label>
               <input
                 type="range"
                 min="40"
                 max="240"
-                value={bpm}
-                onChange={e => setBpm(Number(e.target.value))}
+                value={tempoUI}
+                onChange={e => {
+                  Tone.Transport.bpm.value = e.target.value
+                  setTempoUI(Number(e.target.value))}
+                }
               />
 
               <div className="radio-group">
                 <label>
                   <input
                     type="radio"
-                    checked={noteValue === "quarter"}
-                    onChange={() => setNoteValue("quarter")}
+                    checked={noteValueUI === "quarter"}
+                    onChange={() => setNoteValueUI("quarter")}
                   />
                   Quarter notes
                 </label>
@@ -127,8 +129,8 @@ export default function ScaleSequencePanel({
                 <label>
                   <input
                     type="radio"
-                    checked={noteValue === "eighth"}
-                    onChange={() => setNoteValue("eighth")}
+                    checked={noteValueUI === "eighth"}
+                    onChange={() => setNoteValueUI("eighth")}
                   />
                   Eighth notes
                 </label>
@@ -150,20 +152,30 @@ export default function ScaleSequencePanel({
                   <div className="grid-tile-body">
 
                   <div className="radio-group">
-                    <label>
-                      <input
-                        type="radio"
-                        checked={rhythm === "swing"}
-                        onChange={() => setRhythm("swing")}
-                      />
-                      Swing 8ths
-                    </label>
 
-                    <label>
+                 <label>Swing: {swingUI * 100}</label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="5"
+                    value={swingUI*100}
+                    onChange={e => {
+                      const value = Number(e.target.value) / 100;   // ← convert string → number
+                      Tone.Transport.swing = value ;           // ← now swing works continuously
+                      setSwingUI(value );
+                    }}
+                  />
+
+
+
+
+
+                    {/* <label>
                       <input
                         type="radio"
-                        checked={rhythm === "straight"}
-                        onChange={() => setRhythm("straight")}
+                        checked={rhythmUI === "straight"}
+                        onChange={() => setRhythmUI("straight")}
                       />
                       Straight 8ths
                     </label>
@@ -171,11 +183,11 @@ export default function ScaleSequencePanel({
                     <label>
                       <input
                         type="radio"
-                        checked={rhythm === "triplets"}
-                        onChange={() => setRhythm("triplets")}
+                        checked={rhythmUI === "triplets"}
+                        onChange={() => setRhythmUI("triplets")}
                       />
                       Triplets
-                  </label>
+                  </label> */}
                 </div>
             </div>
           </div>
@@ -191,8 +203,9 @@ export default function ScaleSequencePanel({
               <label>
                 <input
                   type="radio"
-                  checked={direction === "asc"}
-                  onChange={() => setDirection("asc")}
+                  checked={directionUI === "asc"}
+                   onChange={() =>{ console.log("directionUI is currently: ", directionUI, " setting directionUI to asc.")
+                                    setDirectionUI("asc") } }
                 />
                 Ascending
               </label>
@@ -200,8 +213,9 @@ export default function ScaleSequencePanel({
               <label>
                 <input
                   type="radio"
-                  checked={direction === "desc"}
-                  onChange={() => setDirection("desc")}
+                  checked={directionUI === "desc"}
+                  onChange={() =>{ console.log("directionUI is currently: ", directionUI, " setting directionUI to desc.")
+                                    setDirectionUI("desc") } }
                 />
                 Descending
               </label>
@@ -209,8 +223,8 @@ export default function ScaleSequencePanel({
               <label>
                 <input
                   type="radio"
-                  checked={direction === "asc-desc"}
-                  onChange={() => setDirection("asc-desc")}
+                  checked={directionUI === "asc-desc"}
+                  onChange={() => setDirectionUI("asc-desc")}
                 />
                 Ascending → Descending
               </label>
@@ -218,8 +232,8 @@ export default function ScaleSequencePanel({
               <label>
                 <input
                   type="radio"
-                  checked={direction === "desc-asc"}
-                  onChange={() => setDirection("desc-asc")}
+                  checked={directionUI === "desc-asc"}
+                  onChange={() => setDirectionUI("desc-asc")}
                 />
                 Descending → Ascending
               </label>
@@ -239,8 +253,8 @@ export default function ScaleSequencePanel({
                   <label className="pattern-label">
                     <input
                       type="radio"
-                      checked={pattern === p.value}
-                      onChange={() => setPattern(p.value)}
+                      checked={patternUI === p.value}
+                      onChange={() => setPatternUI(p.value)}
                     />
                     {p.value}
                   </label>
@@ -271,23 +285,23 @@ export default function ScaleSequencePanel({
         {/* METRONOME */}
         <div className="col-12 col-md-4">
           <div className="grid-tile">
-             <div className="grid-tile-header">Pattern</div>
+             <div className="grid-tile-header">Metronome</div>
                   <div className="grid-tile-body">
 
 
             <div className="control-group">
-              <label>Level: {metronomeLevel}</label>
+              <label>Level: {metronomeLevelUI}</label>
               <input
                 type="range"
                 min="0"
                 max="100"
-                value={metronomeLevel}
-                onChange={e => setMetronomeLevel(Number(e.target.value))}
+                value={metronomeLevelUI}
+                onChange={e => setMetronomeLevelUI(Number(e.target.value))}
               />
 
               <button
-                className={`mute-btn ${metronomeMuted ? "muted" : ""}`}
-                onClick={() => setMetronomeMuted(m => !m)}
+                className={`mute-btn ${metronomeMutedUI ? "muted" : ""}`}
+                onClick={() => setMetronomeMutedUI(m => !m)}
               >
                 Metronome
               </button>

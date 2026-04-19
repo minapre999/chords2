@@ -4,6 +4,7 @@ export default function SettingsSidebar( props) {
   const items = [
     { id: "general", label: "General" },
     { id: "fretboard", label: "Fretboard" },
+     { id: "harmony", label: "Harmony" },
     { id: "audio", label: "Audio" },
     { id: "theme", label: "Theme" },
     { id: "advanced", label: "Advanced" }

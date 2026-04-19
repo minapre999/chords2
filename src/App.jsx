@@ -46,7 +46,26 @@ function App() {
 
   const [ready, setReady] = useState(false);
   
-  const [scaleSampler, setScaleSampler] = useState(null);
+const [scaleSampler, setScaleSampler] = useState(null);
+const [showHarmonyNotesUI, setShowHarmonyNotesUI] = useState( true) // show root, third, etc in different colours
+const [arrFillColorUI, setArrFillColorUI] = useState( [ 'gray', 'gray', 'gray', 'gray', 'gray'] )
+const [arrFontColorUI, setarrFontColorUI] = useState( [ 'white', 'white', 'white', 'white', 'white'] )
+const [arrFontSizeUI, setArrFontSizeUI] = useState( [ 12, 12, 12, 12, 12] )
+const [arrStrokeColorUI, setArrStrokeColorUI] = useState( [ 'black', 'black', 'black', 'black', 'black'] )
+const [strokeWidthUI, setStrokeWidthUI] = useState( 2 )
+const [arrWidthUI, setArrWidthUI]= useState( [ 18, 18, 18, 18, 18] )
+const [activeFontSizeUI, setActiveFontSizeUI] = useState(18)
+const [activeFillColorUI, setActiveFillColorUI] = useState('red')
+const [activeFontColorUI, setActiveTextColorUI] = useState('black')
+const [activeStrokeColorUI, setActiveStrokeColorUI] = useState('black')
+const [activeStrokeWidthUI, setActiveStrokeWidthUI] = useState( 2 )
+const [activeWidthUI, setActiveWidthUI] = useState(27)
+    /*                                        
+    arrFillColorUI - five element array of fill colors for default, root, third, fifth, seventh notes
+  arrFontColorUI - five element array of text colors for default, root, third, fifth, seventh notes
+  arrstrokeolorUI - five element array of stroke colors for default, root, third, fifth, seventh notes
+  arrWidthUI - five element array of note circle widths for default, root, third, fifth, seventh notes
+*/
 
 
 useEffect(() => {
@@ -169,19 +188,26 @@ useEffect(() => {
 
 
 const fbProps = {
-  renderDataUI: renderDataUI,
-  setRenderDataUI: setRenderDataUI,
-  showOpenStringsUI: showOpenStringsUI,
-  setShowOpenStringsUI: setShowOpenStringsUI,
-  showInlaysUI: showInlaysUI,
- setShowInlaysUI: setShowInlaysUI,
-  stringColorUI:stringColorUI,
-  setStringColorUI:setStringColorUI,
-bassStringColorUI:bassStringColorUI,
-   setBassStringColorUI:setBassStringColorUI,
-showHeadstockUI:        showHeadstockUI,
-  setShowHeadstockUI: setShowHeadstockUI,
-                 
+renderDataUI: renderDataUI, setRenderDataUI: setRenderDataUI,
+showOpenStringsUI: showOpenStringsUI, setShowOpenStringsUI: setShowOpenStringsUI,
+showInlaysUI: showInlaysUI, setShowInlaysUI: setShowInlaysUI,
+stringColorUI: stringColorUI, setStringColorUI:setStringColorUI,
+bassStringColorUI: bassStringColorUI, setBassStringColorUI:setBassStringColorUI,
+showHeadstockUI:  showHeadstockUI, setShowHeadstockUI: setShowHeadstockUI,
+  // notes
+arrFillColorUI: arrFillColorUI, setArrFillColorUI: setArrFillColorUI,
+arrFontSizeUI: arrFontSizeUI, setArrFontSizeUI: setArrFontSizeUI,
+arrFontColorUI: arrFontColorUI, setarrFontColorUI: setarrFontColorUI,
+arrStrokeColorUI: arrStrokeColorUI, setArrStrokeColorUI: setArrStrokeColorUI,
+strokeWidthUI: strokeWidthUI, setStrokeWidthUI: setStrokeWidthUI,
+arrWidthUI: arrWidthUI, setArrWidthUI: setArrWidthUI,
+activeFontSizeUI: activeFontSizeUI, setActiveFontSizeUI: setActiveFontSizeUI,
+activeFillColorUI: activeFillColorUI, setActiveFillColorUI: setActiveFillColorUI,
+activeFontColorUI: activeFontColorUI, setActiveTextColorUI: setActiveTextColorUI,
+activeStrokeColorUI: activeStrokeColorUI, setActiveStrokeColorUI: setActiveStrokeColorUI,
+activeStrokeWidthUI: activeStrokeWidthUI, setActiveStrokeWidthUI: setActiveStrokeWidthUI,
+activeWidthUI: activeWidthUI, setActiveWidthUI: setActiveWidthUI,
+showHarmonyNotesUI : showHarmonyNotesUI, setShowHarmonyNotesUI: setShowHarmonyNotesUI,
 }
 
 const audioProps = {

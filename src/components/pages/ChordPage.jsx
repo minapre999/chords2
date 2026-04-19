@@ -53,6 +53,21 @@ const [noteMode, setNoteMode] = useState("note");
     return stored ? Number(stored) : 1;
   });
 
+
+  const chordProps = {
+  page: "chords",
+    cfUI: cfUI,                       setCFUI:setCFUI,
+          cfChanged: cfChanged,                 setCFChanged: setCFChanged,
+      chordRootUI: chordRootUI,            setChordRootUI: setChordRootUI,
+      chordStringUI: chordStringUI,        setChordStringUI: setChordStringUI,
+      showNoteNamesUI: showNoteNamesUI,     setShowNoteNamesUI: setShowNoteNamesUI,
+      showAllNotesUI: showAllNotesUI,       setShowAllNotesUI: setShowAllNotesUI,
+      noteMode: noteMode,                  setNoteMode: setNoteMode,
+      openMarkersUI: openMarkersUI,         setOpenMarkersUI: setOpenMarkersUI,
+
+}
+
+
   useEffect(() => {
     localStorage.setItem(storageKey, zoom);
   }, [zoom, storageKey]);
@@ -179,7 +194,7 @@ let strCF = "";
 
   useEffect(() => {
 
-const rData = new RenderData()
+const rData = new RenderData(chordProps)
 
   if (cfUI?.id !== undefined) {
         
@@ -198,7 +213,7 @@ const rData = new RenderData()
             else if (noteMode == "fingering"){ text= n.finger }
 
           let color = 'white'
-          const rn = new RenderNote({fillColor: fillColor, note: n, color: color, width: 18, text: text })
+          const rn = new RenderNote({note: n, text: text })
         rData.add(rn, n.stringNumber)
         })
 
@@ -234,18 +249,7 @@ const rData = new RenderData()
 //   return names[idx];
 // }
 
-const chordProps = {
-  page: "chords",
-    cfUI: cfUI,                       setCFUI:setCFUI,
-          cfChanged: cfChanged,                 setCFChanged: setCFChanged,
-      chordRootUI: chordRootUI,            setChordRootUI: setChordRootUI,
-      chordStringUI: chordStringUI,        setChordStringUI: setChordStringUI,
-      showNoteNamesUI: showNoteNamesUI,     setShowNoteNamesUI: setShowNoteNamesUI,
-      showAllNotesUI: showAllNotesUI,       setShowAllNotesUI: setShowAllNotesUI,
-      noteMode: noteMode,                  setNoteMode: setNoteMode,
-      openMarkersUI: openMarkersUI,         setOpenMarkersUI: setOpenMarkersUI,
 
-}
 
   return (
   <div style={{ display: "flex", flexDirection: "column",   height: "100%", gap: 20 }}>
