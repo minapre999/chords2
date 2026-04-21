@@ -22,16 +22,14 @@ import "./App.css"
 
 // Component that listens for route changes
 function RouteChangeListener(props) {
-  const {setRenderDataUI}=props
+
   const location = useLocation();
   // const [pageRenderData, setPageRenderData] = useState({scales: null, })
 
   useEffect(() => {
     // console.log("Page changed to:", location.pathname);
     if(location.pathname = "/scales" ) {
-      // if( pageRenderData.scales !== null) {
-      //   setRenderDataUI(pageRenderData.scales)
-      // }
+   
     }
     
 
@@ -171,7 +169,8 @@ useEffect(() => {
           localStorage.setItem("showInlaysUI", showInlaysUI);
         }, [showInlaysUI]);
 
-const [renderDataUI, setRenderDataUI] = useState(null);
+        // each page must have it's own renderDataUI to avoid leakage of state from one page to another
+// const [renderDataUI, setRenderDataUI] = useState(null);
 
 
 const [arrWidthUI, setArrWidthUI] = useState(() => {
@@ -388,7 +387,7 @@ useEffect(() => {
 
 
 const fbProps = {
-renderDataUI: renderDataUI, setRenderDataUI: setRenderDataUI,
+// renderDataUI: renderDataUI, setRenderDataUI: setRenderDataUI,
 showOpenStringsUI: showOpenStringsUI, setShowOpenStringsUI: setShowOpenStringsUI,
 showInlaysUI: showInlaysUI, setShowInlaysUI: setShowInlaysUI,
 stringColorUI: stringColorUI, setStringColorUI:setStringColorUI,

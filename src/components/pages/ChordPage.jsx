@@ -19,8 +19,8 @@ export default function ChordPage(
  props
 ) {
 
- 
-  const { setRenderDataUI, showOpenStringsUI,
+ const [renderDataUI, setRenderDataUI] = useState(null);
+  const {showOpenStringsUI,
      setShowOpenStringsUI, showInlaysUI, setShowInlaysUI, ...rest} = props
 
 //Always put hooks at the top of the component, before any conditional return.
@@ -56,6 +56,7 @@ const [noteMode, setNoteMode] = useState("note");
 
   const chordProps = {
   page: "chords",
+  renderDataUI: renderDataUI, setRenderDataUI: setRenderDataUI,
     cfUI: cfUI,                       setCFUI:setCFUI,
           cfChanged: cfChanged,                 setCFChanged: setCFChanged,
       chordRootUI: chordRootUI,            setChordRootUI: setChordRootUI,

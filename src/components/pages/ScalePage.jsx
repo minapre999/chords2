@@ -14,13 +14,14 @@ import { useToneEngine } from "/src/context/ToneEngineContext";
 
 export default function ScalePage( props ) {
 
-  const { renderDataUI, setRenderDataUI, showOpenStringsUI,
+  const { showOpenStringsUI,
      setShowOpenStringsUI, showInlaysUI, setShowInlaysUI, setScaleSampler,
      currentNote, setCurrentNote,
      ...rest} = props
 
 const { startAudio, scaleSampler,  samplerReady } = useToneEngine();
 
+const [renderDataUI, setRenderDataUI] = useState(null);
 
        // zoom persistence - zoom is used for scales so persist as different variable
        
@@ -64,10 +65,37 @@ This is causing issues with lag in interface possible due to React seeing a new 
 and re-rerending
 Best solution is to only store primitives in the useState
   */
-const [scaleQualityUI, setScaleQualityUI] = useState("Maj")
-const [scaleModeUI, setScaleModeUI] = useState("Major")
-const [scaleRootUI, setScaleRootUI] = useState("C")
-const [scaleFormUI, setScaleFormUI] = useState("1")
+
+
+const [scaleRootUI, setScaleRootUI] = useState(() => {
+      const saved = localStorage.getItem("scaleRootUI")
+      return saved === null ? "C" : saved 
+    });
+useEffect(() => {  localStorage.setItem("scaleRootUI", scaleRootUI);
+        }, [scaleRootUI]);
+
+const [scaleFormUI, setScaleFormUI] = useState(() => {
+      const saved = localStorage.getItem("scaleFormUI")
+      return saved === null ? "1" : saved 
+    });
+useEffect(() => {  localStorage.setItem("scaleFormUI", scaleFormUI);
+        }, [scaleFormUI]);
+
+const [scaleModeUI, setScaleModeUI] = useState(() => {
+      const saved = localStorage.getItem("scaleModeUI")
+      return saved === null ? "Major" : saved 
+    });
+useEffect(() => {  localStorage.setItem("scaleModeUI", scaleModeUI);
+        }, [scaleModeUI]);
+
+const [scaleQualityUI, setScaleQualityUI] = useState(() => {
+      const saved = localStorage.getItem("scaleQualityUI")
+      return saved === null ? "Maj" : saved 
+    });
+useEffect(() => {  localStorage.setItem("scaleQualityUI", scaleQualityUI);
+        }, [scaleQualityUI]);
+
+
 const [noteValueUI, setNoteValueUI] = useState("eighth")
 const [patternUI, setPatternUI] = useState("sequential")
 const [tempoUI, setTempoUI] = useState(120)
@@ -80,6 +108,7 @@ const seqRef = useRef(null);
 
 
 const scaleProps={
+  renderDataUI: renderDataUI, setRenderDataUI: setRenderDataUI,
   scaleRootUI: scaleRootUI, setScaleRootUI: setScaleRootUI,
   scaleModeUI: scaleModeUI, setScaleModeUI: setScaleModeUI,
   scaleQualityUI: scaleQualityUI, setScaleQualityUI: setScaleQualityUI,

@@ -22,7 +22,6 @@ export default function FretboardSettings(props){
                 activeFontColorUI, setActiveFontColorUI, activeStrokeColorUI, setActiveStrokeColorUI, 
                 activeStrokeWidthUI, setActiveStrokeWidthUI, activeWidthUI, setActiveWidthUI,
                 showHarmonyNotesUI,
-                setRenderDataUI,
                 scaleModeUI, scaleQualityUI, scaleFormUI, scaleRootUI,
                 rootFillColorUI, setRootFillColorUI,
                 thirdFillColorUI, setThirdFillColorUI,
@@ -38,6 +37,7 @@ export default function FretboardSettings(props){
                 ...rest } = props
 
 
+  const [renderDataUI, setRenderDataUI] = useState(null);
   const [ready, setReady] = useState(false);
 
 
@@ -375,6 +375,8 @@ return (
 <div className="fb-wrapper">
  <FretboardSVG
         {...props}
+        renderDataUI={renderDataUI}
+         setRenderDataUI={setRenderDataUI}
         cfUI={null}
       chordRootUI={null}
       width={1800*.66}

@@ -47,6 +47,7 @@ activeStrokeWidthUI,
   seventhFillColorUI, seventhFontColorUI,
 }) {
 
+  console.log("string lane renderDataUI: ", renderDataUI)
     if(renderDataUI == null || renderDataUI == undefined) return null
   const stringData = renderDataUI.string(stringIndex+1)
 
