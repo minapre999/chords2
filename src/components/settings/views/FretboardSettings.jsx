@@ -24,6 +24,15 @@ export default function FretboardSettings(props){
                 showHarmonyNotesUI,
                 setRenderDataUI,
                 scaleModeUI, scaleQualityUI, scaleFormUI, scaleRootUI,
+                rootFillColorUI, setRootFillColorUI,
+                thirdFillColorUI, setThirdFillColorUI,
+                fifthFillColorUI, setFifthFillColorUI,
+                seventhFillColorUI, setSeventhFillColorUI,
+                rootFontColorUI, setRootFontColorUI,
+                thirdFontColorUI, setThirdFontColorUI,
+                fifthFontColorUI, setFifthFontColorUI,
+                seventhFontColorUI, setSeventhFontColorUI,
+
                 setCurrentNote,
                  
                 ...rest } = props
@@ -113,7 +122,7 @@ return (
       <div className="row g-3 scale-grid">
    
      <div className="col-12 col-md-4">   
-    <div class="settings-group-title">Fretboard</div>
+    <div className="settings-group-title">Fretboard</div>
      {/* Headstock toggle */}
       <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
         <input
@@ -140,7 +149,7 @@ return (
 
 
    <div className="col-12 col-md-4">   
-    <div class="settings-group-title">Strings</div>
+    <div className="settings-group-title">Strings</div>
 
     {/* Open strings */}
         <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -187,7 +196,7 @@ return (
 
 
    <div className="col-12 col-md-4">   
-    <div class="settings-group-title">Notes</div>
+    <div className="settings-group-title">Notes</div>
   {/* note colours  - toolbar sends update to the parent */}
       <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
         Colour:
@@ -226,10 +235,11 @@ return (
               />
             </div>
          
-</div>
+
 
   
-    <div class="settings-group-title">Active Note</div>
+
+    <div className="settings-group-title">Active Note</div>
 
   <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
         Colour:
@@ -267,20 +277,19 @@ return (
             </div>
 
 
-
+</div>
 
 
    <div className="col-12 col-md-4">   
-    <div class="settings-group-title">Harmony Notes</div>
+    <div className="settings-group-title">Harmony Notes</div>
   {/* note colours  - toolbar sends update to the parent */}
   <div className="harmony-note-title">Root</div>
       <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
         Colour:
         <input
           type="color"
-          value={arrFillColorUI[0]}
-          
-           onChange={(e) => ChangeNoteColor(e.target.value)}
+          value={rootFillColorUI}
+           onChange={(e) => setRootFillColorUI(e.target.value)}
         />
       </label>
 
@@ -288,9 +297,8 @@ return (
         Font colour:
         <input
           type="color"
-          value={arrStrokeColorUI[0]}
-           onChange={(e) => ChangeNoteStrokeColor(e.target.value)}
-          
+          value={rootFontColorUI}
+           onChange={(e) => setRootFontColorUI(e.target.value)}
         />
       </label>
 
@@ -299,9 +307,8 @@ return (
         Colour:
         <input
           type="color"
-          value={arrFillColorUI[0]}
-          
-           onChange={(e) => ChangeNoteColor(e.target.value)}
+            value={thirdFillColorUI}
+           onChange={(e) => setThirdFillColorUI(e.target.value)}
         />
       </label>
 
@@ -309,9 +316,8 @@ return (
         Font colour:
         <input
           type="color"
-          value={arrStrokeColorUI[0]}
-           onChange={(e) => ChangeNoteStrokeColor(e.target.value)}
-          
+          value={thirdFontColorUI}
+           onChange={(e) => setThirdFontColorUI(e.target.value)}
         />
       </label>  
 
@@ -321,9 +327,8 @@ return (
         Colour:
         <input
           type="color"
-          value={arrFillColorUI[0]}
-          
-           onChange={(e) => ChangeNoteColor(e.target.value)}
+               value={fifthFillColorUI}
+           onChange={(e) => setFifthFillColorUI(e.target.value)}
         />
       </label>
 
@@ -331,20 +336,18 @@ return (
         Font colour:
         <input
           type="color"
-          value={arrStrokeColorUI[0]}
-           onChange={(e) => ChangeNoteStrokeColor(e.target.value)}
-          
+           value={fifthFontColorUI}
+           onChange={(e) => setFifthFontColorUI(e.target.value)}
         />
       </label>
 
  <div className="harmony-note-title">Seventh</div>
-      <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
+     <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
         Colour:
         <input
           type="color"
-          value={arrFillColorUI[0]}
-          
-           onChange={(e) => ChangeNoteColor(e.target.value)}
+               value={seventhFillColorUI}
+           onChange={(e) => setSeventhFillColorUI(e.target.value)}
         />
       </label>
 
@@ -352,12 +355,10 @@ return (
         Font colour:
         <input
           type="color"
-          value={arrStrokeColorUI[0]}
-           onChange={(e) => ChangeNoteStrokeColor(e.target.value)}
-          
+          value={seventhFontColorUI}
+           onChange={(e) =>setSeventhFontColorUI(e.target.value)}
         />
       </label>
-
 
          
 </div>

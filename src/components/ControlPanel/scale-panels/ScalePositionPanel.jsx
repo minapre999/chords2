@@ -50,7 +50,7 @@ const frets = [1,2,3,4,5,6,7,8,9,10,11,12,13]
 
             <div className="fret-grid-group grid-group">
 
-           <div class='fretboard'>
+           <div className='fretboard'>
             {frets.map(f => (
                 <div
                   key={f}

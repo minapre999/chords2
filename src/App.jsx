@@ -7,7 +7,7 @@ import ChordPage from "/src/components/pages/ChordPage.jsx";
 import SettingsPage from "/src/components/pages/SettingsPage.jsx";
 import LeadSheetPage from "/src/components/pages/LeadSheetPage.jsx";
 import NavigationBar from "/src/components/navbar/NavigationBar.jsx";
-
+import {ToneEngineProvider} from "/src/context/ToneEngineContext.jsx"
 import "./globals.js"
 import SettingsModule from "/src/components/settings/SettingsModule.jsx";
 import LeadSheetModule from "/src/components/ls/LeadSheetModule.jsx";
@@ -15,6 +15,32 @@ import { loadSamples } from "./sound/GuitarSampler";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 import TuningManager from "/src/harmony/tuning-manager.js"
 import "./App.css"
+
+
+
+
+
+// Component that listens for route changes
+function RouteChangeListener(props) {
+  const {setRenderDataUI}=props
+  const location = useLocation();
+  // const [pageRenderData, setPageRenderData] = useState({scales: null, })
+
+  useEffect(() => {
+    // console.log("Page changed to:", location.pathname);
+    if(location.pathname = "/scales" ) {
+      // if( pageRenderData.scales !== null) {
+      //   setRenderDataUI(pageRenderData.scales)
+      // }
+    }
+    
+
+    // You can trigger analytics, scroll to top, etc. here
+    // window.scrollTo(0, 0);
+  }, [location]); // Runs every time the location changes
+
+  return null; // This component doesn't render anything
+}
 
 
 
@@ -33,8 +59,6 @@ import "./App.css"
 
 function App() {
 
-
-
 // ut the key is understanding that React always renders something first.
 //  What you control is what it renders while you’re waiting.
 // React cannot block rendering until data arrives.
@@ -46,17 +70,8 @@ function App() {
 
   const [ready, setReady] = useState(false);
   
-const [scaleSampler, setScaleSampler] = useState(null);
+// const [scaleSampler, setScaleSampler] = useState(null);
 const [showHarmonyNotesUI, setShowHarmonyNotesUI] = useState( true) // show root, third, etc in different colours
-
-
-
-
-
-
-           
-
-
 
     /*                                        
     arrFillColorUI - five element array of fill colors for default, root, third, fifth, seventh notes
@@ -66,35 +81,34 @@ const [showHarmonyNotesUI, setShowHarmonyNotesUI] = useState( true) // show root
 */
 
 
-useEffect(() => {
+// useEffect(() => {
 
+// const loadSampler = async () => {
+//     await Tone.start();
 
-const loadSampler = async () => {
-    await Tone.start();
+//     const s = new Tone.Sampler(
+//       {
+//         E2: "/samples/guitar-acoustic/E2.ogg",
+//         A2: "/samples/guitar-acoustic/A2.ogg",
+//         D3: "/samples/guitar-acoustic/D3.ogg",
+//         G3: "/samples/guitar-acoustic/G3.ogg",
+//         B3: "/samples/guitar-acoustic/B3.ogg",
+//         E4: "/samples/guitar-acoustic/E4.ogg",
+//         A4: "/samples/guitar-acoustic/A4.ogg",
+//         D5: "/samples/guitar-acoustic/D5.ogg",
 
-    const s = new Tone.Sampler(
-      {
-        E2: "/samples/guitar-acoustic/E2.ogg",
-        A2: "/samples/guitar-acoustic/A2.ogg",
-        D3: "/samples/guitar-acoustic/D3.ogg",
-        G3: "/samples/guitar-acoustic/G3.ogg",
-        B3: "/samples/guitar-acoustic/B3.ogg",
-        E4: "/samples/guitar-acoustic/E4.ogg",
-        A4: "/samples/guitar-acoustic/A4.ogg",
-        D5: "/samples/guitar-acoustic/D5.ogg",
+//       },
+//       () => console.log("Sampler loaded")
+//     ).toDestination();
 
-      },
-      () => console.log("Sampler loaded")
-    ).toDestination();
+//     s.volume.value = +6;
 
-    s.volume.value = +6;
+//     setScaleSampler(s);
+//   };
 
-    setScaleSampler(s);
-  };
+//  loadSampler()
 
- loadSampler()
-
-}, []);
+// }, []);
 
 
 
@@ -214,7 +228,7 @@ useEffect(() => {
 }, [activeFillColorUI]);
 
 
-const [activeFontColorUI, setActiveTextColorUI] = useState(() => {
+const [activeFontColorUI, setActiveFontColorUI] = useState(() => {
   const saved = localStorage.getItem("activeFontColorUI");
   return saved ? saved : 'black';
 });
@@ -267,11 +281,82 @@ useEffect(() => {
   localStorage.setItem("activeWidthUI", activeWidthUI);
 }, [activeWidthUI]);
 
+
+
+
+const [rootFillColorUI, setRootFillColorUI] = useState(() => {
+  const saved = localStorage.getItem("rootFillColorUI");
+  return saved ? saved : 'black';
+});
+useEffect(() => {
+  localStorage.setItem("rootFillColorUI", rootFillColorUI);
+}, [rootFillColorUI]);
+
+const [rootFontColorUI, setRootFontColorUI] = useState(() => {
+  const saved = localStorage.getItem("rootFontColorUI");
+  return saved ? saved : 'white';
+});
+useEffect(() => {
+  localStorage.setItem("rootFontColorUI", rootFontColorUI);
+}, [rootFontColorUI]);
+
+
+const [thirdFillColorUI, setThirdFillColorUI] = useState(() => {
+  const saved = localStorage.getItem("thirdFillColorUI");
+  return saved ? saved : 'red';
+});
+useEffect(() => {
+  localStorage.setItem("thirdFillColorUI", thirdFillColorUI);
+}, [thirdFillColorUI]);
+
+const [thirdFontColorUI, setThirdFontColorUI] = useState(() => {
+  const saved = localStorage.getItem("thirdFontColorUI");
+  return saved ? saved : 'white';
+});
+useEffect(() => {
+  localStorage.setItem("thirdFontColorUI", thirdFontColorUI);
+}, [thirdFontColorUI]);
+
+
+
+
+const [fifthFillColorUI, setFifthFillColorUI] = useState(() => {
+  const saved = localStorage.getItem("fifthFillColorUI");
+  return saved ? saved : 'black';
+});
+useEffect(() => {
+  localStorage.setItem("fifthFillColorUI", fifthFillColorUI);
+}, [fifthFillColorUI]);
+
+const [fifthFontColorUI, setFifthFontColorUI] = useState(() => {
+  const saved = localStorage.getItem("fifthFontColorUI");
+  return saved ? saved : 'white';
+});
+useEffect(() => {
+  localStorage.setItem("fifthFontColorUI", fifthFontColorUI);
+}, [fifthFontColorUI]);
+
+
+
+const [seventhFillColorUI, setSeventhFillColorUI] = useState(() => {
+  const saved = localStorage.getItem("seventhFillColorUI");
+  return saved ? saved : 'green';
+});
+useEffect(() => {
+  localStorage.setItem("seventhFillColorUI", seventhFillColorUI);
+}, [seventhFillColorUI]);
+
+const [seventhFontColorUI, setSeventhFontColorUI] = useState(() => {
+  const saved = localStorage.getItem("seventhFontColorUI");
+  return saved ? saved : 'white';
+});
+useEffect(() => {
+  localStorage.setItem("seventhFontColorUI", seventhFontColorUI);
+}, [seventhFontColorUI]);
+
+
+
 const [currentNote, setCurrentNote] = useState(null)
-
-
-
-
 
 
 
@@ -318,22 +403,36 @@ strokeWidthUI: strokeWidthUI, setStrokeWidthUI: setStrokeWidthUI,
 arrWidthUI: arrWidthUI, setArrWidthUI: setArrWidthUI,
 activeFontSizeUI: activeFontSizeUI, setActiveFontSizeUI: setActiveFontSizeUI,
 activeFillColorUI: activeFillColorUI, setActiveFillColorUI: setActiveFillColorUI,
-activeFontColorUI: activeFontColorUI, setActiveTextColorUI: setActiveTextColorUI,
+activeFontColorUI: activeFontColorUI, setActiveFontColorUI: setActiveFontColorUI,
 activeStrokeColorUI: activeStrokeColorUI, setActiveStrokeColorUI: setActiveStrokeColorUI,
 activeStrokeWidthUI: activeStrokeWidthUI, setActiveStrokeWidthUI: setActiveStrokeWidthUI,
 activeWidthUI: activeWidthUI, setActiveWidthUI: setActiveWidthUI,
 showHarmonyNotesUI : showHarmonyNotesUI, setShowHarmonyNotesUI: setShowHarmonyNotesUI,
+rootFillColorUI: rootFillColorUI, setRootFillColorUI: setRootFillColorUI,
+rootFontColorUI: rootFontColorUI, setRootFontColorUI: setRootFontColorUI,
+thirdFillColorUI: thirdFillColorUI, setThirdFillColorUI: setThirdFillColorUI,
+thirdFontColorUI: thirdFontColorUI, setThirdFontColorUI: setThirdFontColorUI,
+fifthFillColorUI: fifthFillColorUI, setFifthFillColorUI: setFifthFillColorUI,
+fifthFontColorUI: fifthFontColorUI, setFifthFontColorUI: setFifthFontColorUI,
+seventhFillColorUI: seventhFillColorUI, setSeventhFillColorUI: setSeventhFillColorUI,
+seventhFontColorUI: seventhFontColorUI, setSeventhFontColorUI: setSeventhFontColorUI,
 currentNote: currentNote, setCurrentNote: setCurrentNote,
 }
 
-const audioProps = {
-  scaleSampler: scaleSampler, setScaleSampler: setScaleSampler
-}
+// const audioProps = {
+//   scaleSampler: scaleSampler, setScaleSampler: setScaleSampler
+// }
 
 
 
   return (
+  <ToneEngineProvider>
     <BrowserRouter>
+       {/* This will listen for route changes globally */}
+      {/* <RouteChangeListener 
+       {...fbProps}   {...audioProps}/> */}
+
+
       <Routes>
         {/* Layout wrapper */}
         <Route element={<AppLayout />}>
@@ -343,7 +442,8 @@ const audioProps = {
             path="/chords"
             element={
               <ChordPage
-              {...fbProps} {...audioProps}
+              {...fbProps}
+              //  {...audioProps}
                 />
             }
           />
@@ -352,7 +452,8 @@ const audioProps = {
             path="/scales"
             element={
               <ScalePage
-                {...fbProps} {...audioProps}
+                {...fbProps} 
+                // {...audioProps}
                   />
             }
           />
@@ -363,7 +464,8 @@ const audioProps = {
             path="/settings"
             element={
               <SettingsPage
-              {...fbProps} {...audioProps}
+              {...fbProps} 
+              // {...audioProps}
                
               />
             }
@@ -371,6 +473,7 @@ const audioProps = {
         </Route>
       </Routes>
     </BrowserRouter>
+ </ToneEngineProvider>
   );
 
   

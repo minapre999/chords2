@@ -1286,13 +1286,13 @@ async _loadInternal() {
 
 
     try {
-      console.log("looking for scales in local db.")
+      // console.log("looking for scales in local db.")
        const db = dc.db// create or open
       //  console.log("dexie db: ", db)
 
       let stored = await db.scale_dict.orderBy('id').first();
       if( stored) { 
-        console.log("Scales found in local db."); 
+        // console.log("Scales found in local db."); 
           // Object.assign(this, { id, name, description, category, author });
           this._id = stored.id
           this.name = stored.name

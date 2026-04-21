@@ -41,10 +41,13 @@ export default function StringLane({
 activeWidthUI,
 strokeWidthUI,
 activeStrokeWidthUI,
+  rootFillColorUI, rootFontColorUI,
+  thirdFillColorUI, thirdFontColorUI,
+  fifthFillColorUI, fifthFontColorUI,
+  seventhFillColorUI, seventhFontColorUI,
 }) {
 
     if(renderDataUI == null || renderDataUI == undefined) return null
-
   const stringData = renderDataUI.string(stringIndex+1)
 
     if(stringData == null || stringData == undefined) return null
@@ -193,14 +196,56 @@ function noteNameFromMidi(midi, { preferSharps = true } = {}) {
 
       {/* === FRETTED NOTES === */}
 
-        { stringData.map((note_data)=>{
+{ stringData.map((note_data)=>{
+  // console.log("StringLane note_data: ", note_data)
          const fret = note_data.note.fret
          const fretIndex = fret-1 
+         let is_root = false
+          let is_third = false
+          let is_fifth= false
+          let is_seventh = false
+        let interval = note_data?._note?._interval
+        if( interval ){ is_root = interval.replace(/\D+/g, '') == 1
+          is_third = interval.replace(/\D+/g, '') == 3
+          is_fifth = interval.replace(/\D+/g, '') == 5
+          is_seventh = interval.replace(/\D+/g, '') == 7
+        }
 
-      
-      // Array.from({ length: numFrets }).map((_, fretIndex) => {
+         let fillColor = arrFillColorUI[0]
+           let fontColor = arrFontColorUI[0]
+           let fontSize = arrFontSizeUI[0]
+          let strokeColor = arrStrokeColorUI[0]
+          let noteRadius = arrWidthUI[0]
+          let strokeWidth = strokeWidthUI
+
+        if(is_root) {
+          fillColor = rootFillColorUI
+          fontColor = rootFontColorUI
+        }
+        if(is_third ) {
+             fillColor = thirdFillColorUI
+          fontColor = thirdFontColorUI
+        }
+        if(is_fifth ) {
+             fillColor = fifthFillColorUI
+          fontColor = fifthFontColorUI
+        }
+         if(is_seventh) {
+             fillColor = seventhFillColorUI
+          fontColor = seventhFontColorUI
+        }
+      const isActive = currentNote?.fret == fret && currentNote?.stringNumber-1 == stringIndex ? true : false
+      if(isActive) {
+             fillColor = activeFillColorUI
+          fontColor = activeFontColorUI
+          fontSize = activeFontSizeUI
+          strokeColor = activeStrokeColorUI
+          noteRadius = activeWidthUI
+        }
+
+        // Array.from({ length: numFrets }).map((_, fretIndex) => {
         //  if (!chNote) return null;
-         
+        //  console.log("is_third: ", is_third, "is_seventh: ", is_seventh, "note_data?._note?._interval: ", note_data?._note?._interval )
         // const fret = fretIndex + 1;
         const midi = openMidi + fret;
 
@@ -214,7 +259,8 @@ function noteNameFromMidi(midi, { preferSharps = true } = {}) {
         const x = (left + right) / 2;
 
 // isActive for current note being sequenced
-const isActive = currentNote?.fret == fret && currentNote?.stringNumber-1 == stringIndex ? true : false
+
+
 
 const isChordNote =true
         // const isChordNote =
@@ -232,28 +278,46 @@ const isChordNote =true
             style={{ cursor: interactive ? "pointer" : "default" }}
           >
           
-            {(isChordNote || showAllNotesUI) && (
+            {(showAllNotesUI) && (
               <circle
                 cx={x}
                 cy={y}
-                r={arrWidthUI[0]}
+                r={noteRadius}
                 fill={arrFillColorUI[0]}
                 stroke={arrStrokeColorUI[0]}
                 strokeWidth={strokeWidthUI}
               />
             )}
 
-      {(isActive ) && (
+
+ 
               <circle
                 cx={x}
                 cy={y}
-                r={activeWidthUI}
-                fill={activeFillColorUI}
-                stroke={activeStrokeColorUI}
-                strokeWidth={activeStrokeWidthUI}
+                r={noteRadius}
+                fill={fillColor}
+                stroke={strokeColor}
+                strokeWidth={strokeWidth}
               />
-            )}
+            
 
+
+
+              <text
+                x={x}
+                y={y + 4}
+                fontSize={fontSize }
+                textAnchor="middle"
+                fill={fontColor}
+              >
+                {noteName}
+              </text>
+            
+
+
+
+   
+{/* 
         {isActive  && (
               <text
                 x={x}
@@ -276,7 +340,7 @@ const isChordNote =true
               >
                 {noteName}
               </text>
-            )}
+            )} */}
 
 
             

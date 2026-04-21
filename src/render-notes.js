@@ -195,10 +195,10 @@ let ascSeqArray = []
   } // pattern
 
   // convert from sequence indices to render notes for return
-console.log("seqArray: ", seqArray)
+// console.log("seqArray: ", seqArray)
   const renderNotes = []
     for( let i of seqArray){
-      console.log(" i: ", i, " arr_rn[i] ", arr_rn[i], )
+      // console.log(" i: ", i, " arr_rn[i] ", arr_rn[i], )
       renderNotes.push(arr_rn[i])
     }
       

@@ -63,9 +63,6 @@ export default function FretboardSVG(
 
 
 
-
-
-
 const [selected, setSelected] = useState(null);
 const [vibratingString, setVibratingString] = useState(null);
 const [vibeTick, setVibeTick] = useState(0);

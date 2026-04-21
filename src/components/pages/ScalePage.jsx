@@ -10,14 +10,16 @@ import "/src/harmony/scale-manager.js"
 import "/src/components/pages/ScalePage.css"
 import ScaleControlTab from "/src/components/ControlPanel/scale-panels/ScaleControlTab.jsx"
 import * as Tone from "tone";
+import { useToneEngine } from "/src/context/ToneEngineContext";
 
 export default function ScalePage( props ) {
 
   const { renderDataUI, setRenderDataUI, showOpenStringsUI,
-     setShowOpenStringsUI, showInlaysUI, setShowInlaysUI, scaleSampler, setScaleSampler,
+     setShowOpenStringsUI, showInlaysUI, setShowInlaysUI, setScaleSampler,
      currentNote, setCurrentNote,
      ...rest} = props
 
+const { startAudio, scaleSampler,  samplerReady } = useToneEngine();
 
 
        // zoom persistence - zoom is used for scales so persist as different variable
@@ -98,8 +100,8 @@ const scaleProps={
 
 
 useEffect(() => {
-    console.log("useEffect for scale renderData.  directionUI is: ", directionUI," patternUI is: ", patternUI )
-    if (!scaleSampler) return;
+    console.log("useEffect for scale renderData.  directionUI is: ", directionUI," patternUI is: ", patternUI, " scaleSampler: ", scaleSampler, "renderDataUI; ", renderDataUI)
+    if (!samplerReady) return;
     if( !renderDataUI ) return;
 
       renderDataUI.setProps(scaleProps)
@@ -140,12 +142,14 @@ console.log("resequencing ...")
       // "8n"
     ).start(0);
 
-  }, [renderDataUI, scaleSampler, directionUI, patternUI]);
+  }, [samplerReady, renderDataUI, directionUI, patternUI]);
 
 
 
 
 useEffect(() => {
+  console.log("scale page loading, ready: ",ready)
+  setRenderDataUI(null)
     // const zoomVal = isNaN(Number(localStorage.getItem("scaleZoom"))) ? 1 : localStorage.getItem("scaleZoom")
     // console.log("zoomVal from storage on page load", zoomVal)
     // setZoom(zoomVal)  
@@ -191,6 +195,7 @@ useEffect(() => {
   
      if (!ready) return;
 
+     console.log("ready ...")
     const sDict = dc.SCALE_MANAGER.activeDict 
     // console.log("dict scales: ", sDict.scales)
 
@@ -207,8 +212,6 @@ useEffect(() => {
       //  console.log("getting render data for scale ", scale, " with id: ", scale.id, 
         // " root: ", scale.root , " form: ", scale.form)   
       scale.notes.forEach((n)=>{
- 
-         
   
           let text = n.letter 
 
@@ -217,7 +220,8 @@ useEffect(() => {
           })
   
    // if this doesn't work may need to create a boolean primitive to flag needs rendering
-        // console.log("SCALE RENDER DATA: ", rData)
+        //   console.log("old renderDataUI: ", renderDataUI)
+        // console.log("new render data: ", rData)
         setRenderDataUI( rData);
       }      
 

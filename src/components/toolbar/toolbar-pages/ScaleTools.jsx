@@ -1,17 +1,20 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import * as Tone from "tone";
+import { useToneEngine } from "/src/context/ToneEngineContext";
 
 // import ScalePicker from "/src/components/toolbar/scale-tools/ScalePicker.jsx";
-
 
 
 export default function ScaleTools(props) {
 
 const [isPlaying, setIsPlaying] = useState(false);
 const [isPaused, setIsPaused] = useState(false);
+const { startAudio, samplerReady } = useToneEngine();
 
 
-const handlePlay = () => {
+const handlePlay = async () => {
+  await startAudio();
+  if (!samplerReady) return;   // ⭐ prevents early play
   Tone.Transport.start();
   setIsPlaying(true);
   setIsPaused(false);
