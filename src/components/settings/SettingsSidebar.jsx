@@ -1,6 +1,10 @@
 export default function SettingsSidebar( props) {
 
   const {view, setView, ...rest} = props
+
+
+
+  
   const items = [
     { id: "general", label: "General" },
     { id: "fretboard", label: "Fretboard" },

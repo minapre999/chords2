@@ -4,7 +4,15 @@ import SettingsSidebar from "/src/components/settings/SettingsSidebar.jsx"
 import SettingsContent from "/src/components/settings/SettingsContent.jsx"
 
 export default function SettingsPage(props) {
-  const [view, setView] = useState("general");
+
+ 
+const [view, setView] = useState(() => {
+      const saved = localStorage.getItem("settings-view")
+      return saved === null ? "general" : saved 
+    });
+useEffect(() => {  localStorage.setItem("settings-view", view);
+        }, [view]);
+
 
   return (
     <div className="settings-layout">
