@@ -1,14 +1,56 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useImperativeHandle, forwardRef } from "react";
 import "/node_modules/vexflow/releases/vexflow-debug.js";
+import "./LeadSheetRenderer.css"
 
-export default function LeadSheetRenderer({ leadSheet }) {
+
+
+;
+const LeadSheetRenderer = forwardRef(function LeadSheetRenderer({ leadSheet }, ref) {
+  const containerRef = useRef(null);
+
+  // Maps for visual highlighting
+  const noteElements = useRef(new Map());
+  const measureElements = useRef(new Map());
+  const playheadRef = useRef(null);
+
+
+
   const measures = leadSheet?.measures ?? [];
-  const ref = useRef(null);
+
+  useImperativeHandle(ref, () => ({
+    highlightNote(noteId) {
+      noteElements.current.forEach(el => el.classList.remove("vf-highlight-note"));
+      const el = noteElements.current.get(noteId);
+      if (el) {
+        el.classList.add("vf-highlight-note");
+        el.scrollIntoView({ block: "center", behavior: "smooth" });
+      }
+    },
+
+    highlightMeasure(measureId) {
+      measureElements.current.forEach(el => el.classList.remove("vf-highlight-measure"));
+      const el = measureElements.current.get(measureId);
+      if (el) {
+        el.classList.add("vf-highlight-measure");
+        el.scrollIntoView({ block: "center", behavior: "smooth" });
+      }
+    },
+
+    setPlayheadBeat(x, y1, y2) {
+      if (!playheadRef.current) return;
+      playheadRef.current.setAttribute("x1", x);
+      playheadRef.current.setAttribute("x2", x);
+      playheadRef.current.setAttribute("y1", y1);
+      playheadRef.current.setAttribute("y2", y2);
+    }
+  }));
 
   useEffect(() => {
-    if (!ref.current) return;
+    if (!containerRef.current) return;
 
-    ref.current.innerHTML = "";
+    containerRef.current.innerHTML = "";
+    noteElements.current.clear();
+    measureElements.current.clear();
 
     const VF = window.Vex.Flow;
 
@@ -16,54 +58,49 @@ export default function LeadSheetRenderer({ leadSheet }) {
     const staveHeight = 120;
     const colsPerRow = 2;
 
-    // 🔹 how many rows of staves?
     const rows = Math.ceil(measures.length / colsPerRow);
-
-    // 🔹 SVG height based on content
     const svgWidth = 900;
     const svgHeight = 40 + rows * staveHeight;
 
-    const renderer = new VF.Renderer(ref.current, VF.Renderer.Backends.SVG);
+    const renderer = new VF.Renderer(containerRef.current, VF.Renderer.Backends.SVG);
     renderer.resize(svgWidth, svgHeight);
-    const ctx = renderer.getContext();
 
+    const ctx = renderer.getContext();
     ctx.svg.style.width = `${svgWidth}px`;
     ctx.svg.style.height = `${svgHeight}px`;
     ctx.svg.style.display = "block";
 
-    function tokenToNote(token) {
-       const isRest = token.endsWith("r");
-      const duration = isRest ? token : token.slice(-1);
+    // --- PLAYHEAD LINE ---
+    const playhead = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    playhead.setAttribute("stroke", "red");
+    playhead.setAttribute("stroke-width", "2");
+    ctx.svg.appendChild(playhead);
+    playheadRef.current = playhead;
+
+    function tokenToNote(entry) {
+      const token = typeof entry === "string" ? entry : entry.token;
+      const isRest = token.endsWith("r");
 
       if (isRest) {
         return new VF.StaveNote({
-          keys: ["b/4"],   // VexFlow requires a key, but it is ignored for rests
-          duration: duration, // e.g. "qr", "8r"
+          keys: ["b/4"],
+          duration: token,
           clef: "treble"
         });
       }
-
 
       const pitch = token.slice(0, -1);
       const durationChar = token.slice(-1);
 
       const letter = pitch[0].toLowerCase();
       const accidental = pitch.length === 3 ? pitch[1] : "";
-
       const octave = String(Number(pitch[pitch.length - 1]) + 1);
-      const key = `${letter}${accidental}/${octave}`;
 
-      const durationMap = {
-        w: "w",
-        h: "h",
-        q: "q",
-        "8": "8",
-        "16": "16"
-      };
+      const key = `${letter}${accidental}/${octave}`;
 
       const note = new VF.StaveNote({
         keys: [key],
-        duration: durationMap[durationChar] || "q",
+        duration: durationChar,
         clef: "treble"
       });
 
@@ -81,13 +118,6 @@ export default function LeadSheetRenderer({ leadSheet }) {
       const x = 20 + col * staveWidth;
       const y = 40 + row * staveHeight;
 
-      const notes = (measure.melody || []).map(tokenToNote);
-
-      const voice = new VF.Voice({
-        num_beats: 4,
-        beat_value: 4
-      }).addTickables(notes);
-
       const stave = new VF.Stave(x, y, staveWidth);
 
       if (i === 0) {
@@ -96,29 +126,52 @@ export default function LeadSheetRenderer({ leadSheet }) {
         stave.addKeySignature("G");
       }
 
+      // --- MEASURE GROUP ---
+      const measureGroup = ctx.openGroup();
       stave.setContext(ctx).draw();
+      ctx.closeGroup();
+      measureElements.current.set(measure.id, measureGroup);
+
+      // --- NOTES ---
+      const notes = (measure.melody || []).map(n => {
+        const vfNote = tokenToNote(n);
+        return { vfNote, id: n.id };
+      });
+
+      const voice = new VF.Voice({ num_beats: 4, beat_value: 4 });
+      voice.addTickables(notes.map(n => n.vfNote));
 
       new VF.Formatter().joinVoices([voice]).format([voice], staveWidth - 50);
       voice.draw(ctx, stave);
 
-      if (measure.chords && measure.chords.length > 0) {
-        const beatCount = Math.min(measure.chords.length, 4);
+      // --- NOTE GROUPS ---
+      notes.forEach(n => {
+        const g = ctx.openGroup();
+        n.vfNote.setContext(ctx).draw();
+        ctx.closeGroup();
+        noteElements.current.set(n.id, g);
+      });
 
+      // --- CHORD SYMBOLS ---
+      if (measure.chords && measure.chords.length > 0) {
         const left = stave.getNoteStartX();
         const right = stave.getX() + stave.getWidth() - 20;
         const beatSpacing = (right - left) / 4;
 
-        for (let b = 0; b < beatCount; b++) {
+        measure.chords.forEach((symbol, b) => {
           const xPos = left + beatSpacing * b;
-
           ctx.save();
           ctx.setFont("Arial", 14, "");
-          ctx.fillText(measure.chords[b], xPos, y - 10);
+          ctx.fillText(symbol, xPos, y - 10);
           ctx.restore();
-        }
+        });
       }
     });
   }, [measures]);
+
+
+
+
 
   return (
     <div
@@ -130,8 +183,7 @@ export default function LeadSheetRenderer({ leadSheet }) {
       }}
     >
       <div
-        id="vf-container"
-        ref={ref}
+        ref={containerRef}
         style={{
           width: "900px",
           minHeight: "600px",
@@ -139,4 +191,6 @@ export default function LeadSheetRenderer({ leadSheet }) {
       />
     </div>
   );
-}
+});
+
+export default LeadSheetRenderer;

@@ -3,17 +3,20 @@ import * as Tone from "tone";
 
 export const ToneEngineContext = createContext();
 
-
 export function ToneEngineProvider({ children }) {
   const samplerRef = useRef(null);
 
   const [scaleSampler, setScaleSampler] = useState(null);
   const [audioStarted, setAudioStarted] = useState(false);
-  const [samplerReady, setSamplerReady] = useState(false);   // ⭐ NEW
+  const [samplerReady, setSamplerReady] = useState(false);
 
   const startAudio = async () => {
+    // console.log("DIAG A — startAudio() called");
+
     await Tone.start();
     setAudioStarted(true);
+
+    // console.log("DIAG B — Creating Tone.Sampler...");
 
     const s = new Tone.Sampler(
       {
@@ -27,10 +30,12 @@ export function ToneEngineProvider({ children }) {
         D5: "/samples/guitar-acoustic/D5.ogg",
       },
       () => {
-        console.log("Sampler loaded");
-        setSamplerReady(true);   // ⭐ NOW WE KNOW IT'S SAFE TO PLAY
+        // console.log("DIAG C — Sampler loaded callback fired");
+        setSamplerReady(true);
       }
     ).toDestination();
+
+    // console.log("DIAG D — Sampler instance created:", s);
 
     samplerRef.current = s;
     setScaleSampler(s);
@@ -39,7 +44,7 @@ export function ToneEngineProvider({ children }) {
   return (
     <ToneEngineContext.Provider value={{
       scaleSampler,
-      samplerReady,     // ⭐ expose it
+      samplerReady,
       startAudio,
       audioStarted
     }}>

@@ -4,6 +4,8 @@ import "bootstrap/dist/css/bootstrap.min.css"
 import "./toolbar.css";
 import ChordTools from "/src/components/toolbar/toolbar-pages/ChordTools.jsx";
 import ScaleTools from "/src/components/toolbar/toolbar-pages/ScaleTools.jsx";
+import LeadSheetTools from "/src/components/toolbar/toolbar-pages/LeadSheetTools.jsx";
+
 import SettingsTools from "/src/components/toolbar/toolbar-pages/SettingsTools.jsx";
 import ZoomControls from "/src/components/toolbar/toolbar-global/zoom-controls.jsx"
 import ColorControls from "/src/components/toolbar/toolbar-global/color-controls.jsx"
@@ -37,6 +39,7 @@ export default function Toolbar(props ) {
           {page === "chords" && <ChordTools {...props} />}
           {page === "scales" && <ScaleTools {...props} />}
           {page === "settings" && <SettingsTools {...props} />}
+           {page === "lead-sheet" && <LeadSheetTools {...props} />}
         </div>
       </div>
 

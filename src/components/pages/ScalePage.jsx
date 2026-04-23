@@ -14,10 +14,8 @@ import { useToneEngine } from "/src/context/ToneEngineContext";
 
 export default function ScalePage( props ) {
 
-  const { showOpenStringsUI,
-     setShowOpenStringsUI, showInlaysUI, setShowInlaysUI, setScaleSampler,
-     currentNote, setCurrentNote,
-     ...rest} = props
+  const { showOpenStringsUI, setShowOpenStringsUI, showInlaysUI, setShowInlaysUI, setScaleSampler,
+     currentNote, setCurrentNote,  ...rest} = props
 
 const { startAudio, scaleSampler,  samplerReady } = useToneEngine();
 

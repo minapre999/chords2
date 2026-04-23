@@ -1,0 +1,9 @@
+.vf-highlight-note {
+  fill: #ff4444 !important;
+  stroke: #ff4444 !important;
+}
+
+.vf-highlight-measure {
+  stroke: #ffaa00 !important;
+  stroke-width: 3px !important;
+}
