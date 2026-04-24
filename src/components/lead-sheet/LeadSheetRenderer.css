@@ -2,6 +2,10 @@
   fill: #ff4444 !important;
   stroke: #ff4444 !important;
 }
+.vf-highlight-note path {
+  stroke: red !important;
+  fill: red !important;
+}
 
 .vf-highlight-measure {
   stroke: #ffaa00 !important;

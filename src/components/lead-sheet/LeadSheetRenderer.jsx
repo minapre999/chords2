@@ -18,14 +18,21 @@ const LeadSheetRenderer = forwardRef(function LeadSheetRenderer({ leadSheet }, r
   const measures = leadSheet?.measures ?? [];
 
   useImperativeHandle(ref, () => ({
-    highlightNote(noteId) {
-      noteElements.current.forEach(el => el.classList.remove("vf-highlight-note"));
-      const el = noteElements.current.get(noteId);
-      if (el) {
-        el.classList.add("vf-highlight-note");
-        el.scrollIntoView({ block: "center", behavior: "smooth" });
-      }
-    },
+   highlightNote(noteId) {
+  // remove highlight from all notes
+  noteElements.current.forEach(el => {
+    el.classList.remove("vf-highlight-note");
+  });
+
+  const el = noteElements.current.get(noteId);
+  console.log("HIGHLIGHT ELEMENT:", noteId, el);
+
+  if (el) {
+    el.classList.add("vf-highlight-note");
+    el.scrollIntoView({ block: "center", behavior: "smooth" });
+  }
+},
+
 
     highlightMeasure(measureId) {
       measureElements.current.forEach(el => el.classList.remove("vf-highlight-measure"));
@@ -78,38 +85,46 @@ const LeadSheetRenderer = forwardRef(function LeadSheetRenderer({ leadSheet }, r
     playheadRef.current = playhead;
 
     function tokenToNote(entry) {
-      const token = typeof entry === "string" ? entry : entry.token;
-      const isRest = token.endsWith("r");
+  const token = typeof entry === "string" ? entry : entry.token;
+  const isRest = token.endsWith("r");
 
-      if (isRest) {
-        return new VF.StaveNote({
-          keys: ["b/4"],
-          duration: token,
-          clef: "treble"
-        });
-      }
+  if (isRest) {
+    const note = new VF.StaveNote({
+      keys: ["b/4"],
+      duration: token,
+      clef: "treble"
+    });
 
-      const pitch = token.slice(0, -1);
-      const durationChar = token.slice(-1);
+    note.attrs.id = entry.id;   // ⭐ FIXED
 
-      const letter = pitch[0].toLowerCase();
-      const accidental = pitch.length === 3 ? pitch[1] : "";
-      const octave = String(Number(pitch[pitch.length - 1]) + 1);
+    return note;
+  }
 
-      const key = `${letter}${accidental}/${octave}`;
+  const pitch = token.slice(0, -1);
+  const durationChar = token.slice(-1);
 
-      const note = new VF.StaveNote({
-        keys: [key],
-        duration: durationChar,
-        clef: "treble"
-      });
+  const letter = pitch[0].toLowerCase();
+  const accidental = pitch.length === 3 ? pitch[1] : "";
+  const octave = String(Number(pitch[pitch.length - 1]) + 1);
 
-      if (accidental) {
-        note.addAccidental(0, new VF.Accidental(accidental));
-      }
+  const key = `${letter}${accidental}/${octave}`;
 
-      return note;
-    }
+  const note = new VF.StaveNote({
+    keys: [key],
+    duration: durationChar,
+    clef: "treble"
+  });
+
+  note.attrs.id = entry.id;   // ⭐ FIXED
+
+  if (accidental) {
+    note.addAccidental(0, new VF.Accidental(accidental));
+  }
+
+  return note;
+}
+
+
 
     measures.forEach((measure, i) => {
       const row = Math.floor(i / colsPerRow);
@@ -141,16 +156,25 @@ const LeadSheetRenderer = forwardRef(function LeadSheetRenderer({ leadSheet }, r
       const voice = new VF.Voice({ num_beats: 4, beat_value: 4 });
       voice.addTickables(notes.map(n => n.vfNote));
 
-      new VF.Formatter().joinVoices([voice]).format([voice], staveWidth - 50);
-      voice.draw(ctx, stave);
+      // new VF.Formatter().joinVoices([voice]).format([voice], staveWidth - 50);
+      const formatter = new VF.Formatter();
+      formatter.joinVoices([voice]);
+      formatter.formatToStave([voice], stave);   // ⭐ format only, no drawing
+
+      // voice.draw(ctx, stave);
 
       // --- NOTE GROUPS ---
+     // --- NOTE GROUPS (draw notes ONLY here) ---
       notes.forEach(n => {
+        n.vfNote.setStave(stave);   // ⭐ REQUIRED: attach stave before drawing
+
         const g = ctx.openGroup();
         n.vfNote.setContext(ctx).draw();
         ctx.closeGroup();
+
         noteElements.current.set(n.id, g);
       });
+
 
       // --- CHORD SYMBOLS ---
       if (measure.chords && measure.chords.length > 0) {

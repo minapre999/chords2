@@ -35,18 +35,24 @@ export function useLeadSheetPlayer(props ) {
 
 
 
-  
-  // Convert lead sheet → sequence steps
-  const buildSteps = useCallback(() => {
-  const steps = [];
+
+  /* 
+  buildSteps This produces a clean event list like:
+  { time: "0", note: "G4", duration: "4n" },
+  { time: "4n", note: "A4", duration: "8n" },
+  { time: "4n + 8n", note: "B4", duration: "2n" },
+  ...
+]
+  */
+
+ const buildSteps = useCallback(() => {
+  const events = [];
+  let cursor = 0;
 
   for (const measure of leadSheet.measures) {
     for (const n of measure.melody) {
       const token = n.token;
       const isRest = token.endsWith("r");
-
-      // ⭐ Extract duration symbol (first character or number)
-      const durSymbol = token.replace(/r$/, "").replace(/[A-G#b0-9]/gi, "");
 
       const durationMap = {
         w: "1n",
@@ -56,25 +62,31 @@ export function useLeadSheetPlayer(props ) {
         "16": "16n"
       };
 
+      const durSymbol = token.match(/w|h|q|8|16/)?.[0] || "q";
       const duration = durationMap[durSymbol] || "4n";
 
-      const pitch = token.replace(/r$/, "");
+      // ⭐ FIXED: extract pitch correctly
+      const pitch = token
+        .replace(/r$/, "")        // remove rest marker
+        .replace(/w|h|q|8|16/, ""); // remove duration symbol
 
-      steps.push([
-        {
-          id: n.id,
-          measureId: measure.id,
-          token,
-          isRest,
-          pitch
-        },
-        duration
-      ]);
+      events.push({
+        time: cursor,
+        note: pitch,
+        duration,
+        isRest,
+        id: n.id,
+        measureId: measure.id
+      });
+
+      cursor += Tone.Time(duration).toSeconds();
     }
   }
 
-  return steps;
+  return events;
 }, [leadSheet]);
+
+
 
 
 
@@ -89,13 +101,13 @@ export function useLeadSheetPlayer(props ) {
   useEffect(() => {
   console.log("useEffect for configuring transport , scaleSampler: ", scaleSampler, "leadSheet: " ,leadSheet)
 
-  if (!scaleSampler || !samplerReady) return;   // ⭐ REQUIRED
+ if (!scaleSampler || !samplerReady) return;
   if (!leadSheet) return;
 
-  const steps = buildSteps();
-  console.log("steps: ", steps);
-  if (!steps.length) return;
+  const events = buildSteps();
+  if (!events.length) return;
 
+  // dispose old part
   if (seqRef.current) {
     seqRef.current.stop();
     seqRef.current.dispose();
@@ -106,28 +118,29 @@ export function useLeadSheetPlayer(props ) {
   transport.stop();
   transport.position = 0;
 
-  seqRef.current = new Tone.Sequence(
-    (time, step) => {
-      if (!step.isRest) {
-      
-        scaleSampler.triggerAttackRelease(step.token.slice(0, -1), step.subdivision, time);
-      }
+  // ⭐ Tone.Part instead of Tone.Sequence
+  seqRef.current = new Tone.Part((time, ev) => {
+    console.log("PART CALLBACK FIRED:", ev);
 
-      Tone.Draw.schedule(() => {
-        rendererRef.current?.highlightNote(step.id);
-        rendererRef.current?.highlightMeasure(step.measureId);
-      }, time);
-    },
-    steps,
-    "4n"
-  );
- console.log("seqRef.current: ", seqRef.current, "isPlaying: ", isPlaying)
-if (isPlaying) {
-    console.log("starting Tone.")
+    if (!ev.isRest) {
+      scaleSampler.triggerAttackRelease(ev.note, ev.duration, time);
+    }
+
+ Tone.Draw.schedule(() => {
+  console.log("DRAW CALLBACK FIRED:", ev.id);
+
+  rendererRef.current?.highlightNote(ev.id);
+  rendererRef.current?.highlightMeasure(ev.measureId);
+}, Tone.Time(ev.time).toSeconds());
+
+
+  }, events);
+
   seqRef.current.start(0);
-    transport.start();
-}
 
+  if (isPlaying) {
+    transport.start();
+  }
 
   return () => {
     if (seqRef.current) {
@@ -136,6 +149,7 @@ if (isPlaying) {
       seqRef.current = null;
     }
   };
+
 }, [scaleSampler, buildSteps, rendererRef, isPlaying, samplerReady]);
 
 
