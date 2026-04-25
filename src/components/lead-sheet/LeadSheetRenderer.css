@@ -11,3 +11,21 @@
   stroke: #ffaa00 !important;
   stroke-width: 3px !important;
 }
+
+
+
+.vf-highlight-measure rect {
+  stroke: orange !important;
+  stroke-width: 3px !important;
+}
+
+
+.selected-note * {
+  stroke: #00aaff !important;
+  fill: #00aaff !important;
+}
+
+.selected-note *:not(rect) {
+  stroke: #00aaff !important;
+  fill: #00aaff !important;
+}

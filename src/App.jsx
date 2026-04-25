@@ -55,6 +55,12 @@ function RouteChangeListener(props) {
 
 
 
+
+
+
+
+
+
 function App() {
 
 // ut the key is understanding that React always renders something first.
@@ -129,6 +135,7 @@ const [showHarmonyNotesUI, setShowHarmonyNotesUI] = useState( true) // show root
 // return saved === null ? true : saved === "true";
 // Converts the stored string into a real boolean, with a default of true
 // */ 
+
 const [showOpenStringsUI, setShowOpenStringsUI] = useState(() => {
               const saved = localStorage.getItem("showOpenStringsUI");
               return saved === null ? true : saved === "true";
@@ -372,19 +379,26 @@ const [currentNote, setCurrentNote] = useState(null)
 
 
 
-useEffect(() => {
-      let cancelled = false;   // 1. Track whether the component is still mounted
-    
-      async function init() {
-        await dc.TUNING_MANAGER.load_tuning();  // 2. Wait for the real load
-        if (!cancelled) setReady(true);             // 3. Only update state if mounted
-      }
-    
-      init();                                       // 4. Kick off the async load
-      return () => { cancelled = true };            // 5. Cleanup: mark as unmounted
-    }, []);
-      
+  useEffect(() => {
+    let cancelled = false;
 
+    async function init() {
+      await dc.TUNING_MANAGER.load_tuning();
+      if (!cancelled) setReady(true);
+    }
+
+    init();
+    return () => { cancelled = true };
+  }, []);
+
+  if (!ready) {
+    return <div>Loading tuning…</div>;
+  }
+
+
+
+
+    
 
 const fbProps = {
 // renderDataUI: renderDataUI, setRenderDataUI: setRenderDataUI,
@@ -457,7 +471,11 @@ currentNote: currentNote, setCurrentNote: setCurrentNote,
             }
           />
 
-          <Route path="/lead-sheet" element={<LeadSheetPage />} />
+          <Route path="/lead-sheet" 
+            element={
+              <LeadSheetPage 
+               {...fbProps} 
+              />} />
 
           <Route
             path="/settings"

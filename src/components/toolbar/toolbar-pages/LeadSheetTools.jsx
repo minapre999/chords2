@@ -8,7 +8,7 @@ import { useToneEngine } from "/src/context/ToneEngineContext";
 export default function LeadSheetTools(props) {
 
 const{isPlaying, setIsPlaying, isPaused, setIsPaused }=props
-const { startAudio, samplerReady } = useToneEngine();
+const { startAudio, samplerReady, scaleSampler } = useToneEngine();
 
 
 const handlePlay = async () => {
@@ -16,19 +16,32 @@ const handlePlay = async () => {
   setIsPlaying(true);     // sequencing effect will handle the rest
   setIsPaused(false);
 };
+// const handlePlay = () => {
+//   if (!scaleSampler?.loaded) return;
+
+//   seqRef.current.start(0);
+//   Tone.Transport.start("+0.01"); // ⭐ prevents race condition
+// };
+
+
 
 
 const handlePause = () => {
-  Tone.Transport.pause();
+    const transport = Tone.getTransport()
+  transport.pause();
+    setIsPaused(true);
   setIsPlaying(false);
-  setIsPaused(true);
+
 };
 
 const handleStop = () => {
-  Tone.Transport.stop();
-  Tone.Transport.position = 0;
+const transport = Tone.getTransport()
+  transport.stop();
+  transport.position = 0;
+    // seqRef.current.stop();   // ⭐ Only here
+    setIsPaused(false);
   setIsPlaying(false);
-  setIsPaused(false);
+
 };
 
 

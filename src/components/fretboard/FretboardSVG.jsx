@@ -97,7 +97,7 @@ if(showHeadstockUI) {
 const scaledWidth = width * zoom;
 const scaledHeight = height * zoom;
 
-  const gaugeMap = [4,5,6,7,8.4,10];
+  const gaugeMap = [4,4,4,7,8.4,10];
   const getStringWidth = (i) => gaugeMap[Math.min(gaugeMap.length - 1, i)];
 
 

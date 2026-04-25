@@ -196,5 +196,9 @@ export default class Note {
         }
       }
     }
+  return this
   }
+
+
+
 }

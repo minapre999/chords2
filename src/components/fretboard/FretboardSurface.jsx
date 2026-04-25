@@ -6,7 +6,7 @@ export default function FretboardSurface({
   getFretX,
   showInlaysUI,
 }) {
-
+console.log("fretboard surface height: ", height)
     const inlayFrets = [3, 5, 7, 9, 12, 15, 17, 19];
     const nutWidth = 16 
     const fretWidth = 12 

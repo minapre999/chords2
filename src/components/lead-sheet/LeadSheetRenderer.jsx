@@ -1,12 +1,117 @@
-import { useEffect, useRef, useImperativeHandle, forwardRef } from "react";
+import { useEffect, useRef, useState, useCallback, useImperativeHandle, forwardRef } from "react";
 import "/node_modules/vexflow/releases/vexflow-debug.js";
+import RenderData, {RenderNote} from "/src/render-notes.js"
+import Note from "/src/harmony/note.js"
 import "./LeadSheetRenderer.css"
+import { isNumber } from "tone";
+
+const durationMap = {
+  "s": "16",
+  "e": "8",
+  "q": "4",
+  "h": "2",
+  "w": "1"
+};
+
+
+function pitchToVexFlowKey(pitch) {
+  // pitch is like "C4", "Eb4", "F#3"
+  const match = pitch.match(/^([A-Ga-g])(b|#)?(\d)$/);
+  if (!match) throw new Error("Invalid pitch: " + pitch);
+
+  let [, letter, accidental, octave] = match;
+
+  letter = letter.toLowerCase(); // VexFlow requires lowercase note names
+
+  if (!accidental) accidental = "";
+
+  return `${letter}${accidental}/${octave}`;
+}
 
 
 
-;
-const LeadSheetRenderer = forwardRef(function LeadSheetRenderer({ leadSheet }, ref) {
-  const containerRef = useRef(null);
+
+//  function tokenToVFNote(entry) {
+//   const token = typeof entry === "string" ? entry : entry.token;
+//   const isRest = token.endsWith("r");
+//   const VF = window.Vex.Flow;
+//   if (isRest) {
+//     const note = new VF.StaveNote({
+//       keys: ["b/4"],
+//       duration: token,
+//       clef: "treble"
+//     });
+
+//     note.attrs.id = entry.id;   // ⭐ FIXED
+
+//     return note;
+//   }
+
+//   const pitch = token.slice(0, -1);
+//   const durationChar = token.slice(-1);
+
+//   const letter = pitch[0].toLowerCase();
+//   const accidental = pitch.length === 3 ? pitch[1] : "";
+//   const octave = String(Number(pitch[pitch.length - 1]) + 1);
+
+//   const key = `${letter}${accidental}/${octave}`;
+
+//   const note = new VF.StaveNote({
+//     keys: [key],
+//     duration: durationChar,
+//     clef: "treble"
+//   });
+
+//   note.attrs.id = entry.id;   // ⭐ FIXED
+
+//   if (accidental) {
+//     note.addAccidental(0, new VF.Accidental(accidental));
+//   }
+
+//   return note;
+// }
+
+
+function tokenToVFNote(n) {
+    const VF = window.Vex.Flow;
+
+  const token = n.token;
+
+  if (token.endsWith("r")) {
+    // rest
+    const dur = token.slice(0, -1); // e.g. "q"
+    return new VF.StaveNote({ keys: ["b/4"], duration: durationMap[dur] + "r" });
+  }
+
+  const pitch = token.slice(0, -1); // C4
+  const dur = token.slice(-1);      // q, e, s, h, w
+
+  const vfDur = durationMap[dur];   // convert to VexFlow duration
+
+  return new VF.StaveNote({
+    keys: [pitchToVexFlowKey(pitch)], // e.g. "c/4"
+    duration: vfDur
+  });
+}
+
+
+
+
+export default function LeadSheetRenderer(props) {
+
+  const{leadSheet,
+    ref,
+    renderDataUI, setRenderDataUI,
+    selectedNoteId, setSelectedNoteId, 
+    onNoteSelect,
+    ...rest 
+      } = props
+
+
+// const LeadSheetRenderer = forwardRef(function LeadSheetRenderer({ leadSheet }, ref) {
+  const lsContainerRef = useRef(null);
+
+
 
   // Maps for visual highlighting
   const noteElements = useRef(new Map());
@@ -27,9 +132,63 @@ const LeadSheetRenderer = forwardRef(function LeadSheetRenderer({ leadSheet }, r
   const el = noteElements.current.get(noteId);
   console.log("HIGHLIGHT ELEMENT:", noteId, el);
 
+
   if (el) {
     el.classList.add("vf-highlight-note");
-    el.scrollIntoView({ block: "center", behavior: "smooth" });
+
+   
+    console.log("LeadSheetRenderer leadSheet: ", leadSheet, "noteId: ", noteId)
+    let found = null
+    for(let m of leadSheet.measures) {
+      for(let item of m.melody) {
+        if(item.id==noteId) {
+          found = item
+          break;
+          // found the note item
+        }
+        if( found != null) break;
+      }
+    }
+  // const note = newNote({}).autoPosition()
+
+  const pitch = found.token.slice(0, -1);
+  const letter = pitch[0].toUpperCase();
+  const accidental = pitch.length === 3 ? pitch[1] : "";
+  const octave = String(Number(pitch[pitch.length - 1]) );
+  const fret = found.fret
+  const string = found.string
+  console.log("found: ", found, "letter: ", letter, "accidental: ", accidental, "octave: ", octave, "fret: ", fret, " string: ", string)
+  if(!isNaN(octave) ) { // not a rest
+
+    const name = `${letter.toUpperCase()}${accidental}${octave}`
+    console.log("note name: ", name)
+    const note = new Note({name: name, fret: fret, stringNumber: string})
+    console.log("note: ", note)
+     const rData = new RenderData(props)
+     const rn = new RenderNote({note: note, text: `${letter}${accidental}`,})
+     rData.add(rn)
+     console.log("render data: ", rData)
+     setRenderDataUI(rData)
+  }
+    // const noteLetter = leadSheet.measure.
+    //  const rn = new RenderNote({note: n, text: text ,})
+    //       rData.add(rn, n.stringNumber)
+
+      // ⭐ Controlled scroll (no snapping)
+  const container = lsContainerRef.current;
+  if (container) {
+    const rect = el.getBoundingClientRect();
+    const containerRect = container.getBoundingClientRect();
+    const offset = rect.top - containerRect.top - containerRect.height / 2;
+
+    container.scrollBy({
+      top: offset,
+      behavior: "smooth"
+    });
+  }
+
+
+    // el.scrollIntoView({ block: "center", behavior: "smooth" });
   }
 },
 
@@ -39,7 +198,24 @@ const LeadSheetRenderer = forwardRef(function LeadSheetRenderer({ leadSheet }, r
       const el = measureElements.current.get(measureId);
       if (el) {
         el.classList.add("vf-highlight-measure");
-        el.scrollIntoView({ block: "center", behavior: "smooth" });
+
+
+  // ⭐ Controlled scroll (no snapping)
+        const container = lsContainerRef.current;
+        if (container) {
+          const rect = el.getBoundingClientRect();
+          const containerRect = container.getBoundingClientRect();
+          const offset = rect.top - containerRect.top - containerRect.height / 2;
+
+          container.scrollBy({
+            top: offset,
+            behavior: "smooth"
+          });
+        }
+
+
+
+        // el.scrollIntoView({ block: "center", behavior: "smooth" });
       }
     },
 
@@ -53,9 +229,9 @@ const LeadSheetRenderer = forwardRef(function LeadSheetRenderer({ leadSheet }, r
   }));
 
   useEffect(() => {
-    if (!containerRef.current) return;
+    if (!lsContainerRef.current) return;
 
-    containerRef.current.innerHTML = "";
+    lsContainerRef.current.innerHTML = "";
     noteElements.current.clear();
     measureElements.current.clear();
 
@@ -69,7 +245,7 @@ const LeadSheetRenderer = forwardRef(function LeadSheetRenderer({ leadSheet }, r
     const svgWidth = 900;
     const svgHeight = 40 + rows * staveHeight;
 
-    const renderer = new VF.Renderer(containerRef.current, VF.Renderer.Backends.SVG);
+    const renderer = new VF.Renderer(lsContainerRef.current, VF.Renderer.Backends.SVG);
     renderer.resize(svgWidth, svgHeight);
 
     const ctx = renderer.getContext();
@@ -84,45 +260,7 @@ const LeadSheetRenderer = forwardRef(function LeadSheetRenderer({ leadSheet }, r
     ctx.svg.appendChild(playhead);
     playheadRef.current = playhead;
 
-    function tokenToNote(entry) {
-  const token = typeof entry === "string" ? entry : entry.token;
-  const isRest = token.endsWith("r");
-
-  if (isRest) {
-    const note = new VF.StaveNote({
-      keys: ["b/4"],
-      duration: token,
-      clef: "treble"
-    });
-
-    note.attrs.id = entry.id;   // ⭐ FIXED
-
-    return note;
-  }
-
-  const pitch = token.slice(0, -1);
-  const durationChar = token.slice(-1);
-
-  const letter = pitch[0].toLowerCase();
-  const accidental = pitch.length === 3 ? pitch[1] : "";
-  const octave = String(Number(pitch[pitch.length - 1]) + 1);
-
-  const key = `${letter}${accidental}/${octave}`;
-
-  const note = new VF.StaveNote({
-    keys: [key],
-    duration: durationChar,
-    clef: "treble"
-  });
-
-  note.attrs.id = entry.id;   // ⭐ FIXED
-
-  if (accidental) {
-    note.addAccidental(0, new VF.Accidental(accidental));
-  }
-
-  return note;
-}
+   
 
 
 
@@ -149,7 +287,7 @@ const LeadSheetRenderer = forwardRef(function LeadSheetRenderer({ leadSheet }, r
 
       // --- NOTES ---
       const notes = (measure.melody || []).map(n => {
-        const vfNote = tokenToNote(n);
+        const vfNote = tokenToVFNote(n);
         return { vfNote, id: n.id };
       });
 
@@ -165,15 +303,53 @@ const LeadSheetRenderer = forwardRef(function LeadSheetRenderer({ leadSheet }, r
 
       // --- NOTE GROUPS ---
      // --- NOTE GROUPS (draw notes ONLY here) ---
-      notes.forEach(n => {
-        n.vfNote.setStave(stave);   // ⭐ REQUIRED: attach stave before drawing
+    notes.forEach(n => {
+  n.vfNote.setStave(stave);
 
-        const g = ctx.openGroup();
-        n.vfNote.setContext(ctx).draw();
-        ctx.closeGroup();
+  // --- 1. Create NOTE GROUP (draw the note first) ---
+  const g = ctx.openGroup();
+  n.vfNote.setContext(ctx).draw();
+  ctx.closeGroup();
 
-        noteElements.current.set(n.id, g);
-      });
+  // --- 2. Create HIT AREA GROUP (ABOVE the note) ---
+  const hitGroup = ctx.openGroup();
+  const bbox = n.vfNote.getBoundingBox();
+  if (bbox) {
+    const padding = 6;
+    const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    rect.setAttribute("x", bbox.getX() - padding);
+    rect.setAttribute("y", bbox.getY() - padding);
+    rect.setAttribute("width", bbox.getW() + padding * 2);
+    rect.setAttribute("height", bbox.getH() + padding * 2);
+
+    // ⭐ Fully invisible, but clickable
+    rect.setAttribute("fill", "transparent");
+    rect.setAttribute("stroke", "none");
+    rect.setAttribute("pointer-events", "all");
+
+    hitGroup.appendChild(rect);
+  }
+  ctx.closeGroup();
+
+  // --- Highlight ---
+  if (selectedNoteId === n.id) {
+    g.classList.add("selected-note");
+  }
+
+  // --- Hit testing (on hitGroup, not g) ---
+  hitGroup.setAttribute("data-note-id", n.id);
+  hitGroup.style.cursor = "pointer";
+
+  hitGroup.addEventListener("mousedown", (e) => {
+    onNoteSelect?.(n.id);
+    onNoteDragStart?.(n.id, e.clientY, e.clientX);
+    e.stopPropagation();
+  });
+
+  noteElements.current.set(n.id, g);
+});
+
+
 
 
       // --- CHORD SYMBOLS ---
@@ -191,7 +367,7 @@ const LeadSheetRenderer = forwardRef(function LeadSheetRenderer({ leadSheet }, r
         });
       }
     });
-  }, [measures]);
+  }, [measures, selectedNoteId]);
 
 
 
@@ -203,11 +379,12 @@ const LeadSheetRenderer = forwardRef(function LeadSheetRenderer({ leadSheet }, r
         flex: 1,
         minHeight: 0,
         overflowY: "auto",
-        overflowX: "hidden",
+        // overflowX: "hidden",
       }}
     >
       <div
-        ref={containerRef}
+      className="ls-container"
+        ref={lsContainerRef}
         style={{
           width: "900px",
           minHeight: "600px",
@@ -215,6 +392,5 @@ const LeadSheetRenderer = forwardRef(function LeadSheetRenderer({ leadSheet }, r
       />
     </div>
   );
-});
+}
 
-export default LeadSheetRenderer;

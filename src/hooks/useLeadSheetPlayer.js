@@ -6,10 +6,33 @@ import { useToneEngine } from "/src/context/ToneEngineContext";
 
 export function useLeadSheetPlayer(props ) {
    const {leadSheet, rendererRef, renderDataUI, setRenderDataUI,
-    isPlaying, setIsPlaying}  =props
+    isPlaying, setIsPlaying,isPaused}  =props
  
   const seqRef = useRef(null);
+
+
+//   const prevSampler = useRef(null)
+//     const prevRendererRef = useRef(null)
+//  const prevIsPlaying= useRef(null)
+// const prevSamplerReady= useRef(null)
+//  const prevBuildSteps= useRef(null)
+ 
+
+
   const { startAudio, scaleSampler,  samplerReady, setSamplerReady} = useToneEngine();
+
+
+
+  const [tempo, setTempo] = useState(() => {
+        const saved = localStorage.getItem("lead-sheet.tempo")
+        return saved === null ? 240 : saved 
+      });
+  useEffect(() => {  localStorage.setItem("lead-sheet.tempo", tempo);
+          }, [tempo]);
+  
+
+
+
 
   // Wait for sampler to load
   useEffect(() => {
@@ -19,6 +42,11 @@ export function useLeadSheetPlayer(props ) {
     else scaleSampler.onload = () => setSamplerReady(true);
   
   }, [scaleSampler]);
+
+
+  useEffect(() => {
+  Tone.getTransport().bpm.value = tempo;
+}, [tempo]);
 
 
 
@@ -99,60 +127,128 @@ export function useLeadSheetPlayer(props ) {
   // Main sequencing effect (mirrors your scale player)
 
   useEffect(() => {
-  console.log("useEffect for configuring transport , scaleSampler: ", scaleSampler, "leadSheet: " ,leadSheet)
-
- if (!scaleSampler || !samplerReady) return;
+  if (!scaleSampler || !samplerReady) return;
   if (!leadSheet) return;
+  if(isPaused) return;
+  
+
+
+console.log("effect for build steps /nisPaused: ", isPaused, 
+    " \nisPlaying", isPlaying, 
+
+    " \nsamplerReady", samplerReady, 
+    " \nrendererRef", rendererRef, 
+    " \nscaleSampler", scaleSampler, 
+     " \nbuildSteps", buildSteps,)
+
 
   const events = buildSteps();
   if (!events.length) return;
 
-  // dispose old part
+  // Stop old part but DO NOT reset transport
   if (seqRef.current) {
     seqRef.current.stop();
-    seqRef.current.dispose();
-    seqRef.current = null;
+    seqRef.current.clear();
+  } else {
+    seqRef.current = new Tone.Part((time, ev) => {
+      if (!ev.isRest) {
+        scaleSampler.triggerAttackRelease(ev.note, ev.duration, time);
+      }
+
+      Tone.Draw.schedule(() => {
+        rendererRef.current?.highlightNote(ev.id);
+        rendererRef.current?.highlightMeasure(ev.measureId);
+      }, time);
+    }, events);
   }
 
-  const transport = Tone.getTransport();
-  transport.stop();
-  transport.position = 0;
+  // Update events
+  events.forEach(ev => seqRef.current.add(ev.time, ev));
 
-  // ⭐ Tone.Part instead of Tone.Sequence
-  seqRef.current = new Tone.Part((time, ev) => {
-    console.log("PART CALLBACK FIRED:", ev);
-
-    if (!ev.isRest) {
-      scaleSampler.triggerAttackRelease(ev.note, ev.duration, time);
+ if (isPlaying) {
+    const transport = Tone.getTransport()
+  // If starting from STOP, restart the Part
+    if (transport.state === "stopped") {
+        seqRef.current.start(0);
+        transport.start("+0.01");
+    } else {
+        // If resuming from PAUSE, just resume Transport
+        transport.start();
+    }
+    } else {
+    // Only stop the Part if user pressed STOP
+    if (!isPaused) {
+        seqRef.current.stop();
     }
 
- Tone.Draw.schedule(() => {
-  console.log("DRAW CALLBACK FIRED:", ev.id);
-
-  rendererRef.current?.highlightNote(ev.id);
-  rendererRef.current?.highlightMeasure(ev.measureId);
-}, Tone.Time(ev.time).toSeconds());
 
 
-  }, events);
+//  const prevSampler = scaleSampler
+//     const prevRendererRef = rendererRef
+//  const prevIsPlaying= isPlaying
+// const prevSamplerReady= samplerReady
+//  const prevBuildSteps= buildSteps
+}
 
-  seqRef.current.start(0);
-
-  if (isPlaying) {
-    transport.start();
-  }
-
-  return () => {
-    if (seqRef.current) {
-      seqRef.current.stop();
-      seqRef.current.dispose();
-      seqRef.current = null;
-    }
-  };
 
 }, [scaleSampler, buildSteps, rendererRef, isPlaying, samplerReady]);
 
 
+
+
+//   useEffect(() => {
+//   console.log("useEffect for configuring transport , scaleSampler: ", scaleSampler, "leadSheet: " ,leadSheet)
+
+//  if (!scaleSampler || !samplerReady) return;
+//   if (!leadSheet) return;
+
+//   const events = buildSteps();
+//   if (!events.length) return;
+
+//   // dispose old part
+//   if (seqRef.current) {
+//     seqRef.current.stop();
+//     seqRef.current.dispose();
+//     seqRef.current = null;
+//   }
+
+//   const transport = Tone.getTransport();
+//   transport.stop();
+//   transport.position = 0;
+
+//   // ⭐ Tone.Part instead of Tone.Sequence
+//   seqRef.current = new Tone.Part((time, ev) => {
+//     console.log("PART CALLBACK FIRED:", ev);
+
+//     if (!ev.isRest) {
+//       scaleSampler.triggerAttackRelease(ev.note, ev.duration, time);
+//     }
+
+//  Tone.Draw.schedule(() => {
+//   console.log("DRAW CALLBACK FIRED:", ev.id);
+
+//   rendererRef.current?.highlightNote(ev.id);
+//   rendererRef.current?.highlightMeasure(ev.measureId);
+// }, Tone.Time(ev.time).toSeconds());
+
+
+//   }, events);
+
+//   seqRef.current.start(0);
+
+//   if (isPlaying) {
+//     transport.start();
+//   }
+
+//   return () => {
+//     if (seqRef.current) {
+//       seqRef.current.stop();
+//       seqRef.current.dispose();
+//       seqRef.current = null;
+//     }
+//   };
+
+// }, [scaleSampler, buildSteps, rendererRef, isPlaying, samplerReady]);
 
 
 

@@ -1,3 +1,4 @@
+import dc from '/src/globals.js'
 import TuningManager from "/src/harmony/tuning-manager.js"
 import Note from "/src/harmony/note.js"
 
@@ -234,10 +235,11 @@ return  this._strings[n-1]
 }
 
 // set note(arr){this._notes = arr}
-add(rn, string=1){ 
+add(rn, string){ 
+   if( typeof string === "undefined") {  string = rn.note.stringNumber  }
     if( string <= 0 || string > this._strings.length) throw "string number out of range in RenderData:add()"
-    
-this._strings[string-1].push(rn)  
+   
+  this._strings[string-1].push(rn)  
 
 }
 
