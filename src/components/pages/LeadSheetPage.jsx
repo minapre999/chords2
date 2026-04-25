@@ -91,30 +91,67 @@ function transposeToken(token, semitones) {
 }
 
 
-// This is the mid‑register jazz guitar map:
-const pitchToGuitar = {
-  "C4": { string: 3, fret: 5 },
-  "C#4": { string: 2, fret: 2 },
-  "D4": { string: 2, fret: 3 },
-  "Eb4": { string: 2, fret: 4 },
-  "E4": { string: 2, fret: 5 },
-  "F4": { string: 2, fret: 6 },
-  "F#4": { string: 2, fret: 7 },
-  "G4": { string: 2, fret: 8 },
-  "Ab4": { string: 2, fret: 9 },
-  "A4": { string: 1, fret: 5 },
-  "Bb4": { string: 1, fret: 6 },
-  "B4": { string: 1, fret: 7 },
-
-  "Bb3": { string: 3, fret: 3 },
-  "B3": { string: 3, fret: 4 },
-  "A3": { string: 3, fret: 2 },
-  "G3": { string: 4, fret: 5 },
-  "F3": { string: 4, fret: 3 },
-  "Eb3": { string: 4, fret: 1 },
-  "D3": { string: 4, fret: 0 },
-  "C3": { string: 5, fret: 3 }
+// Helpers
+const NOTE_NAMES_SHARP = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+const ENHARMONIC_EQUIV = {
+  "C#": "Db",
+  "D#": "Eb",
+  "F#": "Gb",
+  "G#": "Ab",
+  "A#": "Bb"
 };
+
+// Standard tuning: [stringNumber, midiNote]
+const TUNING = [
+  { string: 6, midi: 40 }, // E2
+  { string: 5, midi: 45 }, // A2
+  { string: 4, midi: 50 }, // D3
+  { string: 3, midi: 55 }, // G3
+  { string: 2, midi: 59 }, // B3
+  { string: 1, midi: 64 }  // E4
+];
+
+// Convert MIDI -> { name: "C#4", base: "C#", octave: 4 }
+function midiToNote(midi) {
+  const noteIndex = (midi + 3) % 12; // so that 60 -> C
+  const octave = Math.floor(midi / 12) - 1;
+  const base = NOTE_NAMES_SHARP[noteIndex];
+  return { name: `${base}${octave}`, base, octave };
+}
+
+function pitchToGuitar({
+  minMidi = 40,  // E2
+  maxMidi = 76,  // E5
+  maxFret = 17
+} = {}) {
+  console.log("pitchToGuitar")
+  const map = {};
+
+  for (const { string, midi: openMidi } of TUNING) {
+    for (let fret = 0; fret <= maxFret; fret++) {
+      const noteMidi = openMidi + fret;
+      if (noteMidi < minMidi || noteMidi > maxMidi) continue;
+
+      const { name, base, octave } = midiToNote(noteMidi);
+
+      // Prefer lowest-fret occurrence: only set if not already mapped
+      if (!map[name]) {
+        map[name] = { string, fret };
+      }
+      // console.log("PITCH TO GUITAR MAP: ", map)
+      // Add enharmonic flat name if exists (e.g., C# -> Db)
+      if (ENHARMONIC_EQUIV[base]) {
+        const flatName = `${ENHARMONIC_EQUIV[base]}${octave}`;
+        if (!map[flatName]) {
+          map[flatName] = { string, fret };
+        }
+      }
+    }
+  }
+
+  return map;
+}
+
 
 
 
@@ -150,6 +187,8 @@ const player = useLeadSheetPlayer({
 });
 
 
+
+
      // zoom persistence - zoom is used for scales so persist as different variable
          
          const zoomScope="lead-sheet"
@@ -166,10 +205,80 @@ const player = useLeadSheetPlayer({
   
 
 
-const [drag, setDrag] = useState(null);
 
-const handleNoteDragStart = useCallback((noteId, startY, startX) => {
-  setDrag({ noteId, startY, startX });
+
+const onMouseUpRef = useRef(() => {});
+
+const dragRef = useRef(null);
+const [dragPreview, setDragPreview] = useState(null);
+
+
+// called by LeadSheetRenderer on mousedown
+const handleNoteDragStart = (noteId, startX, startY, g) => {
+  dragRef.current = {
+    noteId,
+    startX,
+    startY,
+    g,
+  };
+};
+
+
+
+// mousemove → update preview (still in screen coords)
+const handleMove = (e) => {
+  const drag = dragRef.current;
+  if (!drag) return;
+
+  const dy = e.clientY - drag.startY;
+  const dx = e.clientX - drag.startX;
+
+  // ✅ 5px per semitone (lines AND spaces), not 10
+  const semitones = Math.round(-dy / 5);
+  const durationSteps = Math.round(dx / 30);
+
+  setDragPreview({
+    noteId: drag.noteId,
+    semitones,
+    durationSteps,
+  });
+};
+
+
+// mouseup → commit + clear
+onMouseUpRef.current = () => {
+  const drag = dragRef.current;
+  if (!drag) return;
+
+  setDragPreview(prev => {
+    if (!prev) {
+      dragRef.current = null;
+      return null;
+    }
+
+    const { noteId, semitones, durationSteps } = prev;
+    updateDraggedNote(noteId, semitones, durationSteps);
+
+    dragRef.current = null;
+    return null;
+  });
+};
+
+
+
+
+
+ useEffect(() => {
+  const onMove = (e) => handleMove(e);
+  const onUp = (e) => onMouseUpRef.current(e);
+
+  window.addEventListener("mousemove", onMove);
+  window.addEventListener("mouseup", onUp);
+
+  return () => {
+    window.removeEventListener("mousemove", onMove);
+    window.removeEventListener("mouseup", onUp);
+  };
 }, []);
 
 
@@ -178,29 +287,40 @@ const handleNoteSelect = (id) => {
 };
 
 
+
+const handleUp = useCallback(() => {
+  const drag = dragRef.current;
+  if (!drag || !dragPreview) return;
+
+  const { noteId, semitones, durationSteps } = dragPreview;
+
+  updateDraggedNote(noteId, semitones, durationSteps);
+
+  noteElements.current.forEach(g => g.removeAttribute("transform"));
+
+  dragRef.current = null;
+  setDragPreview(null);
+}, [dragPreview, updateDraggedNote]);
+
+
+
+
+
+// global listeners
 useEffect(() => {
-  if (!drag) return;
+  const onMove = (e) => handleMove(e);
+  const onUp = (e) => onMouseUpRef.current(e);
 
-  const handleMove = (e) => {
-    const dy = e.clientY - drag.startY;
-    const dx = e.clientX - drag.startX;
-
-    const semitones = Math.round(-dy / 12); // vertical → pitch
-    const durationSteps = Math.round(dx / 30); // horizontal → duration
-
-    updateDraggedNote(drag.noteId, semitones, durationSteps);
-  };
-
-  const handleUp = () => setDrag(null);
-
-  window.addEventListener("mousemove", handleMove);
-  window.addEventListener("mouseup", handleUp);
+  window.addEventListener("mousemove", onMove);
+  window.addEventListener("mouseup", onUp);
 
   return () => {
-    window.removeEventListener("mousemove", handleMove);
-    window.removeEventListener("mouseup", handleUp);
+    window.removeEventListener("mousemove", onMove);
+    window.removeEventListener("mouseup", onUp);
   };
-}, [drag]);
+}, []);
+
+
 
 
 
@@ -362,45 +482,58 @@ function applyRippleEdit(measure, editedNoteId, newToken) {
 }
 
 
+function extractPitch(token) {
+  if (!token) return null;
 
+  // Rests
+  if (token[0].toUpperCase() === "R") return null;
+
+  // Match: Letter + optional accidental + octave
+  // Examples matched: C4, C#4, Db3, F##5 (rare), Bb10
+  const match = token.match(/^([A-Ga-g])([#b]?)(\d+)/);
+  if (!match) return null;
+
+  const letter = match[1].toUpperCase();
+  const accidental = match[2] || "";
+  const octave = match[3];
+
+  return `${letter}${accidental}${octave}`;
+}
 
 
 function updateDraggedNote(noteId, semitones, durationSteps) {
   setLeadSheet(prev => {
-    const next = structuredClone(prev);
-
+    const next = structuredClone(prev);   // ⭐ MUST clone
+console.log("UPDATE DRAGGED NOTE: ", noteId, semitones)
     for (const measure of next.measures) {
       const note = measure.melody.find(n => n.id === noteId);
       if (!note) continue;
+      console.log("Existing note token: ", note.token)
+      // transpose pitch
+      const newToken = transposeToken(note.token, semitones);
+      const pitch = extractPitch(newToken);
+console.log("New token: ", newToken, "pitch: ", pitch)
+      if (pitch) {
+        const gf = pitchToGuitar(pitch);
+        if (gf) {
+          note.string = gf.string;
+          note.fret = gf.fret;
+        }
+      }
 
-      // 1. Compute new pitch token
-      const newPitchToken = transposeToken(note.token, semitones);
-      const pitch = newPitchToken.slice(0, -1);
+      note.token = newToken;
 
-      // 2. Compute new duration
-      const durations = ["s", "e", "q", "h", "w"];
-      const currentDur = newPitchToken.slice(-1);
-      let idx = durations.indexOf(currentDur);
-      idx = Math.min(Math.max(idx + durationSteps, 0), durations.length - 1);
-      const newDur = durations[idx];
-
-      const newToken = pitch + newDur;
-
-      // 3. Apply Ripple Edit
-      if( newDur != currentDur) {
-            applyRippleEdit(measure, noteId, newToken);
-            }
-
-      // 4. Update string/fret for edited note
-      const updated = measure.melody.find(n => n.id === noteId);
-      const gf = pitchToGuitar[pitch];
-      updated.string = gf.string;
-      updated.fret = gf.fret;
+      // duration update
+      if (durationSteps !== 0) {
+        note.durationSteps = (note.durationSteps || 0) + durationSteps;
+      }
     }
 
-    return next;
+    return next; // ⭐ MUST return a new object
   });
 }
+
+
 
 
 
@@ -486,6 +619,10 @@ function updateDraggedNote(noteId, semitones, durationSteps) {
              onNoteSelect={handleNoteSelect}
              selectedNoteId={selectedNoteId}
              setSelectedNoteId={setSelectedNoteId}
+             dragPreview={dragPreview} 
+             setDragPreview={setDragPreview}
+             dragRef={dragRef}
+        
           />
         </div>
 
