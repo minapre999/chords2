@@ -10,7 +10,6 @@ import NavigationBar from "/src/components/navbar/NavigationBar.jsx";
 import {ToneEngineProvider} from "/src/context/ToneEngineContext.jsx"
 import "./globals.js"
 import SettingsModule from "/src/components/settings/SettingsModule.jsx";
-import LeadSheetModule from "/src/components/ls/LeadSheetModule.jsx";
 import { loadSamples } from "./sound/GuitarSampler";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 import TuningManager from "/src/harmony/tuning-manager.js"

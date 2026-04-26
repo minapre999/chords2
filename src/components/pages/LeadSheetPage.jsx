@@ -11,7 +11,7 @@ import { useToneEngine } from "/src/context/ToneEngineContext";
 import { useLeadSheetPlayer } from "/src/hooks/useLeadSheetPlayer";
 import RenderData, {RenderNote} from "/src/render-notes.js"
 
-
+import FloatingPalette from "/src/components/panels/FloatingPalette.jsx"
 
 import { autumnLeaves } from "/src/data/autumnLeaves";
 
@@ -170,6 +170,123 @@ const [isPlaying, setIsPlaying] = useState(false);
 const [isPaused, setIsPaused] = useState(false);
   const rendererRef = useRef(null);
 const [selectedNoteId, setSelectedNoteId] = useState(null);
+
+// this is the core of the note input system
+const [noteInputMode, setNoteInputMode] = useState(false);
+const [inputDuration, setInputDuration] = useState("q"); // default quarter
+const [caret, setCaret] = useState({ measure: 0, index: 0 });
+
+
+const onNoteInput = useCallback((pitch, measureIndex, beatIndex) => {
+  if (!noteInputMode) return;
+
+  console.log("onNoteInput fired:", pitch, measureIndex, beatIndex);
+
+  setLeadSheet(prev => {
+    const next = structuredClone(prev);
+    const measure = next.measures[measureIndex];
+
+    // Build token from duration + pitch
+    const token = inputDuration + pitch; // e.g. "qC4"
+
+    // Insert note at caret position
+    measure.melody.splice(beatIndex, 0, {
+      id: crypto.randomUUID(),
+      token,
+      string: null,
+      fret: null
+    });
+
+    // Ripple edit to maintain strict measure length
+    applyRippleEdit(measure, null, null, { insertedIndex: beatIndex });
+
+    // Advance caret
+    advanceCaret(measureIndex, beatIndex, inputDuration, next);
+
+    return next;
+  });
+}, [noteInputMode, inputDuration]);
+
+useEffect(() => {
+  const onKey = (e) => {
+    if (!noteInputMode) return;
+
+    // A–G pitch entry
+    if ("abcdefg".includes(e.key.toLowerCase())) {
+      const pitch = mapLetterToPitch(e.key);
+      onNoteInput(pitch, caret.measure, caret.index);
+      return;
+    }
+
+    // 1–5 duration shortcuts
+    const map = { "1": "w", "2": "h", "3": "q", "4": "e", "5": "s" };
+    if (map[e.key]) {
+      setInputDuration(map[e.key]);
+      return;
+    }
+  };
+
+  window.addEventListener("keydown", onKey);
+  return () => window.removeEventListener("keydown", onKey);
+}, [noteInputMode, caret]);
+
+
+
+const advanceCaret = (measureIndex, beatIndex, inputDuration, leadSheet) => {
+  const beatsPerMeasure = 4;
+
+  // Convert duration token → beat length
+  const durationToBeats = {
+    w: 4,
+    h: 2,
+    q: 1,
+    "8": 0.5,
+    "16": 0.25
+  };
+
+  const step = durationToBeats[inputDuration] ?? 1; // default quarter
+
+  let newBeat = beatIndex + step;
+  let newMeasure = measureIndex;
+
+  // Wrap to next measure if needed
+  if (newBeat >= beatsPerMeasure) {
+    newBeat = 0;
+    newMeasure = measureIndex + 1;
+  }
+
+  // Clamp to last measure
+  if (newMeasure >= leadSheet.measures.length) {
+    newMeasure = leadSheet.measures.length - 1;
+    newBeat = beatsPerMeasure - 1;
+  }
+
+  setCaret({
+    measure: newMeasure,
+    index: newBeat
+  });
+};
+
+
+
+
+
+const [showPalette, setShowPalette] = useState(() => {
+  const saved = localStorage.getItem("lead-sheet.palette.visible");
+  return saved ? JSON.parse(saved) : false;
+});
+useEffect(() => {
+  localStorage.setItem("lead-sheet.palette.visible", JSON.stringify(showPalette));
+}, [showPalette]);
+
+
+const [lsPalettePos, setLsPalettePos] = useState(() => {
+  const saved = localStorage.getItem("lead-sheet.palette.cords");
+  return saved ? JSON.parse(saved) : { x: 100, y: 500 };
+});
+useEffect(() => {
+  localStorage.setItem("lead-sheet.palette.cords", JSON.stringify(lsPalettePos));
+}, [lsPalettePos]);
 
 
 
@@ -581,19 +698,41 @@ console.log("New token: ", newToken, "pitch: ", pitch)
             
         <Toolbar
           {...props}
-      
           page="lead-sheet"
-          zoom={zoom}                     setZoom={setZoom}
-      isPlaying={isPlaying} setIsPlaying={setIsPlaying}
-      isPaused={isPaused} setIsPaused={setIsPaused}
-      onSelectDuration={handleToolbarDurationChange}
+          zoom={zoom}
+          setZoom={setZoom}
+          isPlaying={isPlaying} 
+          setIsPlaying={setIsPlaying}
+          isPaused={isPaused} 
+          setIsPaused={setIsPaused}
+          
+          showPalette={showPalette} 
+          setShowPalette={setShowPalette}
+          pos={lsPalettePos} 
+          setPos={setLsPalettePos}
+          noteInputMode={noteInputMode}
+          setNoteInputMode={setNoteInputMode}
+          changeDuration={handleToolbarDurationChange}
+          onSelectDuration={setInputDuration}
         />
     
     
       <div className="page-content">
       
 
+      {showPalette && (
+        <FloatingPalette
+             pos={lsPalettePos} 
+            setPos={setLsPalettePos} 
+             onClose={() => setShowPalette(false)}
+               >
+         this is a palette
+        </FloatingPalette>
+      )}
 
+
+
+ 
 
     <div
       className="lead-sheet-page"
@@ -656,7 +795,10 @@ console.log("New token: ", newToken, "pitch: ", pitch)
              dragPreview={dragPreview} 
              setDragPreview={setDragPreview}
              dragRef={dragRef}
-        
+            noteInputMode={noteInputMode}
+            onNoteInput={onNoteInput}
+            caret={caret}
+
           />
         </div>
 

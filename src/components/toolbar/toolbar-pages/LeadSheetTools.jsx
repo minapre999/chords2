@@ -9,7 +9,11 @@ import "/src/components/toolbar/toolbar.css"
 
 export default function LeadSheetTools(props) {
 
-const{isPlaying, setIsPlaying, isPaused, setIsPaused }=props
+const{  isPlaying, setIsPlaying, 
+        isPaused, setIsPaused,
+        showPalette, setShowPalette,
+        noteInputMode, setNoteInputMode }=props
+
 const { startAudio, samplerReady, scaleSampler } = useToneEngine();
 
 
@@ -49,7 +53,16 @@ const transport = Tone.getTransport()
 
 
   return (
-    <>
+              <>
+              <button
+            onClick={() => setNoteInputMode(m => !m)}
+            style={{ background: noteInputMode ? "#88f" : "#eee" }}
+          >
+            Note Input
+          </button>
+
+
+
         <div className="toolbar-group">
           <button onClick={handlePlay}>Play</button>
         <button onClick={handlePause}>Pause</button>
@@ -62,6 +75,12 @@ const transport = Tone.getTransport()
 
         </div>
         
+        <div>
+            <button onClick={() => setShowPalette(s => !s)}>
+            {showPalette ? "Hide Palette" : "Show Palette"}
+          </button>
+
+        </div>
         {/* <ScalePicker {...props} /> */}
         {/* <InversionNavigator {...props} />
         <FormSSNavigator {...props} />

@@ -5,6 +5,17 @@ import Note from "/src/harmony/note.js"
 import "./LeadSheetRenderer.css"
 import { isNumber } from "tone";
 
+
+
+function debug(label, value) {
+  console.log(`DEBUG ${label}:`, value);
+  if (value === "4/q" || value === "4q" || value === "r") {
+    console.trace("STACK TRACE FOR BAD VALUE");
+  }
+}
+
+
+
 const durationMap = {
   "s": "16",
   "e": "8",
@@ -15,42 +26,91 @@ const durationMap = {
 
 
 function pitchToVexFlowKey(pitch) {
-  // pitch is like "C4", "Eb4", "F#3"
-  const match = pitch.match(/^([A-Ga-g])(b|#)?(\d)$/);
-  if (!match) throw new Error("Invalid pitch: " + pitch);
+  // pitch formats supported:
+  // C4, F#3, Bb5
 
-  let [, letter, accidental, octave] = match;
+  const letter = pitch[0].toLowerCase();
 
-  letter = letter.toLowerCase(); // VexFlow requires lowercase note names
+  let accidental = "";
+  let octave = "";
 
-  if (!accidental) accidental = "";
+  if (pitch[1] === "#" || pitch[1] === "b") {
+    accidental = pitch[1];
+    octave = pitch[2];
+  } else {
+    octave = pitch[1];
+  }
 
   return `${letter}${accidental}/${octave}`;
 }
 
 
+// function pitchToVexFlowKey(pitch) {
+//   // pitch is like "C4", "Eb4", "F#3"
+//   const match = pitch.match(/^([A-Ga-g])(b|#)?(\d)$/);
+//   if (!match) throw new Error("Invalid pitch: " + pitch);
 
+//   let [, letter, accidental, octave] = match;
+
+//   letter = letter.toLowerCase(); // VexFlow requires lowercase note names
+
+//   if (!accidental) accidental = "";
+
+//   return `${letter}${accidental}/${octave}`;
+// }
 function tokenToVFNote(n) {
-    const VF = window.Vex.Flow;
+  const VF = window.Vex.Flow;
+  const raw = typeof n === "string" ? n : n.token;
+  const token = raw.trim();
 
-  const token = n.token;
-
+  // REST
   if (token.endsWith("r")) {
-    // rest
-    const dur = token.slice(0, -1); // e.g. "q"
-    return new VF.StaveNote({ keys: ["b/4"], duration: durationMap[dur] + "r" });
+    const pitch = token.slice(0, -1); // e.g. "C4"
+    const dur = token.slice(-1);      // "r"
+    const durationChar = pitch.slice(-1); // last char before r is duration
+    return new VF.StaveNote({
+      keys: ["b/4"],
+      duration: durationMap[durationChar] + "r"
+    });
   }
 
-  const pitch = token.slice(0, -1); // C4
-  const dur = token.slice(-1);      // q, e, s, h, w
+  // NORMAL NOTE
+  // Format: C4q → pitch="C4", dur="q"
+  const pitch = token.slice(0, -1);
+  const dur = token.slice(-1);
 
-  const vfDur = durationMap[dur];   // convert to VexFlow duration
-
-  return new VF.StaveNote({
-    keys: [pitchToVexFlowKey(pitch)], // e.g. "c/4"
-    duration: vfDur
+  const vfKey = pitchToVexFlowKey(pitch);
+  const note = new VF.StaveNote({
+    keys: [vfKey],
+    duration: durationMap[dur]
   });
+
+  // Extract accidental
+  const accidental = pitch[1] === "#" ? "#" :
+                     pitch[1] === "b" ? "b" : null;
+
+  if (accidental) {
+    note.addAccidental(0, new VF.Accidental(accidental));
+  }
+
+  return note;
 }
+
+
+
+
+
+
+const PITCH_CLASSES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+
+function semitoneToPitch(baseMidi, offset) {
+  const midi = baseMidi + offset;
+  const pc = midi % 12;
+  const octave = Math.floor(midi / 12) - 1;
+  return `${PITCH_CLASSES[pc]}${octave}`; // e.g. "C4"
+}
+
+
 
 
 
@@ -64,6 +124,9 @@ export default function LeadSheetRenderer(props) {
     onNoteDragStart,
     dragPreview,
     dragRef,
+    caret,
+    noteInputMode,
+    onNoteInput,
     ...rest
   } = props;
 
@@ -129,6 +192,82 @@ const semitoneStepRef = useRef(3); // default ~3px per semitone until stave is b
     }
   }));
 
+
+function drawCaret(svg, x, yTop, yBottom) {
+      const caret = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      caret.setAttribute("x1", x);
+      caret.setAttribute("x2", x);
+      caret.setAttribute("y1", yTop);
+      caret.setAttribute("y2", yBottom);
+      caret.setAttribute("stroke", "#4a7aff");
+      caret.setAttribute("stroke-width", "2");
+      caret.setAttribute("pointer-events", "none");
+      svg.appendChild(caret);
+    }
+
+
+const pitchFromY = (clientY) => {
+  const svg = lsContainerRef.current?.querySelector("svg");
+  if (!svg) return "C4";
+
+  const bbox = svg.getBoundingClientRect();
+  const localY = clientY - bbox.top;
+
+  const semitoneStep = semitoneStepRef.current || 3;
+
+  // Reference: middle line of treble staff = B4 (MIDI 71)
+  const baseMidi = 71;
+
+  // Compute middle line Y
+  const lineSpacing = semitoneStep * (12 / 7) * 2;
+  const middleLineY = 40 + 2 * lineSpacing;
+
+  const dy = localY - middleLineY;
+  const semitoneOffset = Math.round(-dy / semitoneStep);
+
+  const midi = baseMidi + semitoneOffset;
+  const pc = midi % 12;
+  const octave = Math.floor(midi / 12) - 1;
+
+  return `${PITCH_CLASSES[pc]}${octave}`;
+};
+
+
+const computeBeatFromX = (clientX) => {
+  if (!lsContainerRef.current) return 0;
+
+  const svg = lsContainerRef.current.querySelector("svg");
+  if (!svg) return 0;
+
+  const bbox = svg.getBoundingClientRect();
+  const localX = clientX - bbox.left;
+
+  // We’ll reconstruct the same layout logic you use in the effect
+  const staveWidth = 350;
+  const colsPerRow = 2;
+
+  // Find which measure column this X falls into
+  const col = Math.floor((localX - 20) / staveWidth);
+  const clampedCol = Math.max(0, Math.min(colsPerRow - 1, col));
+
+  const measureX = 20 + clampedCol * staveWidth;
+
+  // Approximate beat region inside the stave
+  const VF = window.Vex.Flow;
+  const tempStave = new VF.Stave(measureX, 0, staveWidth);
+  const left = tempStave.getNoteStartX();
+  const right = tempStave.getX() + tempStave.getWidth() - 20;
+  const beatSpacing = (right - left) / 4; // 4 beats
+
+  const dx = localX - left;
+  const beatIndex = Math.round(dx / beatSpacing);
+
+  return Math.max(0, Math.min(3, beatIndex)); // clamp 0–3
+};
+
+
+
+
   // -----------------------------
   // ⭐ Freeze redraw during drag
   // -----------------------------
@@ -139,7 +278,7 @@ const semitoneStepRef = useRef(3); // default ~3px per semitone until stave is b
   lsContainerRef.current.innerHTML = "";
   noteElements.current.clear();
   measureElements.current.clear();
-  originalYRef.current = {}; // ⭐ store each note’s SVG Y anchor
+  originalYRef.current = {};
 
   const VF = window.Vex.Flow;
 
@@ -151,22 +290,13 @@ const semitoneStepRef = useRef(3); // default ~3px per semitone until stave is b
   const svgWidth = 900;
   const svgHeight = 40 + rows * staveHeight;
 
-  const renderer = new VF.Renderer(lsContainerRef.current, VF.Renderer.Backends.SVG);
+  const renderer = new VF.Renderer(
+    lsContainerRef.current,
+    VF.Renderer.Backends.SVG
+  );
   renderer.resize(svgWidth, svgHeight);
 
   const ctx = renderer.getContext();
-  const svg = ctx.svg;
-
-  svg.style.width = `${svgWidth}px`;
-  svg.style.height = `${svgHeight}px`;
-  svg.style.display = "block";
-
-  // Playhead
-  const playhead = document.createElementNS("http://www.w3.org/2000/svg", "line");
-  playhead.setAttribute("stroke", "red");
-  playhead.setAttribute("stroke-width", "2");
-  svg.appendChild(playhead);
-  playheadRef.current = playhead;
 
   // -----------------------------
   // Render measures + notes
@@ -191,15 +321,42 @@ const semitoneStepRef = useRef(3); // default ~3px per semitone until stave is b
     ctx.closeGroup();
     measureElements.current.set(measure.id, measureGroup);
 
-    // ⭐ Compute correct semitone step for this stave
-    const lineSpacing = stave.getSpacingBetweenLines(); // ~10px
-    const semitoneStep = (lineSpacing / 2) * (7 / 12);  // ~2.916px
+    const lineSpacing = stave.getSpacingBetweenLines();
+    const semitoneStep = (lineSpacing / 2) * (7 / 12);
     semitoneStepRef.current = semitoneStep;
 
-    const notes = (measure.melody || []).map(n => ({
-      vfNote: tokenToVFNote(n),
-      id: n.id
-    }));
+  const notes = (measure.melody || []).map((n, idx) => {
+  console.log("---- NOTES() DEBUG ----");
+  console.log(`index: ${idx}`);
+  console.log("raw n:", n);
+  console.log("typeof n:", typeof n);
+
+  if (typeof n === "string") {
+    console.log("STRING TOKEN DETECTED:", JSON.stringify(n));
+    console.log("STRING CHAR CODES:", [...n].map(c => c.charCodeAt(0)));
+    console.trace("STRING ENTERED notes() — THIS CAUSES 4/q");
+  }
+
+  if (typeof n === "object") {
+    console.log("OBJECT TOKEN DETECTED:", JSON.stringify(n));
+    if (!n.token) {
+      console.log("🔥 OBJECT MISSING .token — THIS WILL BREAK");
+      console.trace("BROKEN OBJECT ENTERED notes()");
+    }
+  }
+
+  // Normalize the token so tokenToVFNote always receives { token }
+  const token = typeof n === "string" ? n : n.token;
+  const id = typeof n === "string" ? null : n.id;
+
+  console.log("NORMALIZED TOKEN:", token);
+
+  const vfNote = tokenToVFNote({ token });
+
+  return { vfNote, id };
+});
+
+
 
     const voice = new VF.Voice({ num_beats: 4, beat_value: 4 });
     voice.addTickables(notes.map(n => n.vfNote));
@@ -214,33 +371,32 @@ const semitoneStepRef = useRef(3); // default ~3px per semitone until stave is b
     notes.forEach(n => {
       n.vfNote.setStave(stave);
 
-      // Draw note
       const g = ctx.openGroup();
       n.vfNote.setContext(ctx).draw();
       ctx.closeGroup();
 
-     // ⭐ Capture original SVG Y anchor (TRUE notehead center)
-const ys = n.vfNote.getYs();
-if (ys && ys.length > 0) {
-  originalYRef.current[n.id] = ys[0];
-}
+      const ys = n.vfNote.getYs();
+      if (ys && ys.length > 0) {
+        originalYRef.current[n.id] = ys[0];
+      }
 
-// Hit area
-const hitGroup = ctx.openGroup();
-const bbox = n.vfNote.getBoundingBox();
-if (bbox) {
-  const padding = 6;
-  const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-  rect.setAttribute("x", bbox.getX() - padding);
-  rect.setAttribute("y", bbox.getY() - padding);
-  rect.setAttribute("width", bbox.getW() + padding * 2);
-  rect.setAttribute("height", bbox.getH() + padding * 2);
-  rect.setAttribute("fill", "transparent");
-  rect.setAttribute("pointer-events", "all");
-  hitGroup.appendChild(rect);
-}
-ctx.closeGroup();
-
+      const hitGroup = ctx.openGroup();
+      const bbox = n.vfNote.getBoundingBox();
+      if (bbox) {
+        const padding = 6;
+        const rect = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "rect"
+        );
+        rect.setAttribute("x", bbox.getX() - padding);
+        rect.setAttribute("y", bbox.getY() - padding);
+        rect.setAttribute("width", bbox.getW() + padding * 2);
+        rect.setAttribute("height", bbox.getH() + padding * 2);
+        rect.setAttribute("fill", "transparent");
+        rect.setAttribute("pointer-events", "all");
+        hitGroup.appendChild(rect);
+      }
+      ctx.closeGroup();
 
       if (selectedNoteId === n.id) {
         g.classList.add("selected-note");
@@ -248,49 +404,52 @@ ctx.closeGroup();
 
       hitGroup.style.cursor = "pointer";
 
-    
-      
-   hitGroup.addEventListener("mousedown", (e) => {
-  e.preventDefault();
+      hitGroup.addEventListener("mousedown", e => {
+        e.preventDefault();
 
-  const startX = e.clientX;
-  const startY = e.clientY;
-  let moved = false;
+        // NOTE INPUT MODE
+        if (noteInputMode) {
+          const pitch = pitchFromY(e.clientY);
+            console.log("pitchFromY →", pitchFromY(e.clientY));
 
-  const onMove = (ev) => {
-    const dx = ev.clientX - startX;
-    const dy = ev.clientY - startY;
+          const beatIndex = computeBeatFromX(e.clientX);
+          onNoteInput(pitch, i, beatIndex);
+          return;
+        }
 
-    // ⭐ Threshold: only start drag if moved > 3px
-    if (!moved && Math.hypot(dx, dy) > 3) {
-      moved = true;
-      isDragging.current = true;
-      onNoteSelect?.(n.id);
-      onNoteDragStart(n.id, startX, startY, g);
-    }
+        // NORMAL MODE (drag or select)
+        const startX = e.clientX;
+        const startY = e.clientY;
+        let moved = false;
 
-    if (moved) {
-      // drag logic continues normally
-    }
-  };
+        const onMove = ev => {
+          const dx = ev.clientX - startX;
+          const dy = ev.clientY - startY;
 
-  const onUp = () => {
-    window.removeEventListener("mousemove", onMove);
-    window.removeEventListener("mouseup", onUp);
+          if (!moved && Math.hypot(dx, dy) > 3) {
+            moved = true;
+            isDragging.current = true;
+            onNoteSelect?.(n.id);
+            onNoteDragStart(n.id, startX, startY, g);
+          }
 
-    if (!moved) {
-      // ⭐ Pure click → select note
-      onNoteSelect?.(n.id);
-    }
-  };
+          if (moved) {
+            // drag logic continues
+          }
+        };
 
-  window.addEventListener("mousemove", onMove);
-  window.addEventListener("mouseup", onUp);
-});
+        const onUp = () => {
+          window.removeEventListener("mousemove", onMove);
+          window.removeEventListener("mouseup", onUp);
 
+          if (!moved) {
+            onNoteSelect?.(n.id);
+          }
+        };
 
-
-
+        window.addEventListener("mousemove", onMove);
+        window.addEventListener("mouseup", onUp);
+      });
 
       noteElements.current.set(n.id, g);
     });
@@ -309,8 +468,47 @@ ctx.closeGroup();
         ctx.restore();
       });
     }
+
+    // CARET for this measure (we'll compute X later)
   });
-}, [measures, selectedNoteId]);
+
+  // -----------------------------
+  // After VexFlow is done: get FINAL SVG and draw playhead + caret
+  // -----------------------------
+  const svg = lsContainerRef.current.querySelector("svg");
+  if (!svg) return;
+
+  svg.style.width = `${svgWidth}px`;
+  svg.style.height = `${svgHeight}px`;
+  svg.style.display = "block";
+
+  const playhead = document.createElementNS(
+    "http://www.w3.org/2000/svg",
+    "line"
+  );
+  playhead.setAttribute("stroke", "red");
+  playhead.setAttribute("stroke-width", "2");
+  svg.appendChild(playhead);
+  playheadRef.current = playhead;
+
+  // CARET (simple 4-beat grid based on current caret.measure/index)
+  if (caret) {
+    const measureIndex = caret.measure;
+    const row = Math.floor(measureIndex / colsPerRow);
+    const col = measureIndex % colsPerRow;
+    const x = 20 + col * staveWidth;
+    const y = 40 + row * staveHeight;
+
+    const stave = new VF.Stave(x, y, staveWidth);
+    const left = stave.getNoteStartX();
+    const right = stave.getX() + stave.getWidth() - 20;
+    const beatSpacing = (right - left) / 4;
+    const caretX = left + caret.index * beatSpacing;
+
+    drawCaret(svg, caretX, y - 5, y + staveHeight - 5);
+  }
+}, [measures, selectedNoteId, noteInputMode, caret]);
+
 
   // -----------------------------
   // ⭐ Preview transform effect
