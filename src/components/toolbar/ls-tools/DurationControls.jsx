@@ -5,8 +5,8 @@
 const DURATIONS = ["s", "e", "q", "h", "w"]; // 16th, 8th, quarter, half, whole
 
 export default function DurationControls(props ) {
-  const { onSelectDuration, // for input mode
-          changeDuration // for non-input mode
+  const { setInputDuration, // for input mode
+          handleToolbarDurationChange // for non-input mode
           } = props
 
   return (
@@ -15,8 +15,10 @@ export default function DurationControls(props ) {
         <button
           key={d}
           onClick={()=>{
-          changeDuration(d)
-          onEditDuration(d)}}
+            console.log("TOOLBAR DURATIONS ONCLICK WITH DURATION: ", d)
+          handleToolbarDurationChange(d)
+          setInputDuration(d)}}
+
           style={{ padding: "6px 10px" }}
         >
           {d}

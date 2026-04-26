@@ -36,7 +36,7 @@ export function useLeadSheetPlayer(props ) {
 
   // Wait for sampler to load
   useEffect(() => {
-    console.log("useEffect for sampler")
+    // console.log("useEffect for sampler")
     if (!scaleSampler) return;
     if (scaleSampler.loaded) setSamplerReady(true);
     else scaleSampler.onload = () => setSamplerReady(true);
@@ -52,7 +52,7 @@ export function useLeadSheetPlayer(props ) {
 
    // Wait for sampler to load
   useEffect(() => {
-    console.log("useEffect for leadSheet")
+    // console.log("useEffect for leadSheet")
   
   
     const steps = buildSteps();

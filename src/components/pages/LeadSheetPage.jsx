@@ -124,7 +124,7 @@ function pitchToGuitar({
   maxMidi = 76,  // E5
   maxFret = 17
 } = {}) {
-  console.log("pitchToGuitar")
+  // console.log("pitchToGuitar")
   const map = {};
 
   for (const { string, midi: openMidi } of TUNING) {
@@ -160,7 +160,20 @@ function pitchToGuitar({
 
 
 export default function LeadSheetPage(props) {
+
+
+
+    // 1. All useRef FIRST
+const rendererRef = useRef(null);
+const applyRippleEditRef = useRef(null);
+const advanceCaretRef = useRef(null);
+const onMouseUpRef = useRef(() => {});
+const dragRef = useRef(null);
+
+  // 2. All useState SECOND
   const [leadSheet, setLeadSheet] = useState(initialLeadSheet);
+
+
   const [selected, setSelected] = useState(null);
 
   // add an empty RenderData as default for renderDataUI so strings are drawn
@@ -168,7 +181,7 @@ export default function LeadSheetPage(props) {
 //  const [renderDataUI, setRenderDataUI] = useState(null) ;
 const [isPlaying, setIsPlaying] = useState(false);
 const [isPaused, setIsPaused] = useState(false);
-  const rendererRef = useRef(null);
+
 const [selectedNoteId, setSelectedNoteId] = useState(null);
 
 // this is the core of the note input system
@@ -176,36 +189,270 @@ const [noteInputMode, setNoteInputMode] = useState(false);
 const [inputDuration, setInputDuration] = useState("q"); // default quarter
 const [caret, setCaret] = useState({ measure: 0, index: 0 });
 
+const [pendingInsert, _setPendingInsert] = useState(null);
 
-const onNoteInput = useCallback((pitch, measureIndex, beatIndex) => {
-  if (!noteInputMode) return;
+const setPendingInsert = (value) => {
+  console.groupCollapsed("%c setPendingInsert CALLED", "color:red;font-weight:bold");
+  console.trace("Stack:");
+  console.log("Value:", value);
+  console.groupEnd();
+  _setPendingInsert(value);
+};
 
-  console.log("onNoteInput fired:", pitch, measureIndex, beatIndex);
+
+
+const [showPalette, setShowPalette] = useState(() => {
+  const saved = localStorage.getItem("lead-sheet.palette.visible");
+  return saved ? JSON.parse(saved) : false;
+});
+useEffect(() => {
+  localStorage.setItem("lead-sheet.palette.visible", JSON.stringify(showPalette));
+}, [showPalette]);
+
+
+const [lsPalettePos, setLsPalettePos] = useState(() => {
+  const saved = localStorage.getItem("lead-sheet.palette.cords");
+  return saved ? JSON.parse(saved) : { x: 100, y: 500 };
+});
+useEffect(() => {
+  localStorage.setItem("lead-sheet.palette.cords", JSON.stringify(lsPalettePos));
+}, [lsPalettePos]);
+
+     // zoom persistence - zoom is used for scales so persist as different variable
+         
+  const zoomScope="lead-sheet"
+  const storageKey = `fretboard.zoom.${zoomScope}`
+  const [zoom, setZoom] = useState(() => {
+        const stored = localStorage.getItem(storageKey);
+        return stored ? Number(stored) : 1;
+      });
+
+  useEffect(() => {
+        localStorage.setItem(storageKey, zoom);
+      }, [zoom, storageKey]);
+
+
+
+const [dragPreview, setDragPreview] = useState(null);
+
+// 3. Custome hooks
+
+const { leadSheetSampler } = useToneEngine();
+
+
+        // 4. All useCallback FOURTH
+
+
+const onNoteInput = useCallback((pitch, measureIndex, melodyIndex) => {
+  console.log("onNoteInput fired:", { pitch, measureIndex, melodyIndex, noteInputMode });
+
+  if (!noteInputMode) {
+    console.log("IGNORED — mode off");
+    return;
+  }
+
+  console.log("SETTING pendingInsert from onNoteInput");
+  setPendingInsert({ pitch, measureIndex, melodyIndex });
+
+}, [noteInputMode, inputDuration]);
+
+
+
+const handleUp = useCallback(() => {
+  const drag = dragRef.current;
+  if (!drag || !dragPreview) return;
+
+  const { noteId, semitones, durationSteps } = dragPreview;
+
+  updateDraggedNote(noteId, semitones, durationSteps);
+
+  noteElements.current.forEach(g => g.removeAttribute("transform"));
+
+  dragRef.current = null;
+  setDragPreview(null);
+}, [dragPreview, updateDraggedNote]);
+
+
+
+  const handleSelect = useCallback((payload) => {
+    setSelected(payload);
+  }, []);
+
+  const updateLeadSheet = useCallback((update) => {
+    setLeadSheet((prev) => {
+      console.trace("updateLeadSheet prev: ", prev, " noteInputMode: ", noteInputMode )
+      const next = structuredClone(prev);
+
+      if (update.type === "note") {
+        const bar = next.bars.find((b) => b.id === update.barId);
+        if (!bar) return prev;
+        const note = bar.melody.find((n) => n.id === update.id);
+        if (!note) return prev;
+        Object.assign(note, update.patch);
+      }
+
+      if (update.type === "chord") {
+        const bar = next.bars.find((b) => b.id === update.barId);
+        if (!bar || !bar.chord) return prev;
+        if (bar.chord.id !== update.id) return prev;
+        Object.assign(bar.chord, update.patch);
+      }
+
+      return next;
+    });
+  }, []);
+
+
+
+const handleToolbarDurationChange = useCallback((newDur) => {
+  const duration = newDur;   // ⭐ capture it here
+
+
+  if (noteInputMode) {
+     console.log("setInputDuration: ", duration, "caret: ", caret, "measureIndex: ", measureIndex, "melodyIndex: ", melodyIndex)
+    setInputDuration(duration);
+
+    const { measure, index } = caret;
+
+    // Insert a note at the caret
+    setPendingInsert({
+      pitch: "C4",        // ⭐ default pitch (or last pitch, or caret pitch)
+      measureIndex: measure,
+      melodyIndex: index
+    });
+
+    return;
+  }
+
+  // ⭐ NORMAL MODE: edit selected note
+  if (!selectedNoteId) return;
 
   setLeadSheet(prev => {
     const next = structuredClone(prev);
+
+    for (let measureIndex = 0; measureIndex < next.measures.length; measureIndex++) {
+      const measure = next.measures[measureIndex];
+      const note = measure.melody.find(n => n.id === selectedNoteId);
+      if (!note) continue;
+
+      const oldToken = note.token;
+      const isRest = oldToken.endsWith("r");
+
+      const newToken = isRest
+        ? duration + "r"
+        : oldToken.slice(0, -1) + duration;
+
+      console.log("newToken:", newToken, "oldToken:", oldToken);
+
+      // ⭐ APPLY RIPPLE EDIT AND CAPTURE RETURN VALUE
+      const updatedMeasure = applyRippleEdit(
+        measure,
+        note.id,
+        newToken
+      );
+
+      console.log("ripple returned:", updatedMeasure);
+
+      // ⭐ REPLACE THE MEASURE IN STATE
+    next.measures[measureIndex] = updatedMeasure;
+  }
+
+  console.log("setLeadSheet returning:", next);
+  return next;
+  });
+}, [noteInputMode, caret, selectedNoteId]);
+
+
+
+
+  // 5. All useEffect FIFTH
+
+/* debugging
+This fires after the state updates.
+This logs:
+
+    the new leadSheet
+
+    the call stack that triggered the update
+
+    the exact moment React committed the update
+
+This is the cleanest way to track when the setter caused a change.
+*/
+//   useEffect(() => {
+//   console.trace("leadSheet changed:", "noteInputMode: ", noteInputMode, "leadSheet: ",leadSheet);
+// }, [leadSheet]);
+
+
+useEffect(() => {
+
+    console.log("ripple-edit EXECUTING");
+
+  if (!pendingInsert) return;
+
+  const { pitch, measureIndex, melodyIndex } = pendingInsert;
+
+  console.log("ripple-edit effect fired. pendingInsert:", pendingInsert);
+
+  setLeadSheet(prev => {
+        
+
+    const next = structuredClone(prev);
     const measure = next.measures[measureIndex];
 
-    // Build token from duration + pitch
-    const token = inputDuration + pitch; // e.g. "qC4"
+    const token = pitch + inputDuration;
 
-    // Insert note at caret position
-    measure.melody.splice(beatIndex, 0, {
-      id: crypto.randomUUID(),
-      token,
-      string: null,
-      fret: null
-    });
+    const newMelody = [
+      ...measure.melody.slice(0, melodyIndex),
+      {
+        id: crypto.randomUUID(),
+        token,
+        string: null,
+        fret: null
+      },
+      ...measure.melody.slice(melodyIndex)
+    ];
 
-    // Ripple edit to maintain strict measure length
-    applyRippleEdit(measure, null, null, { insertedIndex: beatIndex });
+    // IMPORTANT: apply ripple edit *before* returning state
+    const updatedMeasure = applyRippleEdit(
+      { ...measure, melody: newMelody },
+      null,
+      null,
+      { insertedIndex: melodyIndex }
+    );
 
-    // Advance caret
-    advanceCaret(measureIndex, beatIndex, inputDuration, next);
+    next.measures[measureIndex] = updatedMeasure;
 
     return next;
   });
-}, [noteInputMode, inputDuration]);
+
+  setPendingInsert(null);
+}, [pendingInsert, inputDuration]);
+
+
+
+
+
+
+
+
+
+
+
+useEffect(() => {
+  if (!advanceCaretRef.current) return;
+  if (!leadSheet || !leadSheet.measures) return;
+
+  const { measureIndex, melodyIndex } = advanceCaretRef.current;
+
+  advanceCaret(measureIndex, melodyIndex, leadSheet);
+
+  advanceCaretRef.current = null;
+
+}, [leadSheet]);   // ⭐ not pendingInsert
+
+
+
 
 useEffect(() => {
   const onKey = (e) => {
@@ -228,42 +475,31 @@ useEffect(() => {
 
   window.addEventListener("keydown", onKey);
   return () => window.removeEventListener("keydown", onKey);
-}, [noteInputMode, caret]);
+}, [noteInputMode ]);
 
 
+const advanceCaret = (measureIndex, tokenIndex, leadSheet) => {
+  const measure = leadSheet.measures[measureIndex];
+  const tokenCount = measure.melody.length;
 
-const advanceCaret = (measureIndex, beatIndex, inputDuration, leadSheet) => {
-  const beatsPerMeasure = 4;
-
-  // Convert duration token → beat length
-  const durationToBeats = {
-    w: 4,
-    h: 2,
-    q: 1,
-    "8": 0.5,
-    "16": 0.25
-  };
-
-  const step = durationToBeats[inputDuration] ?? 1; // default quarter
-
-  let newBeat = beatIndex + step;
+  let newIndex = tokenIndex + 1;
   let newMeasure = measureIndex;
 
-  // Wrap to next measure if needed
-  if (newBeat >= beatsPerMeasure) {
-    newBeat = 0;
+  // Move to next measure
+  if (newIndex >= tokenCount) {
     newMeasure = measureIndex + 1;
+    newIndex = 0;
   }
 
   // Clamp to last measure
   if (newMeasure >= leadSheet.measures.length) {
     newMeasure = leadSheet.measures.length - 1;
-    newBeat = beatsPerMeasure - 1;
+    newIndex = leadSheet.measures[newMeasure].melody.length - 1;
   }
 
   setCaret({
     measure: newMeasure,
-    index: newBeat
+    index: newIndex
   });
 };
 
@@ -271,26 +507,9 @@ const advanceCaret = (measureIndex, beatIndex, inputDuration, leadSheet) => {
 
 
 
-const [showPalette, setShowPalette] = useState(() => {
-  const saved = localStorage.getItem("lead-sheet.palette.visible");
-  return saved ? JSON.parse(saved) : false;
-});
-useEffect(() => {
-  localStorage.setItem("lead-sheet.palette.visible", JSON.stringify(showPalette));
-}, [showPalette]);
-
-
-const [lsPalettePos, setLsPalettePos] = useState(() => {
-  const saved = localStorage.getItem("lead-sheet.palette.cords");
-  return saved ? JSON.parse(saved) : { x: 100, y: 500 };
-});
-useEffect(() => {
-  localStorage.setItem("lead-sheet.palette.cords", JSON.stringify(lsPalettePos));
-}, [lsPalettePos]);
 
 
 
-const { leadSheetSampler } = useToneEngine();
 
 const player = useLeadSheetPlayer({
   leadSheet,
@@ -306,28 +525,13 @@ const player = useLeadSheetPlayer({
 
 
 
-     // zoom persistence - zoom is used for scales so persist as different variable
-         
-         const zoomScope="lead-sheet"
-         const storageKey = `fretboard.zoom.${zoomScope}`
-         const [zoom, setZoom] = useState(() => {
-           const stored = localStorage.getItem(storageKey);
-           return stored ? Number(stored) : 1;
-         });
-       
-         useEffect(() => {
-           localStorage.setItem(storageKey, zoom);
-         }, [zoom, storageKey]);
-       
+
   
 
 
 
 
-const onMouseUpRef = useRef(() => {});
 
-const dragRef = useRef(null);
-const [dragPreview, setDragPreview] = useState(null);
 
 
 // called by LeadSheetRenderer on mousedown
@@ -401,24 +605,12 @@ onMouseUpRef.current = () => {
 
 const handleNoteSelect = (id) => {
   console.log("SELECTING NOTE ID: ", id)
-  setSelectedNoteId(id);
+    if (!noteInputMode) {
+    setSelectedNoteId(id);
+  }
+
 };
 
-
-
-const handleUp = useCallback(() => {
-  const drag = dragRef.current;
-  if (!drag || !dragPreview) return;
-
-  const { noteId, semitones, durationSteps } = dragPreview;
-
-  updateDraggedNote(noteId, semitones, durationSteps);
-
-  noteElements.current.forEach(g => g.removeAttribute("transform"));
-
-  dragRef.current = null;
-  setDragPreview(null);
-}, [dragPreview, updateDraggedNote]);
 
 
 
@@ -442,63 +634,6 @@ useEffect(() => {
 
 
 
-
-
-  const handleSelect = useCallback((payload) => {
-    setSelected(payload);
-  }, []);
-
-  const updateLeadSheet = useCallback((update) => {
-    setLeadSheet((prev) => {
-      const next = structuredClone(prev);
-
-      if (update.type === "note") {
-        const bar = next.bars.find((b) => b.id === update.barId);
-        if (!bar) return prev;
-        const note = bar.melody.find((n) => n.id === update.id);
-        if (!note) return prev;
-        Object.assign(note, update.patch);
-      }
-
-      if (update.type === "chord") {
-        const bar = next.bars.find((b) => b.id === update.barId);
-        if (!bar || !bar.chord) return prev;
-        if (bar.chord.id !== update.id) return prev;
-        Object.assign(bar.chord, update.patch);
-      }
-
-      return next;
-    });
-  }, []);
-
-
-
-
-
-  const handleToolbarDurationChange = useCallback((newDur) => {
-  if (!selectedNoteId) return;
-
-  setLeadSheet(prev => {
-    const next = structuredClone(prev);
-
-    for (const measure of next.measures) {
-      const note = measure.melody.find(n => n.id === selectedNoteId);
-      if (!note) continue;
-
-      const oldToken = note.token;
-      const isRest = oldToken.endsWith("r");
-
-      const newToken = isRest
-        ? newDur + "r"
-        : oldToken.slice(0, -1) + newDur;
-
-      // Apply ripple edit
-      applyRippleEdit(measure, note.id, newToken);
-    }
-
-    return next;
-  });
-}, [selectedNoteId]);
 
 
 
@@ -546,34 +681,32 @@ function setDuration(token, newDur) {
 }
 
 
-
-
 const MEASURE_TICKS = 1024;
 
+function applyRippleEdit(measure, editedNoteId, newToken, opts = {}) {
+  console.log("APPLY RIPPLE measure: ", measure, "editedNoteId: ",  editedNoteId, "newToken: ", newToken, " opts: ", opts )
+  const next = {
+    ...measure,
+    melody: measure.melody.map(n => ({ ...n }))
+  };
 
-function applyRippleEdit(measure, editedNoteId, newToken) {
-  const notes = measure.melody;
+  const notes = next.melody;
+  let index = -1;
 
-  // 1. Find edited note
-  const index = notes.findIndex(n => n.id === editedNoteId);
-  if (index === -1) return measure;
+  if (editedNoteId) {
+    index = notes.findIndex(n => n.id === editedNoteId);
+    if (index === -1) return next;
+    notes[index].token = newToken;
+  }
 
-  const edited = notes[index];
+  if (opts.insertedIndex !== undefined) {
+    index = opts.insertedIndex;
+  }
 
-  // 2. Compute old/new ticks
-  const oldTicks = getTicks(edited.token);
-  const newTicks = getTicks(newToken);
-
-  // 3. Apply new token
-  edited.token = newToken;
-
-  // 4. Recompute total
   let total = notes.reduce((sum, n) => sum + getTicks(n.token), 0);
 
-  // ------------------------------------------------------------
-  // ⭐ CASE 1: Overflow → measure too long → remove/shorten later notes
-  // ------------------------------------------------------------
   if (total > MEASURE_TICKS) {
+    console.log("fixing for overflow")
     let overflow = total - MEASURE_TICKS;
 
     for (let i = index + 1; i < notes.length && overflow > 0; i++) {
@@ -587,47 +720,67 @@ function applyRippleEdit(measure, editedNoteId, newToken) {
       } else {
         const remaining = ticks - overflow;
 
-        const newDur = Object.keys(durationToTicks)
-          .reverse()
-          .find(d => durationToTicks[d] <= remaining);
+        const exactDur = Object.keys(durationToTicks)
+          .find(d => durationToTicks[d] === remaining);
 
-        n.token = setDuration(n.token, newDur);
+        if (exactDur) {
+          n.token = setDuration(n.token, exactDur);
+        } else {
+          const fallback = Object.keys(durationToTicks)
+            .reverse()
+            .find(d => durationToTicks[d] < remaining);
+
+          if (fallback) {
+            n.token = setDuration(n.token, fallback);
+          }
+        }
+
         overflow = 0;
       }
     }
   }
 
-  // ------------------------------------------------------------
-  // ⭐ CASE 2: Underflow → measure too short → insert rests
-  // ⭐ Rests must be inserted *after the edited note*, not at end
-  // ------------------------------------------------------------
   total = notes.reduce((sum, n) => sum + getTicks(n.token), 0);
 
-  if (total < MEASURE_TICKS) {
-    let under = MEASURE_TICKS - total;
-    let insertPos = index + 1; // ⭐ insert immediately after edited note
+  
+if (total < MEASURE_TICKS) {
+  console.log("fixing for underflow");
+  let under = MEASURE_TICKS - total;
+  let insertPos = index + 1;
 
-    while (under > 0) {
-      const restDur = Object.keys(durationToTicks)
-        .reverse()
-        .find(d => durationToTicks[d] <= under);
+  // ⭐ Sort durations by tick length descending
+  const sortedDurations = Object.entries(durationToTicks)
+    .sort((a, b) => b[1] - a[1]); // [duration, ticks]
 
-      const restToken = restDur + "r";
+  while (under > 0) {
+    // ⭐ Pick the largest duration <= under
+    const [dur, ticks] = sortedDurations.find(([d, t]) => t <= under);
 
-      notes.splice(insertPos, 0, {
-        id: crypto.randomUUID(),
-        token: restToken,
-        string: null,
-        fret: null
-      });
+    const newId = crypto.randomUUID();
+    console.log(
+      "adding rest at", insertPos,
+      "id:", newId,
+      "token:", dur + "r"
+    );
 
-      insertPos++; // next rest goes after the previous one
-      under -= durationToTicks[restDur];
-    }
+    notes.splice(insertPos, 0, {
+      id: newId,
+      token: dur + "r",
+      string: null,
+      fret: null
+    });
+
+    insertPos++;
+    under -= ticks;
   }
-
-  return measure;
 }
+
+
+  return next;
+}
+
+
+
 
 
 
@@ -653,16 +806,18 @@ function extractPitch(token) {
 
 function updateDraggedNote(noteId, semitones, durationSteps) {
   setLeadSheet(prev => {
+            console.trace("useEffect setLeadSheet prev: ", prev, " noteInputMode: ", noteInputMode )
+
     const next = structuredClone(prev);   // ⭐ MUST clone
-console.log("UPDATE DRAGGED NOTE: ", noteId, semitones)
+// console.log("UPDATE DRAGGED NOTE: ", noteId, semitones)
     for (const measure of next.measures) {
       const note = measure.melody.find(n => n.id === noteId);
       if (!note) continue;
-      console.log("Existing note token: ", note.token)
+      // console.log("Existing note token: ", note.token)
       // transpose pitch
       const newToken = transposeToken(note.token, semitones);
       const pitch = extractPitch(newToken);
-console.log("New token: ", newToken, "pitch: ", pitch)
+// console.log("New token: ", newToken, "pitch: ", pitch)
       if (pitch) {
         const gf = pitchToGuitar(pitch);
         if (gf) {
@@ -712,8 +867,8 @@ console.log("New token: ", newToken, "pitch: ", pitch)
           setPos={setLsPalettePos}
           noteInputMode={noteInputMode}
           setNoteInputMode={setNoteInputMode}
-          changeDuration={handleToolbarDurationChange}
-          onSelectDuration={setInputDuration}
+          handleToolbarDurationChange={handleToolbarDurationChange}
+          setInputDuration={setInputDuration}
         />
     
     
@@ -798,6 +953,7 @@ console.log("New token: ", newToken, "pitch: ", pitch)
             noteInputMode={noteInputMode}
             onNoteInput={onNoteInput}
             caret={caret}
+            setCaret={setCaret}
 
           />
         </div>

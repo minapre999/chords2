@@ -125,8 +125,10 @@ export default function LeadSheetRenderer(props) {
     dragPreview,
     dragRef,
     caret,
+    setCaret,
     noteInputMode,
     onNoteInput,
+
     ...rest
   } = props;
 
@@ -275,6 +277,9 @@ const computeBeatFromX = (clientX) => {
   if (dragRef.current) return;
   if (!lsContainerRef.current) return;
 
+  let caretDrawInfo = null;
+
+
   lsContainerRef.current.innerHTML = "";
   noteElements.current.clear();
   measureElements.current.clear();
@@ -326,30 +331,12 @@ const computeBeatFromX = (clientX) => {
     semitoneStepRef.current = semitoneStep;
 
   const notes = (measure.melody || []).map((n, idx) => {
-  console.log("---- NOTES() DEBUG ----");
-  console.log(`index: ${idx}`);
-  console.log("raw n:", n);
-  console.log("typeof n:", typeof n);
-
-  if (typeof n === "string") {
-    console.log("STRING TOKEN DETECTED:", JSON.stringify(n));
-    console.log("STRING CHAR CODES:", [...n].map(c => c.charCodeAt(0)));
-    console.trace("STRING ENTERED notes() — THIS CAUSES 4/q");
-  }
-
-  if (typeof n === "object") {
-    console.log("OBJECT TOKEN DETECTED:", JSON.stringify(n));
-    if (!n.token) {
-      console.log("🔥 OBJECT MISSING .token — THIS WILL BREAK");
-      console.trace("BROKEN OBJECT ENTERED notes()");
-    }
-  }
-
+ 
   // Normalize the token so tokenToVFNote always receives { token }
   const token = typeof n === "string" ? n : n.token;
   const id = typeof n === "string" ? null : n.id;
 
-  console.log("NORMALIZED TOKEN:", token);
+  // console.log("NORMALIZED TOKEN:", token);
 
   const vfNote = tokenToVFNote({ token });
 
@@ -368,91 +355,114 @@ const computeBeatFromX = (clientX) => {
     // -----------------------------
     // Draw notes + hit areas
     // -----------------------------
-    notes.forEach(n => {
-      n.vfNote.setStave(stave);
+   notes.forEach((n, idx) => {
+  const { vfNote, id } = n;
+  vfNote.setStave(stave);
 
-      const g = ctx.openGroup();
-      n.vfNote.setContext(ctx).draw();
-      ctx.closeGroup();
+  const g = ctx.openGroup();
+  vfNote.setContext(ctx).draw();
+  ctx.closeGroup();
 
-      const ys = n.vfNote.getYs();
-      if (ys && ys.length > 0) {
-        originalYRef.current[n.id] = ys[0];
-      }
+  // CARET CAPTURE ONLY — DO NOT DRAW YET
+  if (caret &&
+      caret.measure === i &&
+      caret.index === idx) {
+    const noteX = vfNote.getAbsoluteX();
+    caretDrawInfo = {
+      x: noteX,
+      top: y - 5,
+      bottom: y + staveHeight - 5
+    };
+  }
 
-      const hitGroup = ctx.openGroup();
-      const bbox = n.vfNote.getBoundingBox();
-      if (bbox) {
-        const padding = 6;
-        const rect = document.createElementNS(
-          "http://www.w3.org/2000/svg",
-          "rect"
-        );
-        rect.setAttribute("x", bbox.getX() - padding);
-        rect.setAttribute("y", bbox.getY() - padding);
-        rect.setAttribute("width", bbox.getW() + padding * 2);
-        rect.setAttribute("height", bbox.getH() + padding * 2);
-        rect.setAttribute("fill", "transparent");
-        rect.setAttribute("pointer-events", "all");
-        hitGroup.appendChild(rect);
-      }
-      ctx.closeGroup();
+  const ys = vfNote.getYs();
+  if (ys && ys.length > 0) {
+    originalYRef.current[id] = ys[0];
+  }
 
-      if (selectedNoteId === n.id) {
-        g.classList.add("selected-note");
-      }
+  const hitGroup = ctx.openGroup();
+  const bbox = vfNote.getBoundingBox();
+  if (bbox) {
+    const padding = 6;
+    const rect = document.createElementNS(
+      "http://www.w3.org/2000/svg",
+      "rect"
+    );
+    rect.setAttribute("x", bbox.getX() - padding);
+    rect.setAttribute("y", bbox.getY() - padding);
+    rect.setAttribute("width", bbox.getW() + padding * 2);
+    rect.setAttribute("height", bbox.getH() + padding * 2);
+    rect.setAttribute("fill", "transparent");
+    rect.setAttribute("pointer-events", "all");
+    hitGroup.appendChild(rect);
+  }
+  ctx.closeGroup();
 
-      hitGroup.style.cursor = "pointer";
+  if (selectedNoteId === id) {
+    g.classList.add("selected-note");
+  }
 
-      hitGroup.addEventListener("mousedown", e => {
-        e.preventDefault();
+  hitGroup.style.cursor = "pointer";
 
-        // NOTE INPUT MODE
+  hitGroup.addEventListener("mousedown", e => {
+    e.preventDefault();
+
+    // NOTE INPUT MODE: clicking a note should do NOTHING
         if (noteInputMode) {
-          const pitch = pitchFromY(e.clientY);
-            console.log("pitchFromY →", pitchFromY(e.clientY));
+        e.stopPropagation();
+        e.stopImmediatePropagation();
 
-          const beatIndex = computeBeatFromX(e.clientX);
-          onNoteInput(pitch, i, beatIndex);
-          return;
-        }
-
-        // NORMAL MODE (drag or select)
-        const startX = e.clientX;
-        const startY = e.clientY;
-        let moved = false;
-
-        const onMove = ev => {
-          const dx = ev.clientX - startX;
-          const dy = ev.clientY - startY;
-
-          if (!moved && Math.hypot(dx, dy) > 3) {
-            moved = true;
-            isDragging.current = true;
-            onNoteSelect?.(n.id);
-            onNoteDragStart(n.id, startX, startY, g);
-          }
-
-          if (moved) {
-            // drag logic continues
-          }
-        };
-
-        const onUp = () => {
-          window.removeEventListener("mousemove", onMove);
-          window.removeEventListener("mouseup", onUp);
-
-          if (!moved) {
-            onNoteSelect?.(n.id);
-          }
-        };
-
-        window.addEventListener("mousemove", onMove);
-        window.addEventListener("mouseup", onUp);
-      });
-
-      noteElements.current.set(n.id, g);
+        // ⭐ Move caret to this note
+    setCaret({
+      measure: i,
+      index: idx,
     });
+
+
+        return;
+      }
+
+
+    // NORMAL MODE (drag or select)
+    const startX = e.clientX;
+    const startY = e.clientY;
+    let moved = false;
+
+    const onMove = ev => {
+      const dx = ev.clientX - startX;
+      const dy = ev.clientY - startY;
+
+      if (!moved && Math.hypot(dx, dy) > 3) {
+        moved = true;
+        isDragging.current = true;
+        onNoteSelect?.(n.id);
+        onNoteDragStart(n.id, startX, startY, g);
+      }
+
+      if (moved) {
+        // drag logic continues
+      }
+    };
+
+    const onUp = () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+
+      if (!moved) {
+        onNoteSelect?.(n.id);
+      }
+    };
+
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  }); // end mousedown handler
+
+
+
+
+  noteElements.current.set(n.id, g);
+}); // notes.forEach
+
 
     // Chords
     if (measure.chords?.length) {
@@ -470,6 +480,8 @@ const computeBeatFromX = (clientX) => {
     }
 
     // CARET for this measure (we'll compute X later)
+
+
   });
 
   // -----------------------------
@@ -491,22 +503,12 @@ const computeBeatFromX = (clientX) => {
   svg.appendChild(playhead);
   playheadRef.current = playhead;
 
-  // CARET (simple 4-beat grid based on current caret.measure/index)
-  if (caret) {
-    const measureIndex = caret.measure;
-    const row = Math.floor(measureIndex / colsPerRow);
-    const col = measureIndex % colsPerRow;
-    const x = 20 + col * staveWidth;
-    const y = 40 + row * staveHeight;
 
-    const stave = new VF.Stave(x, y, staveWidth);
-    const left = stave.getNoteStartX();
-    const right = stave.getX() + stave.getWidth() - 20;
-    const beatSpacing = (right - left) / 4;
-    const caretX = left + caret.index * beatSpacing;
+  // ⭐ DRAW CARET NOW THAT SVG EXISTS
+if (caretDrawInfo) {
+  drawCaret(svg, caretDrawInfo.x, caretDrawInfo.top, caretDrawInfo.bottom);
+}
 
-    drawCaret(svg, caretX, y - 5, y + staveHeight - 5);
-  }
 }, [measures, selectedNoteId, noteInputMode, caret]);
 
 

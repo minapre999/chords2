@@ -127,7 +127,7 @@ const scaleProps={
 
 
 useEffect(() => {
-    console.log("useEffect for scale renderData.  directionUI is: ", directionUI," patternUI is: ", patternUI, " scaleSampler: ", scaleSampler, "renderDataUI; ", renderDataUI)
+    // console.log("useEffect for scale renderData.  directionUI is: ", directionUI," patternUI is: ", patternUI, " scaleSampler: ", scaleSampler, "renderDataUI; ", renderDataUI)
     if (!samplerReady) return;
     if( !renderDataUI ) return;
 
