@@ -187,6 +187,7 @@ const [selectedNoteId, setSelectedNoteId] = useState(null);
 // this is the core of the note input system
 const [noteInputMode, setNoteInputMode] = useState(false);
 const [inputDuration, setInputDuration] = useState("q"); // default quarter
+const [inputAccidental, setInputAccidental] = useState(null);
 const [caret, setCaret] = useState({ measure: 0, index: 0 });
 
 const [pendingInsert, _setPendingInsert] = useState(null);
@@ -304,6 +305,7 @@ const handleUp = useCallback(() => {
 
 
 
+
 const handleToolbarDurationChange = useCallback((newDur) => {
   const duration = newDur;   // ⭐ capture it here
 
@@ -362,6 +364,38 @@ const handleToolbarDurationChange = useCallback((newDur) => {
 }, [noteInputMode, caret, selectedNoteId]);
 
 
+function handleAccidentalClick(acc) {
+  const accidental = acc
+  console.log("handleAccidentalClick called acc:", accidental)
+  // ⭐ INPUT MODE: set accidental for next inserted note
+  if (noteInputMode) {
+    setInputAccidental(acc);
+    return;
+  }
+
+  // ⭐ NORMAL MODE: edit selected note
+  if (!selectedNoteId) return;
+
+  setLeadSheet(prev => {
+    const next = structuredClone(prev);
+
+    for (let measureIndex = 0; measureIndex < next.measures.length; measureIndex++) {
+      const measure = next.measures[measureIndex];
+      const note = measure.melody.find(n => n.id === selectedNoteId);
+      if (!note) continue;
+
+      // ⭐ Update accidental on the note
+      note.accidental = accidental;
+      console.log("note.accidental: ", note.accidental, "note: ", note)
+      // If your token encodes accidentals, update token here
+      note.token = updateTokenWithAccidental(note.token, acc);
+
+      next.measures[measureIndex] = measure;
+    }
+    console.log("returning next: ", next)
+    return next;
+  });
+}
 
 
   // 5. All useEffect FIFTH
@@ -636,6 +670,36 @@ useEffect(() => {
 
 
 
+function updateTokenWithAccidental(token, acc) {
+  // Handle rests: leave them unchanged
+  if (token.endsWith("r")) {
+    return token; // or handle rest accidentals differently if you ever need to
+  }
+
+  // Expect formats like: C4q, C#4q, Eb4h, etc.
+  const match = token.match(/^([A-Ga-g])([#b]?)(\d)(.+)$/);
+  if (!match) {
+    console.warn("updateTokenWithAccidental: unexpected token format:", token);
+    return token;
+  }
+
+  const [, letter, , octave, dur] = match;
+
+  let accSymbol = "";
+  switch (acc) {
+    case "sharp":        accSymbol = "#";  break;
+    case "flat":         accSymbol = "b";  break;
+    case "natural":      accSymbol = "";   break; // no accidental symbol
+    case "double-sharp": accSymbol = "##"; break;
+    case "double-flat":  accSymbol = "bb"; break;
+    default:             accSymbol = "";
+  }
+
+  return `${letter}${accSymbol}${octave}${dur}`;
+}
+
+
+
 
   /*
 ⭐ What Ripple Edit must do (the rules)
@@ -868,6 +932,7 @@ function updateDraggedNote(noteId, semitones, durationSteps) {
           setNoteInputMode={setNoteInputMode}
           handleToolbarDurationChange={handleToolbarDurationChange}
           setInputDuration={setInputDuration}
+          handleAccidentalClick={handleAccidentalClick}
         />
     
     

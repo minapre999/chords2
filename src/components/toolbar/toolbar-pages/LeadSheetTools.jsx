@@ -12,7 +12,9 @@ export default function LeadSheetTools(props) {
 const{  isPlaying, setIsPlaying, 
         isPaused, setIsPaused,
         showPalette, setShowPalette,
-        noteInputMode, setNoteInputMode }=props
+        noteInputMode, setNoteInputMode,
+      handleAccidentalClick,
+           }=props
 
 const { startAudio, samplerReady, scaleSampler } = useToneEngine();
 
@@ -79,8 +81,16 @@ const transport = Tone.getTransport()
             <button onClick={() => setShowPalette(s => !s)}>
             {showPalette ? "Hide Palette" : "Show Palette"}
           </button>
-
         </div>
+
+          <div className="toolbar-group toolbar-accidentals">
+        <button onClick={() => handleAccidentalClick("sharp")}>♯</button>
+        <button onClick={() => handleAccidentalClick("flat")}>♭</button>
+        <button onClick={() => handleAccidentalClick("natural")}>♮</button>
+        <button onClick={() => handleAccidentalClick("double-sharp")}>𝄪</button>
+        <button onClick={() => handleAccidentalClick("double-flat")}>𝄫</button>
+      </div>
+
         {/* <ScalePicker {...props} /> */}
         {/* <InversionNavigator {...props} />
         <FormSSNavigator {...props} />
