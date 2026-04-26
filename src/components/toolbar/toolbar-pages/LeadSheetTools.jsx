@@ -1,6 +1,8 @@
 import { useState, useEffect, useContext } from "react";
 import * as Tone from "tone";
 import { useToneEngine } from "/src/context/ToneEngineContext";
+import  DurationControls  from "/src/components/toolbar/ls-tools/DurationControls.jsx";
+import "/src/components/toolbar/toolbar.css"
 
 // import ScalePicker from "/src/components/toolbar/scale-tools/ScalePicker.jsx";
 
@@ -46,20 +48,26 @@ const transport = Tone.getTransport()
 
 
 
-
-
-
   return (
-    <div>
-        <button onClick={handlePlay}>Play</button>
-      <button onClick={handlePause}>Pause</button>
-      <button onClick={handleStop}>Stop</button>
-      {/* <ScalePicker {...props} /> */}
-      {/* <InversionNavigator {...props} />
-      <FormSSNavigator {...props} />
-       <NoteMode {...props} /> */}
-       {/* <div>More scale tools coming ...</div> */}
-    </div>
+    <>
+        <div className="toolbar-group">
+          <button onClick={handlePlay}>Play</button>
+        <button onClick={handlePause}>Pause</button>
+        <button onClick={handleStop}>Stop</button>
+        </div>
+        <div className="toolbar-group">
+        <DurationControls 
+              {...props} 
+              />
+
+        </div>
+        
+        {/* <ScalePicker {...props} /> */}
+        {/* <InversionNavigator {...props} />
+        <FormSSNavigator {...props} />
+        <NoteMode {...props} /> */}
+        {/* <div>More scale tools coming ...</div> */}
+    </>
   );
 }
 

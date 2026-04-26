@@ -283,6 +283,7 @@ onMouseUpRef.current = () => {
 
 
 const handleNoteSelect = (id) => {
+  console.log("SELECTING NOTE ID: ", id)
   setSelectedNoteId(id);
 };
 
@@ -354,6 +355,37 @@ useEffect(() => {
   }, []);
 
 
+
+
+
+  const handleToolbarDurationChange = useCallback((newDur) => {
+  if (!selectedNoteId) return;
+
+  setLeadSheet(prev => {
+    const next = structuredClone(prev);
+
+    for (const measure of next.measures) {
+      const note = measure.melody.find(n => n.id === selectedNoteId);
+      if (!note) continue;
+
+      const oldToken = note.token;
+      const isRest = oldToken.endsWith("r");
+
+      const newToken = isRest
+        ? newDur + "r"
+        : oldToken.slice(0, -1) + newDur;
+
+      // Apply ripple edit
+      applyRippleEdit(measure, note.id, newToken);
+    }
+
+    return next;
+  });
+}, [selectedNoteId]);
+
+
+
+
   /*
 ⭐ What Ripple Edit must do (the rules)
 
@@ -403,10 +435,9 @@ const MEASURE_TICKS = 1024;
 
 
 function applyRippleEdit(measure, editedNoteId, newToken) {
-
   const notes = measure.melody;
 
-  // 1. Find edited note/rest
+  // 1. Find edited note
   const index = notes.findIndex(n => n.id === editedNoteId);
   if (index === -1) return measure;
 
@@ -415,12 +446,11 @@ function applyRippleEdit(measure, editedNoteId, newToken) {
   // 2. Compute old/new ticks
   const oldTicks = getTicks(edited.token);
   const newTicks = getTicks(newToken);
-  const delta = newTicks - oldTicks;
 
   // 3. Apply new token
   edited.token = newToken;
 
-  // 4. Compute total ticks after change
+  // 4. Recompute total
   let total = notes.reduce((sum, n) => sum + getTicks(n.token), 0);
 
   // ------------------------------------------------------------
@@ -434,21 +464,17 @@ function applyRippleEdit(measure, editedNoteId, newToken) {
       const ticks = getTicks(n.token);
 
       if (ticks <= overflow) {
-        // Remove entire note/rest
         overflow -= ticks;
         notes.splice(i, 1);
         i--;
       } else {
-        // Shorten this note/rest
         const remaining = ticks - overflow;
 
-        // Find the largest duration <= remaining
         const newDur = Object.keys(durationToTicks)
           .reverse()
           .find(d => durationToTicks[d] <= remaining);
 
         n.token = setDuration(n.token, newDur);
-
         overflow = 0;
       }
     }
@@ -456,30 +482,37 @@ function applyRippleEdit(measure, editedNoteId, newToken) {
 
   // ------------------------------------------------------------
   // ⭐ CASE 2: Underflow → measure too short → insert rests
+  // ⭐ Rests must be inserted *after the edited note*, not at end
   // ------------------------------------------------------------
+  total = notes.reduce((sum, n) => sum + getTicks(n.token), 0);
+
   if (total < MEASURE_TICKS) {
     let under = MEASURE_TICKS - total;
+    let insertPos = index + 1; // ⭐ insert immediately after edited note
 
     while (under > 0) {
       const restDur = Object.keys(durationToTicks)
         .reverse()
         .find(d => durationToTicks[d] <= under);
 
-      notes.push({
+      const restToken = restDur + "r";
+
+      notes.splice(insertPos, 0, {
         id: crypto.randomUUID(),
-        token: restDur + "r",
+        token: restToken,
         string: null,
         fret: null
       });
 
+      insertPos++; // next rest goes after the previous one
       under -= durationToTicks[restDur];
     }
   }
 
-  console.log("POST RIPPLE MEASURE: ",measure.melody.map((t)=>t.token))
   return measure;
-
 }
+
+
 
 
 function extractPitch(token) {
@@ -553,6 +586,7 @@ console.log("New token: ", newToken, "pitch: ", pitch)
           zoom={zoom}                     setZoom={setZoom}
       isPlaying={isPlaying} setIsPlaying={setIsPlaying}
       isPaused={isPaused} setIsPaused={setIsPaused}
+      onSelectDuration={handleToolbarDurationChange}
         />
     
     

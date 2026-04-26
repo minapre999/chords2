@@ -219,27 +219,28 @@ const semitoneStepRef = useRef(3); // default ~3px per semitone until stave is b
       n.vfNote.setContext(ctx).draw();
       ctx.closeGroup();
 
-      // ⭐ Capture original SVG Y anchor (center of notehead)
-      const bbox = n.vfNote.getBoundingBox();
-      if (bbox) {
-        const centerY = bbox.getY() + bbox.getH() / 2;
-        originalYRef.current[n.id] = centerY;
-      }
+     // ⭐ Capture original SVG Y anchor (TRUE notehead center)
+const ys = n.vfNote.getYs();
+if (ys && ys.length > 0) {
+  originalYRef.current[n.id] = ys[0];
+}
 
-      // Hit area
-      const hitGroup = ctx.openGroup();
-      if (bbox) {
-        const padding = 6;
-        const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-        rect.setAttribute("x", bbox.getX() - padding);
-        rect.setAttribute("y", bbox.getY() - padding);
-        rect.setAttribute("width", bbox.getW() + padding * 2);
-        rect.setAttribute("height", bbox.getH() + padding * 2);
-        rect.setAttribute("fill", "transparent");
-        rect.setAttribute("pointer-events", "all");
-        hitGroup.appendChild(rect);
-      }
-      ctx.closeGroup();
+// Hit area
+const hitGroup = ctx.openGroup();
+const bbox = n.vfNote.getBoundingBox();
+if (bbox) {
+  const padding = 6;
+  const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+  rect.setAttribute("x", bbox.getX() - padding);
+  rect.setAttribute("y", bbox.getY() - padding);
+  rect.setAttribute("width", bbox.getW() + padding * 2);
+  rect.setAttribute("height", bbox.getH() + padding * 2);
+  rect.setAttribute("fill", "transparent");
+  rect.setAttribute("pointer-events", "all");
+  hitGroup.appendChild(rect);
+}
+ctx.closeGroup();
+
 
       if (selectedNoteId === n.id) {
         g.classList.add("selected-note");
@@ -247,12 +248,49 @@ const semitoneStepRef = useRef(3); // default ~3px per semitone until stave is b
 
       hitGroup.style.cursor = "pointer";
 
-      // ⭐ Correct screen → parent drag start
-      hitGroup.addEventListener("mousedown", (e) => {
-        e.preventDefault();
-        onNoteSelect?.(n.id);
-        onNoteDragStart(n.id, e.clientX, e.clientY, g);
-      });
+    
+      
+   hitGroup.addEventListener("mousedown", (e) => {
+  e.preventDefault();
+
+  const startX = e.clientX;
+  const startY = e.clientY;
+  let moved = false;
+
+  const onMove = (ev) => {
+    const dx = ev.clientX - startX;
+    const dy = ev.clientY - startY;
+
+    // ⭐ Threshold: only start drag if moved > 3px
+    if (!moved && Math.hypot(dx, dy) > 3) {
+      moved = true;
+      isDragging.current = true;
+      onNoteSelect?.(n.id);
+      onNoteDragStart(n.id, startX, startY, g);
+    }
+
+    if (moved) {
+      // drag logic continues normally
+    }
+  };
+
+  const onUp = () => {
+    window.removeEventListener("mousemove", onMove);
+    window.removeEventListener("mouseup", onUp);
+
+    if (!moved) {
+      // ⭐ Pure click → select note
+      onNoteSelect?.(n.id);
+    }
+  };
+
+  window.addEventListener("mousemove", onMove);
+  window.addEventListener("mouseup", onUp);
+});
+
+
+
+
 
       noteElements.current.set(n.id, g);
     });
@@ -293,11 +331,8 @@ const semitoneStepRef = useRef(3); // default ~3px per semitone until stave is b
     if (!g) return;
 
     /*VexFlow’s default staff has 10px between lines, so:
-
     1 line step = 10px
-
     1 diatonic step (line→space or space→line) = 5px
-
     1 semitone ≈ 5px if you want chromatic snapping (lines and spaces)
     */
     const dy = semitones * -5;
