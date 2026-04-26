@@ -309,7 +309,6 @@ const handleToolbarDurationChange = useCallback((newDur) => {
 
 
   if (noteInputMode) {
-     console.log("setInputDuration: ", duration, "caret: ", caret, "measureIndex: ", measureIndex, "melodyIndex: ", melodyIndex)
     setInputDuration(duration);
 
     const { measure, index } = caret;
