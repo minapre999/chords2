@@ -385,8 +385,8 @@ function handleAccidentalClick(acc) {
       if (!note) continue;
 
       // ⭐ Update accidental on the note
-      note.accidental = accidental;
-      console.log("note.accidental: ", note.accidental, "note: ", note)
+      // note.accidental = accidental;
+      console.log("note to be updated with accidental: ", accidental, "note: ", note)
       // If your token encodes accidentals, update token here
       note.token = updateTokenWithAccidental(note.token, acc);
 
@@ -419,7 +419,7 @@ This is the cleanest way to track when the setter caused a change.
 
 useEffect(() => {
 
-    console.log("ripple-edit EXECUTING");
+    console.log("ripple-edit EXECUTING", "\n   pendingInsert: ", pendingInsert);
 
   if (!pendingInsert) return;
 
@@ -747,7 +747,7 @@ function setDuration(token, newDur) {
 const MEASURE_TICKS = 1024;
 
 function applyRippleEdit(measure, editedNoteId, newToken, opts = {}) {
-  console.log("APPLY RIPPLE measure: ", measure, "editedNoteId: ",  editedNoteId, "newToken: ", newToken, " opts: ", opts )
+  console.log("APPLY RIPPLE EDIT \n. measure: ", measure, "\n. editedNoteId: ",  editedNoteId, "\n. newToken: ", newToken, "\n  opts: ", opts )
   const next = {
     ...measure,
     melody: measure.melody.map(n => ({ ...n }))
@@ -838,7 +838,7 @@ if (total < MEASURE_TICKS) {
   }
 }
 
-
+console.log("   next: ", next)
   return next;
 }
 
@@ -1005,7 +1005,7 @@ function updateDraggedNote(noteId, semitones, durationSteps) {
             leadSheet={leadSheet}
             renderDataUI={renderDataUI}
             setRenderDataUI={setRenderDataUI}
-            ref={rendererRef} 
+            rendererRef={rendererRef} 
             onNoteDragStart={handleNoteDragStart}
              measures={leadSheet.measures}
              onNoteSelect={handleNoteSelect}

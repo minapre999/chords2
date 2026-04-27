@@ -16,8 +16,9 @@ export default function DurationControls(props ) {
           key={d}
           onClick={()=>{
             console.log("TOOLBAR DURATIONS ONCLICK WITH DURATION: ", d)
+            setInputDuration(d)
           handleToolbarDurationChange(d)
-          setInputDuration(d)}}
+          }}
 
           style={{ padding: "6px 10px" }}
         >
