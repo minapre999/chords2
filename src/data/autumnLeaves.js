@@ -3,6 +3,50 @@ export const autumnLeaves = {
   key: "G",
   time: "4/4",
   tempo: 140,
+  ties: [
+        { id: "tie1",
+          startMeasure: 1,
+          startIndex: 0,
+          endMeasure: 2,
+          endIndex: 0  },
+       { id: "tie2",
+          startMeasure: 3,
+          startIndex: 1,
+          endMeasure: 4,
+         endIndex: 0  },
+        { id: "tie3",
+          startMeasure: 5, // Dm7b5
+          startIndex: 0,
+          endMeasure: 6,
+          endIndex: 0  },
+           { id: "tie4",
+          startMeasure: 12, //Dm7b5
+          startIndex: 2,
+          endMeasure: 13,
+          endIndex: 0  },
+          { id: "tie5",
+          startMeasure: 14, // Cm6
+          startIndex: 0,
+          endMeasure: 15,
+          endIndex: 0  },
+         { id: "tie6",
+          startMeasure: 16, // Fm7
+          startIndex: 0,
+          endMeasure: 17,
+          endIndex: 0  },
+        { id: "tie7",
+          startMeasure: 18, // EbMaj7
+          startIndex: 0,
+          endMeasure: 19,
+          endIndex: 0  },
+       { id: "tie8",
+          startMeasure: 22, // Cm7/Cb7
+          startIndex: 1,
+          endMeasure: 23,
+          endIndex: 0  },
+    ],
+    
+
   measures: [
 
     // NEW MEASURE AT BEGINNING

@@ -228,7 +228,6 @@ function semitoneToPitch(baseMidi, offset) {
 
 
 
-
 export default function LeadSheetRenderer(props) {
   const {
     leadSheet,
@@ -293,6 +292,7 @@ export default function LeadSheetRenderer(props) {
 
 
 
+
   // ⭐ StrictMode‑safe VexFlow render
   useLayoutEffect(() => {
     if (!lsContainerRef.current) return;
@@ -303,13 +303,6 @@ export default function LeadSheetRenderer(props) {
     effectGuard.current = true;
 
     let caretDrawInfo = null;
-
-
-
-
-
-
-
 
     lsContainerRef.current.innerHTML = "";
     noteElements.current.clear();
@@ -333,6 +326,10 @@ export default function LeadSheetRenderer(props) {
 
     const ctx = renderer.getContext();
 
+
+    const noteLookup = new Map();
+    const measureLayout = []
+
     // -----------------------------
     // Render measures + notes
     // -----------------------------
@@ -342,8 +339,18 @@ export default function LeadSheetRenderer(props) {
 
       const x = 20 + col * staveWidth;
       const y = 40 + row * staveHeight;
+       const stave = new VF.Stave(x, y, staveWidth);
 
-      const stave = new VF.Stave(x, y, staveWidth);
+      measureLayout[i] = {
+                    x,
+                    y,
+                    width: staveWidth,
+                    row, 
+                    stave
+                  };
+
+
+     
 
       if (i === 0) {
         stave.addClef("treble");
@@ -379,8 +386,11 @@ voice.addTickables(notes.map(n => n.vfNote));
 
       // Draw notes + hit areas
       notes.forEach((n, idx) => {
+
         const { vfNote, id } = n;
         vfNote.setStave(stave);
+      noteLookup.set(`${i}:${idx}`, { vfNote, id });
+
 
         const g = ctx.openGroup();
         vfNote.setContext(ctx).draw();
@@ -482,7 +492,118 @@ voice.addTickables(notes.map(n => n.vfNote));
           ctx.restore();
         });
       }
+    }); // end measures.forEach drawing
+
+  // DRAW TIES (supports cross‑system ties)
+
+
+  function createAnchorNote(stave, x) {
+  
+
+  const note = new VF.StaveNote({
+    keys: ["b/4"],
+    duration: "1"
+  });
+
+  note.setStave(stave);
+  note.setStyle({ fillStyle: "transparent", strokeStyle: "transparent" });
+
+  const tc = new VF.TickContext();
+  tc.addTickable(note);
+  tc.setX(x).preFormat();
+
+  return note;
+}
+
+
+
+
+
+
+leadSheet.ties?.forEach(tie => {
+  const start = noteLookup.get(`${tie.startMeasure}:${tie.startIndex}`);
+  const end   = noteLookup.get(`${tie.endMeasure}:${tie.endIndex}`);
+
+  if (!start || !end) return;
+
+  const startLayout = measureLayout[tie.startMeasure];
+  const endLayout   = measureLayout[tie.endMeasure];
+
+  const startRow = startLayout.row;
+  const endRow   = endLayout.row;
+
+  const crossesSystem = startRow !== endRow;
+
+  // SAME SYSTEM
+  if (!crossesSystem) {
+    const vfTie = new VF.StaveTie({
+      first_note: start.vfNote,
+      last_note: end.vfNote,
+      first_indices: [0],
+      last_indices: [0]
     });
+
+    vfTie.setContext(ctx).draw();
+
+    const bbox = vfTie.getBoundingBox();
+    if (bbox) {
+      const hit = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+      hit.setAttribute("x", bbox.x - 4);
+      hit.setAttribute("y", bbox.y - 4);
+      hit.setAttribute("width", bbox.w + 8);
+      hit.setAttribute("height", bbox.h + 8);
+      hit.setAttribute("fill", "transparent");
+      hit.setAttribute("pointer-events", "all");
+      hit.dataset.tieId = tie.id;
+      hit.addEventListener("mousedown", () => onTieSelect(tie.id));
+      svg.appendChild(hit);
+    }
+
+    return;
+  }
+
+  const endX   = startLayout.stave.getTieEndX();
+  const startX = endLayout.stave.getTieStartX();
+
+  // Segment 1: from real start note → end of stave (barline side)
+  const tie1 = new VF.StaveTie({
+    first_note: start.vfNote,
+    last_note: null,
+    first_indices: [0],
+    last_indices: [0],
+    last_x: endX
+  });
+  tie1.setContext(ctx).draw();
+
+  // Segment 2: from start of next stave → real end note
+  const tie2 = new VF.StaveTie({
+    first_note: null,
+    last_note: end.vfNote,
+    first_indices: [0],
+    last_indices: [0],
+    first_x: startX
+  });
+  tie2.setContext(ctx).draw();
+
+
+
+  const bbox = tie1.getBoundingBox();
+  if (bbox) {
+    const hit = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    hit.setAttribute("x", bbox.x - 4);
+    hit.setAttribute("y", bbox.y - 4);
+    hit.setAttribute("width", bbox.w + 8);
+    hit.setAttribute("height", bbox.h + 8);
+    hit.setAttribute("fill", "transparent");
+    hit.setAttribute("pointer-events", "all");
+    hit.dataset.tieId = tie.id;
+    hit.addEventListener("mousedown", () => onTieSelect(tie.id));
+    svg.appendChild(hit);
+  }
+});
+
+
+
 
     // After VexFlow is done: get FINAL SVG and draw playhead + caret
     const svg = lsContainerRef.current.querySelector("svg");
