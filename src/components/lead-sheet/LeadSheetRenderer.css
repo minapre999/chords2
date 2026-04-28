@@ -1,3 +1,20 @@
+/* 
+.page-wrapper,
+.page-content,
+.lead-sheet-page {
+  pointer-events: none;
+}
+
+.page-wrapper *,
+.page-content *,
+.lead-sheet-page * {
+  pointer-events: auto;
+}
+ */
+
+
+
+
 .vf-highlight-note {
   fill: #ff4444 !important;
   stroke: #ff4444 !important;
@@ -32,3 +49,15 @@
   stroke: #00aaff !important;
   fill: #00aaff !important;
 }
+
+.fretboard-scroll {
+  pointer-events: none;
+}
+
+.fretboard-scroll svg {
+  pointer-events: auto;
+}
+
+
+
+

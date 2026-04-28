@@ -183,6 +183,10 @@ const [isPlaying, setIsPlaying] = useState(false);
 const [isPaused, setIsPaused] = useState(false);
 
 const [selectedNoteId, setSelectedNoteId] = useState(null);
+const [selectedTieId, setSelectedTieId] = useState(null);
+const [tieStart, setTieStart] = useState(null); // where T was pressed
+
+
 
 // this is the core of the note input system
 const [noteInputMode, setNoteInputMode] = useState(false);
@@ -302,6 +306,12 @@ const handleUp = useCallback(() => {
       return next;
     });
   }, []);
+
+
+
+
+
+
 
 
 
@@ -464,8 +474,45 @@ useEffect(() => {
 
 
 
+function onTieDelete(id) {
+  const newLS = {
+    ...leadSheet,
+    ties: leadSheet.ties.filter(t => t.id !== id)
+  };
+  setLeadSheet(newLS);
+}
 
 
+/* KEY HANDLER
+Delete tie, begin tie creation (press T)
+*/
+useEffect(() => {
+  function onKey(e) {
+    // DELETE TIE
+    if ((e.key === "Delete" || e.key === "Backspace") && selectedTieId) {
+      onTieDelete(selectedTieId);
+      setSelectedTieId(null);
+      return;
+    }
+
+    // BEGIN TIE CREATION (press T)
+    if (e.key === "t" || e.key === "T") {
+      if (caret) {
+        setTieStart(caret);   // store the starting note position
+      }
+      return;
+    }
+
+    // CANCEL TIE CREATION
+    if (e.key === "Escape") {
+      setTieStart(null);
+      return;
+    }
+  }
+
+  window.addEventListener("keydown", onKey);
+  return () => window.removeEventListener("keydown", onKey);
+}, [caret, selectedTieId, setSelectedTieId, onTieDelete]);
 
 
 
@@ -959,8 +1006,9 @@ function updateDraggedNote(noteId, semitones, durationSteps) {
         display: "flex",
         flexDirection: "column",
         gap: 12,
-        height: "100vh",   // full viewport
-        minHeight: 0
+        // height: "100vh",   // full viewport
+        minHeight: 0,
+        // pointerEvents: "none"     // ← ADD THIS
       }}
     >
 
@@ -1018,7 +1066,11 @@ function updateDraggedNote(noteId, semitones, durationSteps) {
             onNoteInput={onNoteInput}
             caret={caret}
             setCaret={setCaret}
-
+            tieStart={tieStart}
+            setTieStart={setTieStart}
+            selectedTieId={selectedTieId}
+          setSelectedTieId={setSelectedTieId}
+          onTieDelete={onTieDelete}
           />
         </div>
 

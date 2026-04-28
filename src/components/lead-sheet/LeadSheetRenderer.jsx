@@ -166,7 +166,7 @@ function tokenToVFNote(token, currentKey, accidentalMemory) {
 
   const { letter, accidental, octave, duration } = parsed;
 const vfDuration = durationMap[duration]
-console.log("  vfDuration: ", vfDuration)
+// console.log("  vfDuration: ", vfDuration)
   const key = `${letter.toLowerCase()}${accidental || ""}/${octave}`;
   const keyAcc = getKeySigAccidental(currentKey, letter);
 
@@ -240,6 +240,11 @@ export default function LeadSheetRenderer(props) {
     caret,
     setCaret,
     noteInputMode,
+    tieStart,
+    setTieStart,
+    selectedTieId,
+    setSelectedTieId,
+    onTieDelete,
     ...rest
   } = props;
 
@@ -250,9 +255,34 @@ export default function LeadSheetRenderer(props) {
   const isDragging = useRef(false);
   const originalYRef = useRef({});
   const semitoneStepRef = useRef(3);
+const tieHitLayerRef = useRef(null);
 
   const measures = leadSheet?.measures ?? [];
   const effectGuard = useRef(false);
+
+const lastCtxRef = useRef(null);
+const lastNoteLookupRef = useRef(null);
+const lastMeasureLayoutRef = useRef(null);
+
+
+
+useEffect(() => {
+  if (!lastCtxRef.current) return;
+
+  drawTiesAndHitboxes({
+    ctx: lastCtxRef.current,
+    noteLookup: lastNoteLookupRef.current,
+    measureLayout: lastMeasureLayoutRef.current,
+    leadSheet,
+    selectedTieId,
+    lsContainerRef,
+    tieHitLayerRef
+  });
+}, [selectedTieId]);
+
+
+
+
 
   useImperativeHandle(rendererRef, () => ({
     highlightNote(noteId) {
@@ -288,6 +318,221 @@ export default function LeadSheetRenderer(props) {
     svg.appendChild(caretLine);
   };
 
+
+
+
+const drawTiesAndHitboxes = ({
+    ctx,
+  noteLookup,
+  measureLayout,
+  leadSheet,
+  selectedTieId,
+}) => {
+
+
+    if (!ctx) return;
+  if (!lsContainerRef.current) return;
+
+
+  const VF = window.Vex.Flow;
+
+  const svgList = lsContainerRef.current.querySelectorAll("svg");
+  const svg = svgList[svgList.length - 1];
+  if (!svg) return;
+
+
+// --------------------------------------
+// CREATE TIE HIT-LAYER BEFORE DRAWING TIES
+// --------------------------------------
+
+
+const needsNewLayer =
+  !tieHitLayerRef.current ||
+  !tieHitLayerRef.current.isConnected ||
+  tieHitLayerRef.current.parentNode !== svg;
+
+if (svg && needsNewLayer) {
+  const hitLayer = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  hitLayer.setAttribute("id", "tie-hit-layer");
+  hitLayer.style.pointerEvents = "all";
+  svg.appendChild(hitLayer);
+  tieHitLayerRef.current = hitLayer;
+  console.log("CREATED HIT LAYER (real)", hitLayer);
+}
+
+
+
+
+  // Clear old hitboxes
+  while (tieHitLayerRef.current.firstChild) {
+    tieHitLayerRef.current.removeChild(tieHitLayerRef.current.firstChild);
+  }
+
+  // === YOUR ENTIRE TIE LOOP GOES HERE ===
+  // leadSheet.ties?.forEach(tie => { ... })
+  // (the full amended version I gave you earlier)
+  // =======================================
+
+  // Ensure hit layer is on top
+
+
+leadSheet.ties?.forEach(tie => {
+   console.log("DRAWING TIE", tie);
+  const isSelected = selectedTieId === tie.id;
+  ctx.setStrokeStyle(isSelected ? "dodgerblue" : "black");
+  ctx.setLineWidth(isSelected ? 2 : 1);
+
+  const start = noteLookup.get(`${tie.startMeasure}:${tie.startIndex}`);
+  const end   = noteLookup.get(`${tie.endMeasure}:${tie.endIndex}`);
+  if (!start || !end) return;
+
+  const startLayout = measureLayout[tie.startMeasure];
+  const endLayout   = measureLayout[tie.endMeasure];
+
+  const startRow = startLayout.row;
+  const endRow   = endLayout.row;
+  const crossesSystem = startRow !== endRow;
+
+  // --- shared: SVG + offset for canvas→SVG mapping ---
+
+  
+  const svgRect = svg.getBoundingClientRect();
+  const containerRect = lsContainerRef.current.getBoundingClientRect();
+  const svgOffsetY = svgRect.top - containerRect.top;
+
+  // SAME SYSTEM
+  if (!crossesSystem) {
+    const vfTie = new VF.StaveTie({
+      first_note: start.vfNote,
+      last_note: end.vfNote,
+      first_indices: [0],
+      last_indices: [0]
+    });
+    vfTie.setContext(ctx).draw();
+
+    // Canvas coords from VexFlow
+    const canvasStartX = start.vfNote.getAbsoluteX();
+    const canvasEndX   = end.vfNote.getAbsoluteX();
+    const canvasY      = start.vfNote.getYs()[0];
+
+    // Canvas → SVG
+    const svgX = Math.min(canvasStartX, canvasEndX);
+    const svgY = (canvasY - svgOffsetY) - 20;
+    const svgWidth = Math.abs(canvasEndX - canvasStartX);
+    const svgHeight = 40;
+
+    const hit = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    hit.setAttribute("x", svgX);
+    hit.setAttribute("y", svgY);
+    hit.setAttribute("width", svgWidth);
+    hit.setAttribute("height", svgHeight);
+    hit.setAttribute("fill", isSelected ? "rgba(0,128,255,0.25)" : "rgba(255,0,0,0.3)");
+    hit.setAttribute("pointer-events", "all");
+    hit.dataset.tieId = tie.id;
+
+    hit.addEventListener("mousedown", e => {
+      e.stopPropagation();
+      setSelectedTieId(tie.id);
+    });
+
+    tieHitLayerRef.current.appendChild(hit);
+    return;
+  }
+
+  // CROSS-SYSTEM — draw VexFlow ties
+  const system1EndX   = startLayout.stave.getTieEndX();
+  const system2StartX = endLayout.stave.getTieStartX();
+
+  const tie1 = new VF.StaveTie({
+    first_note: start.vfNote,
+    last_note: null,
+    first_indices: [0],
+    last_indices: [0],
+    last_x: system1EndX
+  });
+  tie1.setContext(ctx).draw();
+
+  const tie2 = new VF.StaveTie({
+    first_note: null,
+    last_note: end.vfNote,
+    first_indices: [0],
+    last_indices: [0],
+    first_x: system2StartX
+  });
+  tie2.setContext(ctx).draw();
+
+  // CROSS-SYSTEM HITBOXES
+
+  // Segment 1: start note → end of system 1
+  {
+    const canvasStartX1 = start.vfNote.getAbsoluteX();
+    const canvasEndX1   = system1EndX;
+    const canvasY1      = start.vfNote.getYs()[0];
+
+    const svgX1 = Math.min(canvasStartX1, canvasEndX1);
+    const svgY1 = (canvasY1 - svgOffsetY) - 20;
+    const svgW1 = Math.abs(canvasEndX1 - canvasStartX1);
+    const svgH1 = 40;
+
+    const hit1 = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    hit1.setAttribute("x", svgX1);
+    hit1.setAttribute("y", svgY1);
+    hit1.setAttribute("width", svgW1);
+    hit1.setAttribute("height", svgH1);
+    hit1.setAttribute("fill", isSelected ? "rgba(0,128,255,0.25)" : "rgba(255,0,0,0.3)");
+    hit1.setAttribute("pointer-events", "all");
+    hit1.dataset.tieId = tie.id;
+
+    hit1.addEventListener("mousedown", e => {
+      e.stopPropagation();
+      setSelectedTieId(tie.id);
+    });
+
+    tieHitLayerRef.current.appendChild(hit1);
+  }
+
+  // Segment 2: start of system 2 → end note
+  {
+    const canvasStartX2 = system2StartX;
+    const canvasEndX2   = end.vfNote.getAbsoluteX();
+    const canvasY2      = end.vfNote.getYs()[0];
+
+    const svgX2 = Math.min(canvasStartX2, canvasEndX2);
+    const svgY2 = (canvasY2 - svgOffsetY) - 20;
+    const svgW2 = Math.abs(canvasEndX2 - canvasStartX2);
+    const svgH2 = 40;
+
+    const hit2 = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    hit2.setAttribute("x", svgX2);
+    hit2.setAttribute("y", svgY2);
+    hit2.setAttribute("width", svgW2);
+    hit2.setAttribute("height", svgH2);
+    hit2.setAttribute("fill", isSelected ? "rgba(0,128,255,0.25)" : "rgba(255,0,0,0.3)");
+    hit2.setAttribute("pointer-events", "all");
+    hit2.dataset.tieId = tie.id;
+
+    hit2.addEventListener("mousedown", e => {
+      e.stopPropagation();
+      setSelectedTieId(tie.id);
+    });
+
+    tieHitLayerRef.current.appendChild(hit2);
+  }
+}); // end ties loop
+
+// ensure hit-layer is on top
+
+
+if (tieHitLayerRef.current && tieHitLayerRef.current.parentNode === svg) {
+  svg.appendChild(tieHitLayerRef.current);
+}
+
+
+
+
+
+  svg.appendChild(tieHitLayerRef.current);
+};
 
 
 
@@ -384,8 +629,9 @@ voice.addTickables(notes.map(n => n.vfNote));
       formatter.joinVoices([voice]);
       formatter.formatToStave([voice], stave);
 
-      // Draw notes + hit areas
+      // NOTE DRAWING LOOP
       notes.forEach((n, idx) => {
+
 
         const { vfNote, id } = n;
         vfNote.setStave(stave);
@@ -446,6 +692,12 @@ voice.addTickables(notes.map(n => n.vfNote));
             return;
           }
 
+
+          g.style.pointerEvents = "none";       // note graphics never block clicks
+          hitGroup.style.pointerEvents = "all"; // only hitbox receives events
+
+
+
           const startX = e.clientX;
           const startY = e.clientY;
           let moved = false;
@@ -476,7 +728,11 @@ voice.addTickables(notes.map(n => n.vfNote));
         if (id) {
           noteElements.current.set(id, g);
         }
-      });
+
+      g.style.pointerEvents = "none"; // the VexFlow note graphics
+    hitGroup.style.pointerEvents = "all"; // your note hitbox
+
+      });  // note drawing loop
 
       // Chords
       if (measure.chords?.length) {
@@ -494,7 +750,8 @@ voice.addTickables(notes.map(n => n.vfNote));
       }
     }); // end measures.forEach drawing
 
-  // DRAW TIES (supports cross‑system ties)
+
+
 
 
   function createAnchorNote(stave, x) {
@@ -519,99 +776,26 @@ voice.addTickables(notes.map(n => n.vfNote));
 
 
 
+const svgList = lsContainerRef.current.querySelectorAll("svg");
+const svg = svgList[svgList.length - 1];
 
-leadSheet.ties?.forEach(tie => {
-  const start = noteLookup.get(`${tie.startMeasure}:${tie.startIndex}`);
-  const end   = noteLookup.get(`${tie.endMeasure}:${tie.endIndex}`);
-
-  if (!start || !end) return;
-
-  const startLayout = measureLayout[tie.startMeasure];
-  const endLayout   = measureLayout[tie.endMeasure];
-
-  const startRow = startLayout.row;
-  const endRow   = endLayout.row;
-
-  const crossesSystem = startRow !== endRow;
-
-  // SAME SYSTEM
-  if (!crossesSystem) {
-    const vfTie = new VF.StaveTie({
-      first_note: start.vfNote,
-      last_note: end.vfNote,
-      first_indices: [0],
-      last_indices: [0]
-    });
-
-    vfTie.setContext(ctx).draw();
-
-    const bbox = vfTie.getBoundingBox();
-    if (bbox) {
-      const hit = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-      hit.setAttribute("x", bbox.x - 4);
-      hit.setAttribute("y", bbox.y - 4);
-      hit.setAttribute("width", bbox.w + 8);
-      hit.setAttribute("height", bbox.h + 8);
-      hit.setAttribute("fill", "transparent");
-      hit.setAttribute("pointer-events", "all");
-      hit.dataset.tieId = tie.id;
-      hit.addEventListener("mousedown", () => onTieSelect(tie.id));
-      svg.appendChild(hit);
-    }
-
-    return;
-  }
-
-  const endX   = startLayout.stave.getTieEndX();
-  const startX = endLayout.stave.getTieStartX();
-
-  // Segment 1: from real start note → end of stave (barline side)
-  const tie1 = new VF.StaveTie({
-    first_note: start.vfNote,
-    last_note: null,
-    first_indices: [0],
-    last_indices: [0],
-    last_x: endX
-  });
-  tie1.setContext(ctx).draw();
-
-  // Segment 2: from start of next stave → real end note
-  const tie2 = new VF.StaveTie({
-    first_note: null,
-    last_note: end.vfNote,
-    first_indices: [0],
-    last_indices: [0],
-    first_x: startX
-  });
-  tie2.setContext(ctx).draw();
-
-
-
-  const bbox = tie1.getBoundingBox();
-  if (bbox) {
-    const hit = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-    hit.setAttribute("x", bbox.x - 4);
-    hit.setAttribute("y", bbox.y - 4);
-    hit.setAttribute("width", bbox.w + 8);
-    hit.setAttribute("height", bbox.h + 8);
-    hit.setAttribute("fill", "transparent");
-    hit.setAttribute("pointer-events", "all");
-    hit.dataset.tieId = tie.id;
-    hit.addEventListener("mousedown", () => onTieSelect(tie.id));
-    svg.appendChild(hit);
-  }
-});
-
+if (!svg || svg.parentNode !== lsContainerRef.current) {
+  console.error("Lead-sheet SVG not found");
+  return;
+}
 
 
 
     // After VexFlow is done: get FINAL SVG and draw playhead + caret
-    const svg = lsContainerRef.current.querySelector("svg");
+
     if (svg) {
       svg.style.width = `${svgWidth}px`;
       svg.style.height = `${svgHeight}px`;
       svg.style.display = "block";
 
+
+  
+      // Now draw playhead    
       const playhead = document.createElementNS(
         "http://www.w3.org/2000/svg",
         "line"
@@ -624,7 +808,27 @@ leadSheet.ties?.forEach(tie => {
       if (caretDrawInfo) {
         drawCaret(svg, caretDrawInfo.x, caretDrawInfo.top, caretDrawInfo.bottom);
       }
-    }
+
+// Inside LeadSheetRenderer, where you already have lsContainerRef and tieHitLayerRef
+
+ drawTiesAndHitboxes({
+  ctx,
+  noteLookup,
+  measureLayout,
+  leadSheet,
+  selectedTieId,
+  lsContainerRef,
+  tieHitLayerRef
+});
+
+
+lastCtxRef.current = ctx;
+lastNoteLookupRef.current = noteLookup;
+lastMeasureLayoutRef.current = measureLayout;
+
+
+
+}
 
     return () => {
       effectGuard.current = false;
