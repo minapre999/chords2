@@ -368,21 +368,32 @@ function drawTieSegment({
 
   curveLayer.appendChild(path);
 
-  // Hitbox
   const hit = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-  hit.setAttribute("x", Math.min(x1, x2));
-  hit.setAttribute("y", Math.min(y1, y2) - 20);
-  hit.setAttribute("width", Math.abs(x2 - x1));
-  hit.setAttribute("height", 40);
-  hit.setAttribute("fill", "transparent");
-  hit.style.cursor = "pointer";
 
-  hit.addEventListener("pointerdown", e => {
-    e.stopPropagation();
-    setSelection({ type: "tie", id: tie.id });
-  });
+hit.setAttribute("x", Math.min(x1, x2));
+hit.setAttribute("width", Math.abs(x2 - x1));
 
-  hitLayer.appendChild(hit);
+// thin strip below the curve
+const hitHeight = 8;
+const hitYOffset = 4;
+const topY = Math.max(y1, y2);
+
+hit.setAttribute("y", topY + hitYOffset);
+hit.setAttribute("height", hitHeight);
+
+hit.setAttribute("fill", "transparent");
+
+// critical:
+hit.style.pointerEvents = "all";
+hit.style.cursor = "pointer";   // ← THIS restores the pointer cursor
+
+hit.addEventListener("pointerdown", e => {
+  e.stopPropagation();
+  setSelection({ type: "tie", id: tie.id });
+});
+
+hitLayer.appendChild(hit);
+
 }
 
 
@@ -427,7 +438,8 @@ function drawTies({
   if (!hitLayer || !hitLayer.isConnected) {
     hitLayer = document.createElementNS("http://www.w3.org/2000/svg", "g");
     hitLayer.setAttribute("id", "tie-hit-layer");
-    hitLayer.style.pointerEvents = "all";
+    // hitLayer.style.pointerEvents = "all";
+    hitLayer.style.pointerEvents = "none";
     svg.appendChild(hitLayer);
     tieHitLayerRef.current = hitLayer;
   }
@@ -557,7 +569,9 @@ function drawSlurs({
   if (!hitLayer || !hitLayer.isConnected) {
     hitLayer = document.createElementNS("http://www.w3.org/2000/svg", "g");
     hitLayer.setAttribute("id", "slur-hit-layer");
-    hitLayer.style.pointerEvents = "all";
+    // hitLayer.style.pointerEvents = "all";
+    hitLayer.style.pointerEvents = "none";
+
     svg.appendChild(hitLayer);
     slurHitLayerRef.current = hitLayer;
   }
@@ -618,20 +632,32 @@ function drawSlurs({
     //
     // --- HITBOX ---
     //
-    const hit = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-    hit.setAttribute("x", Math.min(x1, x2));
-    hit.setAttribute("y", Math.min(y1, y2) - 30);
-    hit.setAttribute("width", Math.abs(x2 - x1));
-    hit.setAttribute("height", 60);
-    hit.setAttribute("fill", "transparent");
-    hit.style.cursor = "pointer";
+const hit = document.createElementNS("http://www.w3.org/2000/svg", "rect");
 
-    hit.addEventListener("pointerdown", e => {
-      e.stopPropagation();
-      setSelection({ type: "slur", id: slur.id });
-    });
+hit.setAttribute("x", Math.min(x1, x2));
+hit.setAttribute("width", Math.abs(x2 - x1));
 
-    hitLayer.appendChild(hit);
+// thin strip below the curve
+const hitHeight = 8;
+const hitYOffset = 4;
+const topY = Math.max(y1, y2);
+
+hit.setAttribute("y", topY + hitYOffset);
+hit.setAttribute("height", hitHeight);
+
+hit.setAttribute("fill", "transparent");
+
+// critical:
+hit.style.pointerEvents = "all";
+hit.style.cursor = "pointer";   // ← THIS restores the pointer cursor
+
+hit.addEventListener("pointerdown", e => {
+  e.stopPropagation();
+  setSelection({ type: "slur", id: slur.id });
+});
+
+hitLayer.appendChild(hit);
+
   });
 }
 
