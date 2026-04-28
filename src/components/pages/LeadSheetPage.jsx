@@ -359,7 +359,7 @@ function onToolbarSlurClick() {
 
   leadSheet.measures.forEach((m, mi) => {
     m.melody.forEach((n, ni) => {
-      if (n.id === selection) {
+      if (n.id === selection.id) {
         startMeasure = mi;
         startIndex = ni;
       }
@@ -403,13 +403,14 @@ function onToolbarSlurClick() {
 function onToolbarTieClick() {
   if (!selection) return;
 
+  console.log("TOOLBAR TIE CLICK", "   \nselection: ", selection)
   // Find the selection note's measure + index
   let startMeasure = null;
   let startIndex = null;
 
   leadSheet.measures.forEach((m, mi) => {
     m.melody.forEach((n, ni) => {
-      if (n.id === selection) {
+      if (n.id === selection.id) {
         startMeasure = mi;
         startIndex = ni;
       }
