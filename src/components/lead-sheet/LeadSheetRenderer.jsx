@@ -254,9 +254,10 @@ export default function LeadSheetRenderer(props) {
   const isDragging = useRef(false);
   const originalYRef = useRef({});
   const semitoneStepRef = useRef(3);
-const tieHitLayerRef = useRef(null);
 const slurCurveLayerRef = useRef(null);
 const slurHitLayerRef = useRef(null); // you already have this one
+const tieCurveLayerRef = useRef(null);
+const tieHitLayerRef = useRef(null); // you already have this
 
   const measures = leadSheet?.measures ?? [];
   const effectGuard = useRef(false);
@@ -270,7 +271,7 @@ const lastMeasureLayoutRef = useRef(null);
 useEffect(() => {
   if (!lastCtxRef.current) return;
 
-  drawTiesAndHitboxes({
+  drawTies({
     ctx: lastCtxRef.current,
     noteLookup: lastNoteLookupRef.current,
     measureLayout: lastMeasureLayoutRef.current,
@@ -278,7 +279,8 @@ useEffect(() => {
     selection,
     setSelection,
     lsContainerRef,
-    tieHitLayerRef
+    tieHitLayerRef,
+    tieCurveLayerRef
   });
 }, [selection, leadSheet.ties]);
 
@@ -339,71 +341,105 @@ useEffect(() => {
     svg.appendChild(caretLine);
   };
 
+function drawTieSegment({
+  x1, y1, x2, y2,
+  isSelected,
+  curveLayer,
+  hitLayer,
+  tie,
+  setSelection
+}) {
+  const offset = 10;
 
+  const c1x = x1 + (x2 - x1) * 0.33;
+  const c2x = x1 + (x2 - x1) * 0.66;
+  const c1y = y1 + offset;
+  const c2y = y2 + offset;
 
+  // Curve path
+  const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  path.setAttribute(
+    "d",
+    `M ${x1} ${y1} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${x2} ${y2}`
+  );
+  path.setAttribute("stroke", isSelected ? "dodgerblue" : "black");
+  path.setAttribute("fill", "none");
+  path.setAttribute("stroke-width", isSelected ? 2 : 1);
 
-const drawTiesAndHitboxes = ({
-    ctx,
-  noteLookup,
-  measureLayout,
-  leadSheet,
-  selection,
-  setSelection,
-}) => {
+  curveLayer.appendChild(path);
 
+  // Hitbox
+  const hit = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+  hit.setAttribute("x", Math.min(x1, x2));
+  hit.setAttribute("y", Math.min(y1, y2) - 20);
+  hit.setAttribute("width", Math.abs(x2 - x1));
+  hit.setAttribute("height", 40);
+  hit.setAttribute("fill", "transparent");
+  hit.style.cursor = "pointer";
 
-    if (!ctx) return;
-  if (!lsContainerRef.current) return;
+  hit.addEventListener("pointerdown", e => {
+    e.stopPropagation();
+    setSelection({ type: "tie", id: tie.id });
+  });
 
-
-  const VF = window.Vex.Flow;
-
-  const svgList = lsContainerRef.current.querySelectorAll("svg");
-  const svg = svgList[svgList.length - 1];
-  if (!svg) return;
-
-
-// --------------------------------------
-// CREATE TIE HIT-LAYER BEFORE DRAWING TIES
-// --------------------------------------
-
-
-const needsNewLayer =
-  !tieHitLayerRef.current ||
-  !tieHitLayerRef.current.isConnected ||
-  tieHitLayerRef.current.parentNode !== svg;
-
-if (svg && needsNewLayer) {
-  const hitLayer = document.createElementNS("http://www.w3.org/2000/svg", "g");
-  hitLayer.setAttribute("id", "tie-hit-layer");
-  hitLayer.style.pointerEvents = "all";
-  svg.appendChild(hitLayer);
-  tieHitLayerRef.current = hitLayer;
-  console.log("CREATED HIT LAYER (real)", hitLayer);
+  hitLayer.appendChild(hit);
 }
 
 
 
 
-  // Clear old hitboxes
-  while (tieHitLayerRef.current.firstChild) {
-    tieHitLayerRef.current.removeChild(tieHitLayerRef.current.firstChild);
+function drawTies({
+  noteLookup,
+  measureLayout,
+  leadSheet,
+  selection,
+  setSelection,
+  lsContainerRef,
+  tieCurveLayerRef,
+  tieHitLayerRef,
+
+}) {
+
+  if (!noteLookup) return;
+  const svgList = lsContainerRef.current?.querySelectorAll("svg");
+  const svg = svgList?.[svgList.length - 1];
+  if (!svg) return;
+
+  //
+  // --- CURVE LAYER ---
+  //
+  let curveLayer = tieCurveLayerRef.current;
+  if (!curveLayer || !curveLayer.isConnected) {
+    curveLayer = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    curveLayer.setAttribute("id", "tie-curve-layer");
+    svg.appendChild(curveLayer);
+    tieCurveLayerRef.current = curveLayer;
   }
 
-  // === YOUR ENTIRE TIE LOOP GOES HERE ===
-  // leadSheet.ties?.forEach(tie => { ... })
-  // (the full amended version I gave you earlier)
-  // =======================================
+  while (curveLayer.firstChild) {
+    curveLayer.removeChild(curveLayer.firstChild);
+  }
 
-  // Ensure hit layer is on top
+  //
+  // --- HIT LAYER ---
+  //
+  let hitLayer = tieHitLayerRef.current;
+  if (!hitLayer || !hitLayer.isConnected) {
+    hitLayer = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    hitLayer.setAttribute("id", "tie-hit-layer");
+    hitLayer.style.pointerEvents = "all";
+    svg.appendChild(hitLayer);
+    tieHitLayerRef.current = hitLayer;
+  }
 
+  while (hitLayer.firstChild) {
+    hitLayer.removeChild(hitLayer.firstChild);
+  }
 
-leadSheet.ties?.forEach(tie => {
-  //  console.log("DRAWING TIE", tie);
-  const isSelected = selection?.type === "tie" && selection?.id === tie.id;
-  ctx.setStrokeStyle(isSelected ? "dodgerblue" : "black");
-  ctx.setLineWidth(isSelected ? 2 : 1);
-
+  //
+  // --- DRAW EACH TIE ---
+  //
+  leadSheet.ties.forEach(tie => {
   const start = noteLookup.get(`${tie.startMeasure}:${tie.startIndex}`);
   const end   = noteLookup.get(`${tie.endMeasure}:${tie.endIndex}`);
   if (!start || !end) return;
@@ -411,195 +447,74 @@ leadSheet.ties?.forEach(tie => {
   const startLayout = measureLayout[tie.startMeasure];
   const endLayout   = measureLayout[tie.endMeasure];
 
-  const startRow = startLayout.row;
-  const endRow   = endLayout.row;
-  const crossesSystem = startRow !== endRow;
+  const startSystem = startLayout.systemIndex;
+  const endSystem   = endLayout.systemIndex;
 
-  // --- shared: SVG + offset for canvas→SVG mapping ---
+  console.log(
+  "tie", tie.id,
+  "startSystem:", startLayout.systemIndex,
+  "endSystem:", endLayout.systemIndex
+);
 
-  
-  const svgRect = svg.getBoundingClientRect();
-  const containerRect = lsContainerRef.current.getBoundingClientRect();
-  const svgOffsetY = svgRect.top - containerRect.top;
 
-  // SAME SYSTEM
-  if (!crossesSystem) {
-    const vfTie = new VF.StaveTie({
-      first_note: start.vfNote,
-      last_note: end.vfNote,
-      first_indices: [0],
-      last_indices: [0]
+  const isSelected = selection?.type === "tie" && selection.id === tie.id;
+
+  //
+  // CASE 1: Tie is within the same system → draw normally
+  //
+  if (startSystem === endSystem) {
+    drawTieSegment({
+      x1: start.vfNote.getAbsoluteX(),
+      y1: start.vfNote.getYs()[0],
+      x2: end.vfNote.getAbsoluteX(),
+      y2: end.vfNote.getYs()[0],
+      isSelected,
+      curveLayer,
+      hitLayer,
+      tie,
+      setSelection
     });
-    vfTie.setContext(ctx).draw();
-
-    // Canvas coords from VexFlow
-    const canvasStartX = start.vfNote.getAbsoluteX();
-    const canvasEndX   = end.vfNote.getAbsoluteX();
-    const canvasY      = start.vfNote.getYs()[0];
-
-    // Canvas → SVG
-    const svgX = Math.min(canvasStartX, canvasEndX);
-    const svgY = (canvasY - svgOffsetY) - 20;
-    const svgWidth = Math.abs(canvasEndX - canvasStartX);
-    const svgHeight = 40;
-
-    const hit = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-    hit.setAttribute("x", svgX);
-    hit.setAttribute("y", svgY);
-    hit.setAttribute("width", svgWidth);
-    hit.setAttribute("height", svgHeight);
-    // hit.setAttribute("fill", isSelected ? "rgba(0,128,255,0.25)" : "rgba(255,0,0,0.3)"
-    hit.setAttribute("fill", isSelected ? "rgba(0,128,255,0.25)" : "transparent");
-    hit.setAttribute("stroke", "transparent");
-    hit.setAttribute("pointer-events", "all");
-    hit.style.cursor = "pointer";   // ← add this
-    hit.dataset.tieId = tie.id;
-
-    hit.addEventListener("mousedown", e => {
-      e.stopPropagation();
-      setSelection({type: "tie", id: tie.id});
-    });
-
-      // visual hover feedback
-  hit.addEventListener("mouseenter", () => {
-  hit.style.fillOpacity = 0.4;
-});
-hit.addEventListener("mouseleave", () => {
-  hit.style.fillOpacity = isSelected ? 0.25 : 0.3;
-});
-
-
-    tieHitLayerRef.current.appendChild(hit);
     return;
   }
 
+  //
+  // CASE 2: Tie crosses systems → split into two segments
+  //
 
+  // Segment A: start note → right edge of system N
+  const rightX = startLayout.stave.getTieEndX();
+  const yA = start.vfNote.getYs()[0];
 
-
-
-
-  // CROSS-SYSTEM — draw VexFlow ties
-  const system1EndX   = startLayout.stave.getTieEndX();
-  const system2StartX = endLayout.stave.getTieStartX();
-
-  const tie1 = new VF.StaveTie({
-    first_note: start.vfNote,
-    last_note: null,
-    first_indices: [0],
-    last_indices: [0],
-    last_x: system1EndX
+  drawTieSegment({
+    x1: start.vfNote.getAbsoluteX(),
+    y1: yA,
+    x2: rightX,
+    y2: yA,
+    isSelected,
+    curveLayer,
+    hitLayer,
+    tie,
+    setSelection
   });
-  tie1.setContext(ctx).draw();
 
-  const tie2 = new VF.StaveTie({
-    first_note: null,
-    last_note: end.vfNote,
-    first_indices: [0],
-    last_indices: [0],
-    first_x: system2StartX
+  // Segment B: left edge of system N+1 → end note
+  const leftX = endLayout.stave.getTieStartX();
+  const yB = end.vfNote.getYs()[0];
+
+  drawTieSegment({
+    x1: leftX,
+    y1: yB,
+    x2: end.vfNote.getAbsoluteX(),
+    y2: yB,
+    isSelected,
+    curveLayer,
+    hitLayer,
+    tie,
+    setSelection
   });
-  tie2.setContext(ctx).draw();
-
-  // CROSS-SYSTEM HITBOXES
-
-  // Segment 1: start note → end of system 1
-  {
-    const canvasStartX1 = start.vfNote.getAbsoluteX();
-    const canvasEndX1   = system1EndX;
-    const canvasY1      = start.vfNote.getYs()[0];
-
-    const svgX1 = Math.min(canvasStartX1, canvasEndX1);
-    const svgY1 = (canvasY1 - svgOffsetY) - 20;
-    const svgW1 = Math.abs(canvasEndX1 - canvasStartX1);
-    const svgH1 = 40;
-
-    const hit1 = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-    hit1.setAttribute("x", svgX1);
-    hit1.setAttribute("y", svgY1);
-    hit1.setAttribute("width", svgW1);
-    hit1.setAttribute("height", svgH1);
-    // hit1.setAttribute("fill", isSelected ? "rgba(0,128,255,0.25)" : "rgba(255,0,0,0.3)");
-hit1.setAttribute("fill", isSelected ? "rgba(0,128,255,0.25)" : "transparent");
-hit1.setAttribute("stroke", "transparent");
-
-    hit1.setAttribute("pointer-events", "all");
-    hit1.style.cursor = "pointer";   // ← add this
-    hit1.dataset.tieId = tie.id;
-
-    hit1.addEventListener("mousedown", e => {
-      e.stopPropagation();
-      setSelection({type: "tie", id: tie.id} );
-    });
-
-    tieHitLayerRef.current.appendChild(hit1);
-
-     // visual hover feedback
-  hit1.addEventListener("mouseenter", () => {
-  hit1.style.fillOpacity = 0.4;
-});
-hit1.addEventListener("mouseleave", () => {
-  hit1.style.fillOpacity = isSelected ? 0.25 : 0.3;
 });
 
-
-  }
-
-  // Segment 2: start of system 2 → end note
-  {
-    const canvasStartX2 = system2StartX;
-    const canvasEndX2   = end.vfNote.getAbsoluteX();
-    const canvasY2      = end.vfNote.getYs()[0];
-
-    const svgX2 = Math.min(canvasStartX2, canvasEndX2);
-    const svgY2 = (canvasY2 - svgOffsetY) - 20;
-    const svgW2 = Math.abs(canvasEndX2 - canvasStartX2);
-    const svgH2 = 40;
-
-    const hit2 = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-    hit2.setAttribute("x", svgX2);
-    hit2.setAttribute("y", svgY2);
-    hit2.setAttribute("width", svgW2);
-    hit2.setAttribute("height", svgH2);
-    // hit2.setAttribute("fill", isSelected ? "rgba(0,128,255,0.25)" : "rgba(255,0,0,0.3)");
-    hit2.setAttribute("fill", isSelected ? "rgba(0,128,255,0.25)" : "transparent");
-hit2.setAttribute("stroke", "transparent");
-
-    hit2.setAttribute("pointer-events", "all");
-    hit2.style.cursor = "pointer";   // ← add this
-    hit2.dataset.tieId = tie.id;
-
-    hit2.addEventListener("mousedown", e => {
-      e.stopPropagation();
-      setSelection({type: "tie", id: tie.id} );
-    });
-
-    tieHitLayerRef.current.appendChild(hit2);
-
-        // visual hover feedback
-      hit2.addEventListener("mouseenter", () => {
-      hit2.style.fillOpacity = 0.4;
-    });
-    hit2.addEventListener("mouseleave", () => {
-      hit2.style.fillOpacity = isSelected ? 0.25 : 0.3;
-    });
-
-
-  }
-}); // end ties loop
-
-// ensure hit-layer is on top
-
-
-if (tieHitLayerRef.current && tieHitLayerRef.current.parentNode === svg) {
-  svg.appendChild(tieHitLayerRef.current);
 }
-
-
-
-
-
-  svg.appendChild(tieHitLayerRef.current);
-};
 
 
 
@@ -782,7 +697,25 @@ function drawSlurs({
                   };
 
 
-     
+      let currentSystem = 0;
+        let lastY = null;
+
+        for (let m = 0; m < measureLayout.length; m++) {
+          const layout = measureLayout[m];
+          const stave = layout.stave;
+
+          const y = stave.getBoundingBox().getY();
+
+          if (lastY !== null && Math.abs(y - lastY) > 20) {
+            currentSystem++;
+          }
+
+          layout.systemIndex = currentSystem;
+          lastY = y;
+        }
+
+
+
 
       if (i === 0) {
         stave.addClef("treble");
@@ -1001,15 +934,16 @@ if (!svg || svg.parentNode !== lsContainerRef.current) {
 
 // Inside LeadSheetRenderer, where you already have lsContainerRef and tieHitLayerRef
 
- drawTiesAndHitboxes({
+ drawTies({
   ctx,
-  noteLookup,
-  measureLayout,
+    noteLookup: lastNoteLookupRef.current,  
+        measureLayout,   // ← ADD THIS,
   leadSheet,
   selection,
   setSelection,
   lsContainerRef,
-  tieHitLayerRef
+  tieHitLayerRef,
+  tieCurveLayerRef
 });
 
 
