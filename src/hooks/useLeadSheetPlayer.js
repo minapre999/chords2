@@ -156,6 +156,7 @@ console.log("effect for build steps /nisPaused: ", isPaused,
       }
 
       Tone.Draw.schedule(() => {
+     
         rendererRef.current?.highlightNote(ev.id);
         rendererRef.current?.highlightMeasure(ev.measureId);
       }, time);
@@ -193,62 +194,6 @@ console.log("effect for build steps /nisPaused: ", isPaused,
 
 }, [scaleSampler, buildSteps, rendererRef, isPlaying, samplerReady]);
 
-
-
-
-//   useEffect(() => {
-//   console.log("useEffect for configuring transport , scaleSampler: ", scaleSampler, "leadSheet: " ,leadSheet)
-
-//  if (!scaleSampler || !samplerReady) return;
-//   if (!leadSheet) return;
-
-//   const events = buildSteps();
-//   if (!events.length) return;
-
-//   // dispose old part
-//   if (seqRef.current) {
-//     seqRef.current.stop();
-//     seqRef.current.dispose();
-//     seqRef.current = null;
-//   }
-
-//   const transport = Tone.getTransport();
-//   transport.stop();
-//   transport.position = 0;
-
-//   // ⭐ Tone.Part instead of Tone.Sequence
-//   seqRef.current = new Tone.Part((time, ev) => {
-//     console.log("PART CALLBACK FIRED:", ev);
-
-//     if (!ev.isRest) {
-//       scaleSampler.triggerAttackRelease(ev.note, ev.duration, time);
-//     }
-
-//  Tone.Draw.schedule(() => {
-//   console.log("DRAW CALLBACK FIRED:", ev.id);
-
-//   rendererRef.current?.highlightNote(ev.id);
-//   rendererRef.current?.highlightMeasure(ev.measureId);
-// }, Tone.Time(ev.time).toSeconds());
-
-
-//   }, events);
-
-//   seqRef.current.start(0);
-
-//   if (isPlaying) {
-//     transport.start();
-//   }
-
-//   return () => {
-//     if (seqRef.current) {
-//       seqRef.current.stop();
-//       seqRef.current.dispose();
-//       seqRef.current = null;
-//     }
-//   };
-
-// }, [scaleSampler, buildSteps, rendererRef, isPlaying, samplerReady]);
 
 
 

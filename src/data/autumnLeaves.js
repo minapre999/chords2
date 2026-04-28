@@ -45,7 +45,32 @@ export const autumnLeaves = {
           endMeasure: 23,
           endIndex: 0  },
     ],
-    
+  slurs: [
+{
+  id: "slur1",
+  startMeasure: 0,
+  startIndex: 2,
+  endMeasure: 0,
+  endIndex: 3
+},
+{
+  id: "slur2",
+  startMeasure: 2,
+  startIndex: 3,
+  endMeasure: 3,
+  endIndex: 0
+},
+{
+  id: "slur3",
+  startMeasure: 4,
+  startIndex: 3,
+  endMeasure: 5,
+  endIndex: 0
+}
+
+
+  ],
+
 
   measures: [
 

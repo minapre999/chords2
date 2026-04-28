@@ -174,18 +174,46 @@ const dragRef = useRef(null);
   const [leadSheet, setLeadSheet] = useState(initialLeadSheet);
 
 
-  const [selected, setSelected] = useState(null);
-
   // add an empty RenderData as default for renderDataUI so strings are drawn
   const [renderDataUI, setRenderDataUI] = useState(new RenderData()) ;
 //  const [renderDataUI, setRenderDataUI] = useState(null) ;
 const [isPlaying, setIsPlaying] = useState(false);
 const [isPaused, setIsPaused] = useState(false);
 
-const [selectedNoteId, setSelectedNoteId] = useState(null);
-const [selectedTieId, setSelectedTieId] = useState(null);
+
 const [tieStart, setTieStart] = useState(null); // where T was pressed
 
+
+
+
+/* Replace multiple selection states with ONE selection object 
+    where selection is
+{
+  type: "note" | "tie" | "slur" | "chord" | "rest" | "measure",
+  id: string,
+  measure: number,
+  index: number
+}
+  e.g. setSelection({
+  type: "note",
+  id: note.id,
+  measure: m,
+  index: i
+});
+setSelection({
+  type: "tie",
+  id: tie.id
+});
+
+setSelection({
+  type: "slur",
+  id: slur.id
+});
+
+This immediately eliminates all selection collisions.
+*/
+
+const [selection, setSelection] = useState(null);
 
 
 // this is the core of the note input system
@@ -288,7 +316,7 @@ const handleUp = useCallback(() => {
 
 
   const handleSelect = useCallback((payload) => {
-    setSelected(payload);
+    setSelection(payload);
   }, []);
 
   const updateLeadSheet = useCallback((update) => {
@@ -320,16 +348,68 @@ const handleUp = useCallback(() => {
 
 
 
-function onToolbarTieClick() {
-  if (!selectedNoteId) return;
 
-  // Find the selected note's measure + index
+
+function onToolbarSlurClick() {
+  if (!selection) return;
+
+  // Find selection note
   let startMeasure = null;
   let startIndex = null;
 
   leadSheet.measures.forEach((m, mi) => {
     m.melody.forEach((n, ni) => {
-      if (n.id === selectedNoteId) {
+      if (n.id === selection) {
+        startMeasure = mi;
+        startIndex = ni;
+      }
+    });
+  });
+
+  if (startMeasure === null) return;
+
+  // Find next note
+  let endMeasure = startMeasure;
+  let endIndex = startIndex + 1;
+
+  if (endIndex >= leadSheet.measures[startMeasure].melody.length) {
+    endMeasure = startMeasure + 1;
+    endIndex = 0;
+  }
+
+  if (
+    endMeasure >= leadSheet.measures.length ||
+    leadSheet.measures[endMeasure].melody.length === 0
+  ) {
+    return;
+  }
+
+  const newSlur = {
+    id: crypto.randomUUID(),
+    startMeasure,
+    startIndex,
+    endMeasure,
+    endIndex
+  };
+
+  setLeadSheet(ls => ({
+    ...ls,
+    slurs: [...ls.slurs, newSlur]
+  }));
+}
+
+
+
+function onToolbarTieClick() {
+  if (!selection) return;
+
+  // Find the selection note's measure + index
+  let startMeasure = null;
+  let startIndex = null;
+
+  leadSheet.measures.forEach((m, mi) => {
+    m.melody.forEach((n, ni) => {
+      if (n.id === selection) {
         startMeasure = mi;
         startIndex = ni;
       }
@@ -397,15 +477,15 @@ const handleToolbarDurationChange = useCallback((newDur) => {
     return;
   }
 
-  // ⭐ NORMAL MODE: edit selected note
-  if (!selectedNoteId) return;
+  // ⭐ NORMAL MODE: edit selection note
+  if (!selection) return;
 
   setLeadSheet(prev => {
     const next = structuredClone(prev);
 
     for (let measureIndex = 0; measureIndex < next.measures.length; measureIndex++) {
       const measure = next.measures[measureIndex];
-      const note = measure.melody.find(n => n.id === selectedNoteId);
+      const note = measure.melody.find(n => n.id === selection);
       if (!note) continue;
 
       const oldToken = note.token;
@@ -433,7 +513,7 @@ const handleToolbarDurationChange = useCallback((newDur) => {
   console.log("setLeadSheet returning:", next);
   return next;
   });
-}, [noteInputMode, caret, selectedNoteId]);
+}, [noteInputMode, caret, selection]);
 
 
 function handleAccidentalClick(acc) {
@@ -445,15 +525,15 @@ function handleAccidentalClick(acc) {
     return;
   }
 
-  // ⭐ NORMAL MODE: edit selected note
-  if (!selectedNoteId) return;
+  // ⭐ NORMAL MODE: edit selection note
+  if (!selection) return;
 
   setLeadSheet(prev => {
     const next = structuredClone(prev);
 
     for (let measureIndex = 0; measureIndex < next.measures.length; measureIndex++) {
       const measure = next.measures[measureIndex];
-      const note = measure.melody.find(n => n.id === selectedNoteId);
+      const note = measure.melody.find(n => n.id === selection);
       if (!note) continue;
 
       // ⭐ Update accidental on the note
@@ -544,40 +624,82 @@ function onTieDelete(id) {
   setLeadSheet(newLS);
 }
 
+function onSlurDelete(id) {
+  const newLS = {
+    ...leadSheet,
+    slurs: leadSheet.slurs.filter(s => s.id !== id)
+  };
+  setLeadSheet(newLS);
+}
 
 /* KEY HANDLER
 Delete tie, begin tie creation (press T)
 */
 useEffect(() => {
   function onKey(e) {
-    console.log("TIE KEY HANDLER")
-    // DELETE TIE
-    if ((e.key === "Delete" || e.key === "Backspace") && selectedTieId) {
-      onTieDelete(selectedTieId);
-      setSelectedTieId(null);
-      return;
+    console.log("DELETE KEY DOWN EFFECT", "   \nselected: ", selection)
+    if (e.key !== "Delete" && e.key !== "Backspace") return;
+    if (!selection) return;
+
+
+    switch (selection.type) {
+      case "note":
+         console.log("deleting note: ", selection.id)
+        deleteNote(selection);
+        break;
+
+      case "tie":
+        console.log("deleting tie: ", selection.id)
+        deleteTie(selection.id);
+        break;
+
+      case "slur":
+         console.log("deleting slur: ", selection.id)
+        deleteSlur(selection.id);
+        break;
+
+      case "chord":
+        deleteChord(selection);
+        break;
+
+      // future types go here
     }
 
-    // BEGIN TIE CREATION (press T)
-    if (e.key === "t" || e.key === "T") {
-      if (caret) {
-        setTieStart(caret);   // store the starting note position
-      }
-      return;
-    }
-
-    // CANCEL TIE CREATION
-    if (e.key === "Escape") {
-      setTieStart(null);
-      return;
-    }
+    setSelection(null);
   }
 
   window.addEventListener("keydown", onKey);
   return () => window.removeEventListener("keydown", onKey);
-}, [caret, selectedTieId, setSelectedTieId, onTieDelete]);
+}, [selection]);
 
 
+
+
+function deleteTie(id) {
+  setLeadSheet(ls => ({
+    ...ls,
+    ties: ls.ties.filter(t => t.id !== id)
+  }));
+}
+
+function deleteSlur(id) {
+  setLeadSheet(ls => ({
+    ...ls,
+    slurs: ls.slurs.filter(s => s.id !== id)
+  }));
+}
+
+function deleteNote(sel) {
+  const { measure, index } = sel;
+  setLeadSheet(ls => {
+    const measures = [...ls.measures];
+    measures[measure] = {
+      ...measures[measure],
+      melody: measures[measure].melody.filter((_, i) => i !== index)
+    };
+    return { ...ls, measures };
+  });
+}
 
 
 
@@ -749,7 +871,7 @@ onMouseUpRef.current = () => {
 const handleNoteSelect = (id) => {
   console.log("SELECTING NOTE ID: ", id)
     if (!noteInputMode) {
-    setSelectedNoteId(id);
+    setSelection({type: "note", id: id});
   }
 
 };
@@ -1044,6 +1166,7 @@ function updateDraggedNote(noteId, semitones, durationSteps) {
           setInputDuration={setInputDuration}
           handleAccidentalClick={handleAccidentalClick}
           onToolbarTieClick={onToolbarTieClick}
+          onToolbarSlurClick={onToolbarSlurClick}
         />
     
     
@@ -1121,8 +1244,6 @@ function updateDraggedNote(noteId, semitones, durationSteps) {
             onNoteDragStart={handleNoteDragStart}
              measures={leadSheet.measures}
              onNoteSelect={handleNoteSelect}
-             selectedNoteId={selectedNoteId}
-             setSelectedNoteId={setSelectedNoteId}
              dragPreview={dragPreview} 
              setDragPreview={setDragPreview}
              dragRef={dragRef}
@@ -1132,9 +1253,10 @@ function updateDraggedNote(noteId, semitones, durationSteps) {
             setCaret={setCaret}
             tieStart={tieStart}
             setTieStart={setTieStart}
-            selectedTieId={selectedTieId}
-          setSelectedTieId={setSelectedTieId}
+            selection={selection}
+          setSelection={setSelection}
           onTieDelete={onTieDelete}
+           onSlurDelete={onSlurDelete}
           />
         </div>
 
@@ -1149,12 +1271,12 @@ function updateDraggedNote(noteId, semitones, durationSteps) {
           }}
         >
           {/* <InspectorPanel
-            selected={selected}
+            selection={selection}
             leadSheet={leadSheet}
             onChange={updateLeadSheet}
           /> */}
           {/* <FretboardPreview
-            selected={selected}
+            selection={selection}
             leadSheet={leadSheet}
             onChange={updateLeadSheet}
           /> */}

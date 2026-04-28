@@ -232,7 +232,6 @@ export default function LeadSheetRenderer(props) {
   const {
     leadSheet,
     rendererRef,
-    selectedNoteId,
     onNoteSelect,
     onNoteDragStart,
     dragPreview,
@@ -242,9 +241,9 @@ export default function LeadSheetRenderer(props) {
     noteInputMode,
     tieStart,
     setTieStart,
-    selectedTieId,
-    setSelectedTieId,
     onTieDelete,
+    selection,
+    setSelection,
     ...rest
   } = props;
 
@@ -256,6 +255,8 @@ export default function LeadSheetRenderer(props) {
   const originalYRef = useRef({});
   const semitoneStepRef = useRef(3);
 const tieHitLayerRef = useRef(null);
+const slurCurveLayerRef = useRef(null);
+const slurHitLayerRef = useRef(null); // you already have this one
 
   const measures = leadSheet?.measures ?? [];
   const effectGuard = useRef(false);
@@ -274,29 +275,49 @@ useEffect(() => {
     noteLookup: lastNoteLookupRef.current,
     measureLayout: lastMeasureLayoutRef.current,
     leadSheet,
-    selectedTieId,
+    selection,
+    setSelection,
     lsContainerRef,
     tieHitLayerRef
   });
-}, [selectedTieId]);
+}, [selection, leadSheet.ties]);
 
 
+useEffect(() => {
+  if (!lastCtxRef.current) return;
+
+  drawSlurs({
+    ctx: lastCtxRef.current,
+    noteLookup: lastNoteLookupRef.current,
+    measureLayout: lastMeasureLayoutRef.current,
+    leadSheet,
+    selection,
+    setSelection,
+    lsContainerRef,
+    slurHitLayerRef,
+    slurCurveLayerRef
+  });
+}, [selection, leadSheet.slurs]);
 
 
 
   useImperativeHandle(rendererRef, () => ({
+
     highlightNote(noteId) {
+      console.log("HIGHLIGHT NOTE", "   /nselection: ", selection)
       noteElements.current.forEach(el => el.classList.remove("vf-highlight-note"));
       const el = noteElements.current.get(noteId);
       if (!el) return;
       el.classList.add("vf-highlight-note");
     },
+
     highlightMeasure(measureId) {
       measureElements.current.forEach(el => el.classList.remove("vf-highlight-measure"));
       const el = measureElements.current.get(measureId);
       if (!el) return;
       el.classList.add("vf-highlight-measure");
     },
+
     setPlayheadBeat(x, y1, y2) {
       if (!playheadRef.current) return;
       playheadRef.current.setAttribute("x1", x);
@@ -326,7 +347,8 @@ const drawTiesAndHitboxes = ({
   noteLookup,
   measureLayout,
   leadSheet,
-  selectedTieId,
+  selection,
+  setSelection,
 }) => {
 
 
@@ -378,7 +400,7 @@ if (svg && needsNewLayer) {
 
 leadSheet.ties?.forEach(tie => {
   //  console.log("DRAWING TIE", tie);
-  const isSelected = selectedTieId === tie.id;
+  const isSelected = selection?.type === "tie" && selection?.id === tie.id;
   ctx.setStrokeStyle(isSelected ? "dodgerblue" : "black");
   ctx.setLineWidth(isSelected ? 2 : 1);
 
@@ -435,7 +457,7 @@ leadSheet.ties?.forEach(tie => {
 
     hit.addEventListener("mousedown", e => {
       e.stopPropagation();
-      setSelectedTieId(tie.id);
+      setSelection({type: "tie", id: tie.id});
     });
 
       // visual hover feedback
@@ -506,7 +528,7 @@ hit1.setAttribute("stroke", "transparent");
 
     hit1.addEventListener("mousedown", e => {
       e.stopPropagation();
-      setSelectedTieId(tie.id);
+      setSelection({type: "tie", id: tie.id} );
     });
 
     tieHitLayerRef.current.appendChild(hit1);
@@ -548,7 +570,7 @@ hit2.setAttribute("stroke", "transparent");
 
     hit2.addEventListener("mousedown", e => {
       e.stopPropagation();
-      setSelectedTieId(tie.id);
+      setSelection({type: "tie", id: tie.id} );
     });
 
     tieHitLayerRef.current.appendChild(hit2);
@@ -578,6 +600,126 @@ if (tieHitLayerRef.current && tieHitLayerRef.current.parentNode === svg) {
 
   svg.appendChild(tieHitLayerRef.current);
 };
+
+
+
+
+function drawSlurs({
+  ctx,
+  noteLookup,
+  measureLayout,
+  leadSheet,
+  selection,
+  setSelection,
+  lsContainerRef,
+  slurHitLayerRef,
+  slurCurveLayerRef
+}) {
+  const svgList = lsContainerRef.current?.querySelectorAll("svg");
+  const svg = svgList?.[svgList.length - 1];
+  if (!svg) return;
+
+  //
+  // --- CREATE OR ATTACH CURVE LAYER ---
+  //
+  let curveLayer = slurCurveLayerRef.current;
+  if (!curveLayer || !curveLayer.isConnected) {
+    curveLayer = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    curveLayer.setAttribute("id", "slur-curve-layer");
+    svg.appendChild(curveLayer);
+    slurCurveLayerRef.current = curveLayer;
+  }
+
+  // Clear old curves
+  while (curveLayer.firstChild) {
+    curveLayer.removeChild(curveLayer.firstChild);
+  }
+
+  //
+  // --- CREATE OR ATTACH HIT LAYER ---
+  //
+  let hitLayer = slurHitLayerRef.current;
+  if (!hitLayer || !hitLayer.isConnected) {
+    hitLayer = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    hitLayer.setAttribute("id", "slur-hit-layer");
+    hitLayer.style.pointerEvents = "all";
+    svg.appendChild(hitLayer);
+    slurHitLayerRef.current = hitLayer;
+  }
+
+  // Clear old hitboxes
+  while (hitLayer.firstChild) {
+    hitLayer.removeChild(hitLayer.firstChild);
+  }
+
+  //
+  // --- DRAW EACH SLUR ---
+  //
+  leadSheet.slurs.forEach(slur => {
+    const start = noteLookup.get(`${slur.startMeasure}:${slur.startIndex}`);
+    const end   = noteLookup.get(`${slur.endMeasure}:${slur.endIndex}`);
+    if (!start || !end) return;
+
+    const isSelected = selection?.type === "slur" && selection.id === slur.id;
+
+    const x1 = start.vfNote.getAbsoluteX();
+    const y1 = start.vfNote.getYs()[0];
+
+    const x2 = end.vfNote.getAbsoluteX();
+    const y2 = end.vfNote.getYs()[0];
+
+    // Horizontal curvature
+    const c1x = x1 + (x2 - x1) * 0.33;
+    const c2x = x1 + (x2 - x1) * 0.66;
+
+    // Determine slur direction based on stems
+    const stemUpStart = start.vfNote.getStemDirection() === 1;
+    const stemUpEnd   = end.vfNote.getStemDirection() === 1;
+
+    // If both stems up → slur above, else below
+    const slurAbove = stemUpStart && stemUpEnd;
+
+    // Vertical curvature
+    const offset = 20;
+    const c1y = slurAbove ? y1 + offset : y1 - offset;
+    const c2y = slurAbove ? y2 + offset : y2 - offset;
+
+
+
+    //
+    // --- DRAW CURVE AS SVG PATH ---
+    //
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute(
+      "d",
+      `M ${x1} ${y1} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${x2} ${y2}`
+    );
+    path.setAttribute("stroke", isSelected ? "dodgerblue" : "black");
+    path.setAttribute("fill", "none");
+    path.setAttribute("stroke-width", isSelected ? 2 : 1);
+
+    curveLayer.appendChild(path);
+
+    //
+    // --- HITBOX ---
+    //
+    const hit = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    hit.setAttribute("x", Math.min(x1, x2));
+    hit.setAttribute("y", Math.min(y1, y2) - 30);
+    hit.setAttribute("width", Math.abs(x2 - x1));
+    hit.setAttribute("height", 60);
+    hit.setAttribute("fill", "transparent");
+    hit.style.cursor = "pointer";
+
+    hit.addEventListener("pointerdown", e => {
+      e.stopPropagation();
+      setSelection({ type: "slur", id: slur.id });
+    });
+
+    hitLayer.appendChild(hit);
+  });
+}
+
 
 
 
@@ -720,8 +862,9 @@ voice.addTickables(notes.map(n => n.vfNote));
           hitGroup.appendChild(rect);
         }
         ctx.closeGroup();
-
-        if (selectedNoteId === id) {
+        // console.log("RENDER NOTE LOOP", "   \selection: ", selection)
+        if (selection?.type==="note" && selection?.id === id) {
+          console.log("marking as selected", id )
           g.classList.add("selected-note");
         }
 
@@ -863,9 +1006,23 @@ if (!svg || svg.parentNode !== lsContainerRef.current) {
   noteLookup,
   measureLayout,
   leadSheet,
-  selectedTieId,
+  selection,
+  setSelection,
   lsContainerRef,
   tieHitLayerRef
+});
+
+
+drawSlurs({
+  ctx,
+  noteLookup,
+  measureLayout,
+  leadSheet,
+  selection,
+   setSelection,
+  lsContainerRef,
+  slurHitLayerRef,
+  slurCurveLayerRef
 });
 
 
@@ -886,7 +1043,7 @@ lastMeasureLayoutRef.current = measureLayout;
       measureElements.current.clear();
       originalYRef.current = {};
     };
-  }, [measures, selectedNoteId, noteInputMode, caret, dragRef, leadSheet.ties]); // useLayoutEffect
+  }, [measures, selection, noteInputMode, caret, dragRef, leadSheet.ties]); // useLayoutEffect
 
 
 
