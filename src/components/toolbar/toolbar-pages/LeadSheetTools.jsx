@@ -14,6 +14,7 @@ const{  isPlaying, setIsPlaying,
         showPalette, setShowPalette,
         noteInputMode, setNoteInputMode,
       handleAccidentalClick,
+      onToolbarTieClick
            }=props
 
 const { startAudio, samplerReady, scaleSampler } = useToneEngine();
@@ -90,6 +91,10 @@ const transport = Tone.getTransport()
         <button onClick={() => handleAccidentalClick("double-sharp")}>𝄪</button>
         <button onClick={() => handleAccidentalClick("double-flat")}>𝄫</button>
       </div>
+
+ <div className="toolbar-group">
+<button onClick={onToolbarTieClick}>Tie</button>
+</div>
 
         {/* <ScalePicker {...props} /> */}
         {/* <InversionNavigator {...props} />

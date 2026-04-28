@@ -205,6 +205,14 @@ const setPendingInsert = (value) => {
 };
 
 
+// for debugging - can view the lead sheet contents in the console
+useEffect(() => {
+  window.leadSheet = leadSheet;
+}, [leadSheet]);
+
+
+
+
 
 const [showPalette, setShowPalette] = useState(() => {
   const saved = localStorage.getItem("lead-sheet.palette.visible");
@@ -309,6 +317,60 @@ const handleUp = useCallback(() => {
 
 
 
+
+
+
+function onToolbarTieClick() {
+  if (!selectedNoteId) return;
+
+  // Find the selected note's measure + index
+  let startMeasure = null;
+  let startIndex = null;
+
+  leadSheet.measures.forEach((m, mi) => {
+    m.melody.forEach((n, ni) => {
+      if (n.id === selectedNoteId) {
+        startMeasure = mi;
+        startIndex = ni;
+      }
+    });
+  });
+
+  if (startMeasure === null) return;
+
+  // Determine the next note
+  let endMeasure = startMeasure;
+  let endIndex = startIndex + 1;
+
+  // If at end of measure, move to next measure
+  if (endIndex >= leadSheet.measures[startMeasure].melody.length) {
+    endMeasure = startMeasure + 1;
+    endIndex = 0;
+  }
+
+  // If no next measure or no next note, abort
+  if (
+    endMeasure >= leadSheet.measures.length ||
+    leadSheet.measures[endMeasure].melody.length === 0
+  ) {
+    return;
+  }
+
+  // Create the tie
+  const newTie = {
+    id: crypto.randomUUID(),
+    startMeasure,
+    startIndex,
+    endMeasure,
+    endIndex
+  };
+
+  // Update lead sheet
+  setLeadSheet(ls => ({
+    ...ls,
+    ties: [...ls.ties, newTie]
+  }));
+}
 
 
 
@@ -488,6 +550,7 @@ Delete tie, begin tie creation (press T)
 */
 useEffect(() => {
   function onKey(e) {
+    console.log("TIE KEY HANDLER")
     // DELETE TIE
     if ((e.key === "Delete" || e.key === "Backspace") && selectedTieId) {
       onTieDelete(selectedTieId);
@@ -980,6 +1043,7 @@ function updateDraggedNote(noteId, semitones, durationSteps) {
           handleToolbarDurationChange={handleToolbarDurationChange}
           setInputDuration={setInputDuration}
           handleAccidentalClick={handleAccidentalClick}
+          onToolbarTieClick={onToolbarTieClick}
         />
     
     

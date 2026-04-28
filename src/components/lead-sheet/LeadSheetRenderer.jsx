@@ -377,7 +377,7 @@ if (svg && needsNewLayer) {
 
 
 leadSheet.ties?.forEach(tie => {
-   console.log("DRAWING TIE", tie);
+  //  console.log("DRAWING TIE", tie);
   const isSelected = selectedTieId === tie.id;
   ctx.setStrokeStyle(isSelected ? "dodgerblue" : "black");
   ctx.setLineWidth(isSelected ? 2 : 1);
@@ -426,8 +426,11 @@ leadSheet.ties?.forEach(tie => {
     hit.setAttribute("y", svgY);
     hit.setAttribute("width", svgWidth);
     hit.setAttribute("height", svgHeight);
-    hit.setAttribute("fill", isSelected ? "rgba(0,128,255,0.25)" : "rgba(255,0,0,0.3)");
+    // hit.setAttribute("fill", isSelected ? "rgba(0,128,255,0.25)" : "rgba(255,0,0,0.3)"
+    hit.setAttribute("fill", isSelected ? "rgba(0,128,255,0.25)" : "transparent");
+    hit.setAttribute("stroke", "transparent");
     hit.setAttribute("pointer-events", "all");
+    hit.style.cursor = "pointer";   // ← add this
     hit.dataset.tieId = tie.id;
 
     hit.addEventListener("mousedown", e => {
@@ -435,9 +438,23 @@ leadSheet.ties?.forEach(tie => {
       setSelectedTieId(tie.id);
     });
 
+      // visual hover feedback
+  hit.addEventListener("mouseenter", () => {
+  hit.style.fillOpacity = 0.4;
+});
+hit.addEventListener("mouseleave", () => {
+  hit.style.fillOpacity = isSelected ? 0.25 : 0.3;
+});
+
+
     tieHitLayerRef.current.appendChild(hit);
     return;
   }
+
+
+
+
+
 
   // CROSS-SYSTEM — draw VexFlow ties
   const system1EndX   = startLayout.stave.getTieEndX();
@@ -479,8 +496,12 @@ leadSheet.ties?.forEach(tie => {
     hit1.setAttribute("y", svgY1);
     hit1.setAttribute("width", svgW1);
     hit1.setAttribute("height", svgH1);
-    hit1.setAttribute("fill", isSelected ? "rgba(0,128,255,0.25)" : "rgba(255,0,0,0.3)");
+    // hit1.setAttribute("fill", isSelected ? "rgba(0,128,255,0.25)" : "rgba(255,0,0,0.3)");
+hit1.setAttribute("fill", isSelected ? "rgba(0,128,255,0.25)" : "transparent");
+hit1.setAttribute("stroke", "transparent");
+
     hit1.setAttribute("pointer-events", "all");
+    hit1.style.cursor = "pointer";   // ← add this
     hit1.dataset.tieId = tie.id;
 
     hit1.addEventListener("mousedown", e => {
@@ -489,6 +510,16 @@ leadSheet.ties?.forEach(tie => {
     });
 
     tieHitLayerRef.current.appendChild(hit1);
+
+     // visual hover feedback
+  hit1.addEventListener("mouseenter", () => {
+  hit1.style.fillOpacity = 0.4;
+});
+hit1.addEventListener("mouseleave", () => {
+  hit1.style.fillOpacity = isSelected ? 0.25 : 0.3;
+});
+
+
   }
 
   // Segment 2: start of system 2 → end note
@@ -507,8 +538,12 @@ leadSheet.ties?.forEach(tie => {
     hit2.setAttribute("y", svgY2);
     hit2.setAttribute("width", svgW2);
     hit2.setAttribute("height", svgH2);
-    hit2.setAttribute("fill", isSelected ? "rgba(0,128,255,0.25)" : "rgba(255,0,0,0.3)");
+    // hit2.setAttribute("fill", isSelected ? "rgba(0,128,255,0.25)" : "rgba(255,0,0,0.3)");
+    hit2.setAttribute("fill", isSelected ? "rgba(0,128,255,0.25)" : "transparent");
+hit2.setAttribute("stroke", "transparent");
+
     hit2.setAttribute("pointer-events", "all");
+    hit2.style.cursor = "pointer";   // ← add this
     hit2.dataset.tieId = tie.id;
 
     hit2.addEventListener("mousedown", e => {
@@ -517,6 +552,16 @@ leadSheet.ties?.forEach(tie => {
     });
 
     tieHitLayerRef.current.appendChild(hit2);
+
+        // visual hover feedback
+      hit2.addEventListener("mouseenter", () => {
+      hit2.style.fillOpacity = 0.4;
+    });
+    hit2.addEventListener("mouseleave", () => {
+      hit2.style.fillOpacity = isSelected ? 0.25 : 0.3;
+    });
+
+
   }
 }); // end ties loop
 
@@ -682,7 +727,9 @@ voice.addTickables(notes.map(n => n.vfNote));
 
         hitGroup.style.cursor = "pointer";
 
+        // notes mousedown handler
         hitGroup.addEventListener("mousedown", e => {
+          
           e.preventDefault();
 
           if (noteInputMode) {
@@ -723,7 +770,7 @@ voice.addTickables(notes.map(n => n.vfNote));
 
           window.addEventListener("mousemove", onMove);
           window.addEventListener("mouseup", onUp);
-        });
+        }); // end mousedown handler
 
         if (id) {
           noteElements.current.set(id, g);
@@ -839,7 +886,7 @@ lastMeasureLayoutRef.current = measureLayout;
       measureElements.current.clear();
       originalYRef.current = {};
     };
-  }, [measures, selectedNoteId, noteInputMode, caret, dragRef]); // useLayoutEffect
+  }, [measures, selectedNoteId, noteInputMode, caret, dragRef, leadSheet.ties]); // useLayoutEffect
 
 
 
