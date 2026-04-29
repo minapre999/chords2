@@ -16,7 +16,7 @@ function debug(label, value) {
 
 
 
-const durationMap = {
+export const durationMap = {
   "s": "16",
   "e": "8",
   "q": "4",
@@ -38,7 +38,7 @@ function getAccidentalFromToken(token) {
 
 
 
-function parseToken(token) {
+export function parseToken(token) {
   // console.log("PARSE TOKEN", "\n token: ", token)
   // Handles: C4q, C#4q, Eb4h, F##4q, etc.
   const match = token.match(/^([A-Ga-g])([#b]{0,2})(\d)(.+)$/);
@@ -151,12 +151,12 @@ function tokenToVFNote(token, currentKey, accidentalMemory) {
 
       // REST
   if (token.endsWith("r")) {
-    const pitch = token.slice(0, -1); // e.g. "C4"
-    const dur = token.slice(-1);      // "r"
-    const durationChar = pitch.slice(-1); // last char before r is duration
+    // const pitch = token.slice(0, -1); // e.g. "C4"
+    // const dur = token.slice(-1);      // "r"
+    const durationChar = token.charAt(0); // last char before r is duration
     return new VF.StaveNote({
       keys: ["b/4"],
-      duration: durationMap[durationChar] + "r"
+      duration: durationMap[token.charAt(0)] + "r"
     });
   }
 

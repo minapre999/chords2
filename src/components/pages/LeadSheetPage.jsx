@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect, useRef } from "react";
 import Toolbar from "/src/components/toolbar/toolbar.jsx";
 
 import { TransportBar } from "../lead-sheet/TransportBar";
-import  LeadSheetRenderer  from "../lead-sheet/LeadSheetRenderer";
+import  LeadSheetRenderer, {parseToken, durationMap}  from "../lead-sheet/LeadSheetRenderer";
 // import { InspectorPanel } from "../lead-sheet/InspectorPanel";
 // import { FretboardPreview } from "../lead-sheet/FretboardPreview";
 import FretboardSVG from "/src/components/fretboard/FretboardSVG.jsx";
@@ -218,11 +218,20 @@ const [selection, setSelection] = useState(null);
 
 // this is the core of the note input system
 const [noteInputMode, setNoteInputMode] = useState(false);
-const [inputDuration, setInputDuration] = useState("q"); // default quarter
 const [inputAccidental, setInputAccidental] = useState(null);
 const [caret, setCaret] = useState({ measure: 0, index: 0 });
-
 const [pendingInsert, _setPendingInsert] = useState(null);
+
+// Muscescore like interactivity
+// inputDuration - current selected duration
+// must always have one selected duration
+const [inputDuration, setInputDuration] = useState("q"); // default quarter
+// rest selected is true or false.  If true, then clicking a note 
+// will replace it with a rest of the current selected duration
+const [selRest, setSelRest] = useState(false); // default quarter
+// dotted duration.  If true, then note changes / new notes / rests
+// will have dotted duration
+const [selDotted, setSelDotted] = useState(false); // dotted duration
 
 const setPendingInsert = (value) => {
   console.groupCollapsed("%c setPendingInsert CALLED", "color:red;font-weight:bold");
@@ -453,6 +462,71 @@ function onToolbarTieClick() {
   }));
 }
 
+
+
+
+
+
+// user has applied a rest to the highlighted note
+// simple switch from a note to a rest.  No duration change.
+
+const handleToolbarRestChange = useCallback((newDur) => {
+  const duration = newDur;   // ⭐ capture it here
+
+console.log("HANDLE TOOLBAR DURATION CHANGE", "   /nduration: ", duration, "   \nnoteInputMode: ", noteInputMode, "   \nselection: ", selection)
+  if (noteInputMode) {
+    setInputDuration(duration);
+
+    const { measure, index } = caret;
+
+    // Insert a note at the caret
+    setPendingInsert({
+      pitch: "C4",        // ⭐ default pitch (or last pitch, or caret pitch)
+      measureIndex: measure,
+      melodyIndex: index
+    });
+
+    return;
+  }
+
+  // ⭐ NORMAL MODE: edit selection note
+  if (selection?.id && selection?.type === "note") {
+
+    setLeadSheet(prev => {
+      const next = structuredClone(prev);
+
+      for (let measureIndex = 0; measureIndex < next.measures.length; measureIndex++) {
+        const measure = next.measures[measureIndex];
+        const note = measure.melody.find(n => n.id === selection.id);
+        if (!note) continue;
+
+        const oldToken = note.token;
+        const isRest = oldToken.endsWith("r");
+
+        const newToken = isRest
+          ? duration + "r"
+          : oldToken.slice(0, -1) + duration;
+
+        console.log("newToken:", newToken, "oldToken:", oldToken);
+
+        // ⭐ APPLY RIPPLE EDIT AND CAPTURE RETURN VALUE
+        const updatedMeasure = applyRippleEdit(
+          measure,
+          note.id,
+          newToken
+        );
+
+        console.log("ripple returned:", updatedMeasure);
+
+        // ⭐ REPLACE THE MEASURE IN STATE
+      next.measures[measureIndex] = updatedMeasure;
+    }
+
+    console.log("setLeadSheet returning:", next);
+    return next;
+    });
+  }
+}, [noteInputMode, caret, selection]);
 
 
 
@@ -874,7 +948,41 @@ const handleNoteSelect = (id) => {
   console.log("SELECTING NOTE ID: ", id)
     if (!noteInputMode) {
     setSelection({type: "note", id: id});
+    // set the noteInputDuration to the new selected note duration
+    // this will update the duration tools to the curent duration value of selected note
+    let token = null
+    for(const m of leadSheet.measures) {
+      for(const n of m.melody) {
+        if(n.id==id) {
+          token=n.token
+          break;
+          }
+        }
+      if(token !== null) break;
+      }
+    
+    // get duration from token
+       // REST
+    let duration = null
+  if (token?.endsWith("r")) {
+    duration = token.charAt(0)
+    setSelRest(true)
   }
+
+
+   else{ 
+    duration= parseToken(token).duration 
+   setSelRest(false)
+   } 
+    console.log("SETTING SELECTED DURATION: ", duration)
+      setInputDuration(duration)
+   
+  
+      // setInputDuration={setInputDuration}
+  }
+
+
+
 
 };
 
@@ -1165,10 +1273,16 @@ function updateDraggedNote(noteId, semitones, durationSteps) {
           noteInputMode={noteInputMode}
           setNoteInputMode={setNoteInputMode}
           handleToolbarDurationChange={handleToolbarDurationChange}
-          setInputDuration={setInputDuration}
           handleAccidentalClick={handleAccidentalClick}
           onToolbarTieClick={onToolbarTieClick}
           onToolbarSlurClick={onToolbarSlurClick}
+          inputDuration={inputDuration}
+          setInputDuration={setInputDuration}
+          selRest={selRest}
+          setSelRest={setSelRest}
+          selDotted={selDotted}
+          setSelDotted={setSelDotted}
+          
         />
     
     

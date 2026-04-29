@@ -6,19 +6,73 @@ import "/src/components/toolbar/toolbar.css"
 
 // import ScalePicker from "/src/components/toolbar/scale-tools/ScalePicker.jsx";
 
+/*
+Bravura codes
+E032: light/thick barline
+E034: thick barline
+E035: double thick barline
+E040: right repeat barline
+E041: left repeat barline
+E042: double repeat barline
+E045: DS symbol
+E046: DC symbol
+E262: #
+E269: ##
+E264: bb
+E266: bbb
 
+EB1C:   play
+EB1D:  stop play
+EB1E:  pause play
+
+EB26:  sound muted
+EB27:  sound not muted
+
+F5EE:  2/4
+F5F3:  4/4
+F5F1:  3/4
+F5F2:  3/8
+F5F7:  6/8
+
+E4E5: quarter note rest
+
+E1E7:  augmentation dot
+*/
 export default function LeadSheetTools(props) {
 
 const{  isPlaying, setIsPlaying, 
-        isPaused, setIsPaused,
-        showPalette, setShowPalette,
-        noteInputMode, setNoteInputMode,
-      handleAccidentalClick,
-      onToolbarTieClick,
-      onToolbarSlurClick
+            isPaused, setIsPaused,
+            showPalette, setShowPalette,
+            noteInputMode, setNoteInputMode,
+            handleAccidentalClick,
+            onToolbarTieClick,
+            onToolbarSlurClick,
+            inputDuration,
+            setInputDuration,
+            selRest, 
+            setSelRest,
+            selDotted,
+            setSelDotted,
            }=props
 
 const { startAudio, samplerReady, scaleSampler } = useToneEngine();
+
+
+
+const onRest =  () => {
+// console.log("CLICKED ON REST" , "\nselRest: ", selRest)
+selRest === true ? setSelRest(false) : setSelRest(true)
+};
+
+const onDotted =  () => {
+// console.log("CLICKED ON DOTTED", "   \nselDotted: ", selDotted)
+selDotted === true ? setSelDotted(false) : setSelDotted(true)
+};
+
+
+
+
+
 
 
 const handlePlay = async () => {
@@ -56,15 +110,23 @@ const transport = Tone.getTransport()
 
 
 
+
+const quarterRest = "\uE4E5"
+const dottedCrotchet = "\uECA5 \uE1E7"
+ 
+
+
   return (
-              <>
+   <>
+
+        <div className="toolbar-group">
               <button
             onClick={() => setNoteInputMode(m => !m)}
             style={{ background: noteInputMode ? "#88f" : "#eee" }}
           >
             Note Input
           </button>
-
+      </div>
 
 
         <div className="toolbar-group">
@@ -72,6 +134,7 @@ const transport = Tone.getTransport()
         <button onClick={handlePause}>Pause</button>
         <button onClick={handleStop}>Stop</button>
         </div>
+
         <div className="toolbar-group">
         <DurationControls 
               {...props} 
@@ -79,7 +142,32 @@ const transport = Tone.getTransport()
 
         </div>
         
-        <div>
+              <div className="toolbar-divider" />
+
+      <div className="toolbar-group" >
+          <button
+              className={`btn-bravura btn-rest${selRest ? " selected" : ""}`}
+
+              onClick={onRest}
+            >
+              {quarterRest}
+           </button>
+    
+
+            <button
+              className={`btn-bravura btn-dotted${selDotted ? " selected" : ""}`}
+              onClick={onDotted}
+            >
+              {dottedCrotchet}
+           </button>
+   
+        </div>
+
+              <div className="toolbar-divider" />
+
+
+           <div className="toolbar-group">
+
             <button onClick={() => setShowPalette(s => !s)}>
             {showPalette ? "Hide Palette" : "Show Palette"}
           </button>
@@ -89,8 +177,8 @@ const transport = Tone.getTransport()
         <button onClick={() => handleAccidentalClick("sharp")}>♯</button>
         <button onClick={() => handleAccidentalClick("flat")}>♭</button>
         <button onClick={() => handleAccidentalClick("natural")}>♮</button>
-        <button onClick={() => handleAccidentalClick("double-sharp")}>𝄪</button>
-        <button onClick={() => handleAccidentalClick("double-flat")}>𝄫</button>
+        {/* <button onClick={() => handleAccidentalClick("double-sharp")}>𝄪</button>
+        <button onClick={() => handleAccidentalClick("double-flat")}>𝄫</button> */}
       </div>
 
  <div className="toolbar-group">

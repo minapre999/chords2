@@ -26,12 +26,53 @@
   align-items: center;
   gap: 6px;
 }
+.toolbar-group button{
+    border: 1px solid rgba(76, 74, 74, 0.82);
 
+  background-color: #eee;
+  cursor: pointer;
+
+
+}
+
+.toolbar-group button:not(.selected):hover  {
+    background-color: lightgray;
+  }
+
+  
 .toolbar-divider {
   width: 1px;
   height: 24px;
   background: #d0d0d0;
-  margin: 0 12px;
+  margin: 0 6px;
    border: none !important;
 }
 
+
+.btn-bravura{
+  font-family: "Bravura";
+    width: 30px;
+    height: 34px;
+    line-height: 46px;
+    /* padding-top: 6px; */
+   
+    text-align: center;
+    font-size: 28px !important;
+
+}
+
+
+
+  /* .btn-bravura:hover {
+    background-color: lightgray;
+  } */
+
+  .btn-rest {
+
+    padding-bottom: 20px;
+line-height: 34px;
+  }
+
+  button.selected{
+    background-color: rgb(150, 192, 229);
+  }

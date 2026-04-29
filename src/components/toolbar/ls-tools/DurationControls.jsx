@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import "/src/components/toolbar/toolbar.css"
 import "./DurationControls.css"
 // const SMUFL = {
 //   s: "\uE1D7\uE240", // notehead + double-flag
@@ -17,26 +18,22 @@ import "./DurationControls.css"
 // };
 
 const SMUFL = {
-  s: "\uE1DB", // 16th note
-  e: "\uE1D9", // 8th note
-  q: "\uE1D5", // quarter note
-  h: "\uE1D3", // half note
-  w: "\uE1D2"  // whole note
+  
+  s: "\uECA9", // 16th note
+  e: "\uECA7", // 8th note
+  q: "\uECA5", // quarter note
+  h: "\uECA3", // half note
+  w: "\uECA2"  // whole note
 };
 
 
-function DurationButton({ dur, onClick }) {
+function DurationButton({ newDur, onClick, inputDuration }) {
   return (
     <button
-      className="btn-duration"
+      className={`btn-bravura btn-duration${inputDuration === newDur? " selected" : ""}`}
       onClick={onClick}
-      style={{
-       
-      
-
-      }}
-    >
-      {SMUFL[dur]}
+         >
+      {SMUFL[newDur]}
     </button>
   );
 }
@@ -44,16 +41,22 @@ function DurationButton({ dur, onClick }) {
 
 const DURATIONS = ["s", "e", "q", "h", "w"];
 
-export default function DurationControls({
+export default function DurationControls(props) {
+
+ const  {
+  handleToolbarDurationChange,
   setInputDuration,
-  handleToolbarDurationChange
-}) {
+} = props
+
+
   return (
     <div style={{ display: "flex", padding: "8px" }}>
       {DURATIONS.map(d => (
         <DurationButton
+         {...props}
           key={d}
-          dur={d}
+          newDur={d}
+
           onClick={() => {
             setInputDuration(d);
             handleToolbarDurationChange(d);
