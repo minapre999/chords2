@@ -16,46 +16,7 @@ function debug(label, value) {
 
 
 
-export const durationMap = {
-  "s": "16",
-  "e": "8",
-  "q": "4",
-  "h": "2",
-  "w": "1"
-};
 
-
-
-function getAccidentalFromToken(token) {
-  const match = token.match(/^([A-Ga-g])([#b]{1,2}|)(\d)/);
-  if (!match) return null;
-
-  const [, , accidental] = match;
-  if (accidental === "") return null;
-
-  return accidental; // "#", "b", "##", "bb"
-}
-
-
-
-export function parseToken(token) {
-  // console.log("PARSE TOKEN", "\n token: ", token)
-  // Handles: C4q, C#4q, Eb4h, F##4q, etc.
-  const match = token.match(/^([A-Ga-g])([#b]{0,2})(\d)(.+)$/);
-  if (!match) {
-    console.warn("parseToken: unexpected token:", token);
-    return null;
-  }
-
-  const [, letter, accidental, octave, duration] = match;
-
-  return {
-    letter: letter.toUpperCase(),
-    accidental: accidental || null,
-    octave,
-    duration
-  };
-}
 
 
 
@@ -111,106 +72,6 @@ function shouldShowAccidental({
 
 
 
-function pitchToVexFlowKey(pitch) {
-  // pitch formats supported:
-  // C4, F#3, Bb5
-
-  const letter = pitch[0].toLowerCase();
-
-  let accidental = "";
-  let octave = "";
-
-  if (pitch[1] === "#" || pitch[1] === "b") {
-    accidental = pitch[1];
-    octave = pitch[2];
-  } else {
-    octave = pitch[1];
-  }
-
-  return `${letter}${accidental}/${octave}`;
-}
-
-
-// function pitchToVexFlowKey(pitch) {
-//   // pitch is like "C4", "Eb4", "F#3"
-//   const match = pitch.match(/^([A-Ga-g])(b|#)?(\d)$/);
-//   if (!match) throw new Error("Invalid pitch: " + pitch);
-
-//   let [, letter, accidental, octave] = match;
-
-//   letter = letter.toLowerCase(); // VexFlow requires lowercase note names
-
-//   if (!accidental) accidental = "";
-
-//   return `${letter}${accidental}/${octave}`;
-// }
-function tokenToVFNote(token, currentKey, accidentalMemory) {
-  // console.log("TOKEN TO VFNOTE", "   \ntoken: ", token, "   \ncurrentKey: ", currentKey)
-    const VF = window.Vex.Flow;
-
-
-      // REST
-  if (token.endsWith("r")) {
-    // const pitch = token.slice(0, -1); // e.g. "C4"
-    // const dur = token.slice(-1);      // "r"
-    const durationChar = token.charAt(0); // last char before r is duration
-    return new VF.StaveNote({
-      keys: ["b/4"],
-      duration: durationMap[token.charAt(0)] + "r"
-    });
-  }
-
-
-  const parsed = parseToken(token);
-  if (!parsed) return null;
-
-  const { letter, accidental, octave, duration } = parsed;
-const vfDuration = durationMap[duration]
-// console.log("  vfDuration: ", vfDuration)
-  const key = `${letter.toLowerCase()}${accidental || ""}/${octave}`;
-  const keyAcc = getKeySigAccidental(currentKey, letter);
-
-
-
-    // NORMAL NOTE
-  // Format: C4q → pitch="C4", dur="q"
-
-  const validDurations = new Set(["1","2","4","8","16","32"]);
-
-if (!validDurations.has(vfDuration)) {
-  console.log("Invalid duration:", vfDuration, "from token:", token);
-   return null;
-}
-
-
-  const vfNote = new VF.StaveNote({
-    keys: [key],
-    duration: vfDuration
-  });
-
-  // --- ACCIDENTAL LOGIC ---
-  let writtenAcc = accidental; // "#", "b", "##", "bb", or null
-  if (!writtenAcc && keyAcc) {
-    writtenAcc = "n"; // natural sign required
-  }
-  const prevAcc = accidentalMemory[letter];
-
-  if (shouldShowAccidental({ writtenAcc, keySigAcc: keyAcc, previousAcc: prevAcc })) {
-    if (writtenAcc) {
-      vfNote.addAccidental(0, new VF.Accidental(writtenAcc));
-    } else if (keyAcc) {
-      vfNote.addAccidental(0, new VF.Accidental("n"));
-    }
-  }
-
-  accidentalMemory[letter] = writtenAcc;
-
-  return vfNote;
-}
-
-
-
-
 
 
 
@@ -224,8 +85,13 @@ function semitoneToPitch(baseMidi, offset) {
 }
 
 
-
-
+export const durationMap = {
+  "w": "1",
+  "h": "2",
+  "q": "4",
+  "8": "8",
+  "16": "16"
+};
 
 
 export default function LeadSheetRenderer(props) {
@@ -254,59 +120,62 @@ export default function LeadSheetRenderer(props) {
   const isDragging = useRef(false);
   const originalYRef = useRef({});
   const semitoneStepRef = useRef(3);
-const slurCurveLayerRef = useRef(null);
-const slurHitLayerRef = useRef(null); // you already have this one
-const tieCurveLayerRef = useRef(null);
-const tieHitLayerRef = useRef(null); // you already have this
+
+  const slurCurveLayerRef = useRef(null);
+  const slurHitLayerRef = useRef(null);
+  const tieCurveLayerRef = useRef(null);
+  const tieHitLayerRef = useRef(null);
 
   const measures = leadSheet?.measures ?? [];
   const effectGuard = useRef(false);
 
-const lastCtxRef = useRef(null);
-const lastNoteLookupRef = useRef(null);
-const lastMeasureLayoutRef = useRef(null);
+  const lastCtxRef = useRef(null);
+  const lastNoteLookupRef = useRef(null);
+  const lastMeasureLayoutRef = useRef(null);
 
+  //
+  // Re-draw ties when selection or ties change
+  //
+  useEffect(() => {
+    if (!lastCtxRef.current) return;
 
+    drawTies({
+      ctx: lastCtxRef.current,
+      noteLookup: lastNoteLookupRef.current,
+      measureLayout: lastMeasureLayoutRef.current,
+      leadSheet,
+      selection,
+      setSelection,
+      lsContainerRef,
+      tieHitLayerRef,
+      tieCurveLayerRef
+    });
+  }, [selection, leadSheet.ties]);
 
-useEffect(() => {
-  if (!lastCtxRef.current) return;
+  //
+  // Re-draw slurs when selection or slurs change
+  //
+  useEffect(() => {
+    if (!lastCtxRef.current) return;
 
-  drawTies({
-    ctx: lastCtxRef.current,
-    noteLookup: lastNoteLookupRef.current,
-    measureLayout: lastMeasureLayoutRef.current,
-    leadSheet,
-    selection,
-    setSelection,
-    lsContainerRef,
-    tieHitLayerRef,
-    tieCurveLayerRef
-  });
-}, [selection, leadSheet.ties]);
+    drawSlurs({
+      ctx: lastCtxRef.current,
+      noteLookup: lastNoteLookupRef.current,
+      measureLayout: lastMeasureLayoutRef.current,
+      leadSheet,
+      selection,
+      setSelection,
+      lsContainerRef,
+      slurHitLayerRef,
+      slurCurveLayerRef
+    });
+  }, [selection, leadSheet.slurs]);
 
-
-useEffect(() => {
-  if (!lastCtxRef.current) return;
-
-  drawSlurs({
-    ctx: lastCtxRef.current,
-    noteLookup: lastNoteLookupRef.current,
-    measureLayout: lastMeasureLayoutRef.current,
-    leadSheet,
-    selection,
-    setSelection,
-    lsContainerRef,
-    slurHitLayerRef,
-    slurCurveLayerRef
-  });
-}, [selection, leadSheet.slurs]);
-
-
-
+  //
+  // Imperative API
+  //
   useImperativeHandle(rendererRef, () => ({
-
     highlightNote(noteId) {
-      console.log("HIGHLIGHT NOTE", "   /nselection: ", selection)
       noteElements.current.forEach(el => el.classList.remove("vf-highlight-note"));
       const el = noteElements.current.get(noteId);
       if (!el) return;
@@ -329,6 +198,9 @@ useEffect(() => {
     }
   }));
 
+  //
+  // Draw caret
+  //
   const drawCaret = (svg, x, yTop, yBottom) => {
     const caretLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
     caretLine.setAttribute("x1", x);
@@ -339,194 +211,158 @@ useEffect(() => {
     caretLine.setAttribute("stroke-width", "2");
     caretLine.setAttribute("pointer-events", "none");
     svg.appendChild(caretLine);
-  };
-
-function drawTieSegment({
-  x1, y1, x2, y2,
-  isSelected,
-  curveLayer,
-  hitLayer,
-  tie,
-  setSelection
-}) {
-  const offset = 10;
-
-  const c1x = x1 + (x2 - x1) * 0.33;
-  const c2x = x1 + (x2 - x1) * 0.66;
-  const c1y = y1 + offset;
-  const c2y = y2 + offset;
-
-  // Curve path
-  const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-  path.setAttribute(
-    "d",
-    `M ${x1} ${y1} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${x2} ${y2}`
-  );
-  path.setAttribute("stroke", isSelected ? "dodgerblue" : "black");
-  path.setAttribute("fill", "none");
-  path.setAttribute("stroke-width", isSelected ? 2 : 1);
-
-  curveLayer.appendChild(path);
-
-  const hit = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-
-hit.setAttribute("x", Math.min(x1, x2));
-hit.setAttribute("width", Math.abs(x2 - x1));
-
-// thin strip below the curve
-const hitHeight = 8;
-const hitYOffset = 4;
-const topY = Math.max(y1, y2);
-
-hit.setAttribute("y", topY + hitYOffset);
-hit.setAttribute("height", hitHeight);
-
-hit.setAttribute("fill", "transparent");
-
-// critical:
-hit.style.pointerEvents = "all";
-hit.style.cursor = "pointer";   // ← THIS restores the pointer cursor
-
-hit.addEventListener("pointerdown", e => {
-  e.stopPropagation();
-  setSelection({ type: "tie", id: tie.id });
-});
-
-hitLayer.appendChild(hit);
-
-}
-
-
-
-
-function drawTies({
-  noteLookup,
-  measureLayout,
-  leadSheet,
-  selection,
-  setSelection,
-  lsContainerRef,
-  tieCurveLayerRef,
-  tieHitLayerRef,
-
-}) {
-
-  if (!noteLookup) return;
-  const svgList = lsContainerRef.current?.querySelectorAll("svg");
-  const svg = svgList?.[svgList.length - 1];
-  if (!svg) return;
+  }; // drawCaret
 
   //
-  // --- CURVE LAYER ---
+  // Tie segment drawing (unchanged)
   //
-  let curveLayer = tieCurveLayerRef.current;
-  if (!curveLayer || !curveLayer.isConnected) {
-    curveLayer = document.createElementNS("http://www.w3.org/2000/svg", "g");
-    curveLayer.setAttribute("id", "tie-curve-layer");
-    svg.appendChild(curveLayer);
-    tieCurveLayerRef.current = curveLayer;
-  }
+  function drawTieSegment({
+    x1, y1, x2, y2,
+    isSelected,
+    curveLayer,
+    hitLayer,
+    tie,
+    setSelection
+  }) {
+    const offset = 10;
 
-  while (curveLayer.firstChild) {
-    curveLayer.removeChild(curveLayer.firstChild);
-  }
+    const c1x = x1 + (x2 - x1) * 0.33;
+    const c2x = x1 + (x2 - x1) * 0.66;
+    const c1y = y1 + offset;
+    const c2y = y2 + offset;
 
-  //
-  // --- HIT LAYER ---
-  //
-  let hitLayer = tieHitLayerRef.current;
-  if (!hitLayer || !hitLayer.isConnected) {
-    hitLayer = document.createElementNS("http://www.w3.org/2000/svg", "g");
-    hitLayer.setAttribute("id", "tie-hit-layer");
-    // hitLayer.style.pointerEvents = "all";
-    hitLayer.style.pointerEvents = "none";
-    svg.appendChild(hitLayer);
-    tieHitLayerRef.current = hitLayer;
-  }
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute(
+      "d",
+      `M ${x1} ${y1} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${x2} ${y2}`
+    );
+    path.setAttribute("stroke", isSelected ? "dodgerblue" : "black");
+    path.setAttribute("fill", "none");
+    path.setAttribute("stroke-width", isSelected ? 2 : 1);
 
-  while (hitLayer.firstChild) {
-    hitLayer.removeChild(hitLayer.firstChild);
-  }
+    curveLayer.appendChild(path);
 
-  //
-  // --- DRAW EACH TIE ---
-  //
-  leadSheet.ties.forEach(tie => {
-  const start = noteLookup.get(`${tie.startMeasure}:${tie.startIndex}`);
-  const end   = noteLookup.get(`${tie.endMeasure}:${tie.endIndex}`);
-  if (!start || !end) return;
+    const hit = document.createElementNS("http://www.w3.org/2000/svg", "rect");
 
-  const startLayout = measureLayout[tie.startMeasure];
-  const endLayout   = measureLayout[tie.endMeasure];
+    hit.setAttribute("x", Math.min(x1, x2));
+    hit.setAttribute("width", Math.abs(x2 - x1));
 
-  const startSystem = startLayout.systemIndex;
-  const endSystem   = endLayout.systemIndex;
+    const hitHeight = 8;
+    const hitYOffset = 4;
+    const topY = Math.max(y1, y2);
 
-  console.log(
-  "tie", tie.id,
-  "startSystem:", startLayout.systemIndex,
-  "endSystem:", endLayout.systemIndex
-);
+    hit.setAttribute("y", topY + hitYOffset);
+    hit.setAttribute("height", hitHeight);
+    hit.setAttribute("fill", "transparent");
 
+    hit.style.pointerEvents = "all";
+    hit.style.cursor = "pointer";
 
-  const isSelected = selection?.type === "tie" && selection.id === tie.id;
-
-  //
-  // CASE 1: Tie is within the same system → draw normally
-  //
-  if (startSystem === endSystem) {
-    drawTieSegment({
-      x1: start.vfNote.getAbsoluteX(),
-      y1: start.vfNote.getYs()[0],
-      x2: end.vfNote.getAbsoluteX(),
-      y2: end.vfNote.getYs()[0],
-      isSelected,
-      curveLayer,
-      hitLayer,
-      tie,
-      setSelection
+    hit.addEventListener("pointerdown", e => {
+      e.stopPropagation();
+      setSelection({ type: "tie", id: tie.id });
     });
-    return;
-  }
+
+    hitLayer.appendChild(hit);
+  } // drawTieSegment
 
   //
-  // CASE 2: Tie crosses systems → split into two segments
+  // Draw ties (unchanged except: noteLookup now contains new-format notes)
   //
+  function drawTies({
+    noteLookup,
+    measureLayout,
+    leadSheet,
+    selection,
+    setSelection,
+    lsContainerRef,
+    tieCurveLayerRef,
+    tieHitLayerRef
+  }) {
+    if (!noteLookup) return;
 
-  // Segment A: start note → right edge of system N
-  const rightX = startLayout.stave.getTieEndX();
-  const yA = start.vfNote.getYs()[0];
+    const svgList = lsContainerRef.current?.querySelectorAll("svg");
+    const svg = svgList?.[svgList.length - 1];
+    if (!svg) return;
 
-  drawTieSegment({
-    x1: start.vfNote.getAbsoluteX(),
-    y1: yA,
-    x2: rightX,
-    y2: yA,
-    isSelected,
-    curveLayer,
-    hitLayer,
-    tie,
-    setSelection
-  });
+    let curveLayer = tieCurveLayerRef.current;
+    if (!curveLayer || !curveLayer.isConnected) {
+      curveLayer = document.createElementNS("http://www.w3.org/2000/svg", "g");
+      curveLayer.setAttribute("id", "tie-curve-layer");
+      svg.appendChild(curveLayer);
+      tieCurveLayerRef.current = curveLayer;
+    }
+    while (curveLayer.firstChild) curveLayer.removeChild(curveLayer.firstChild);
 
-  // Segment B: left edge of system N+1 → end note
-  const leftX = endLayout.stave.getTieStartX();
-  const yB = end.vfNote.getYs()[0];
+    let hitLayer = tieHitLayerRef.current;
+    if (!hitLayer || !hitLayer.isConnected) {
+      hitLayer = document.createElementNS("http://www.w3.org/2000/svg", "g");
+      hitLayer.setAttribute("id", "tie-hit-layer");
+      hitLayer.style.pointerEvents = "none";
+      svg.appendChild(hitLayer);
+      tieHitLayerRef.current = hitLayer;
+    }
+    while (hitLayer.firstChild) hitLayer.removeChild(hitLayer.firstChild);
 
-  drawTieSegment({
-    x1: leftX,
-    y1: yB,
-    x2: end.vfNote.getAbsoluteX(),
-    y2: yB,
-    isSelected,
-    curveLayer,
-    hitLayer,
-    tie,
-    setSelection
-  });
-});
+    leadSheet.ties.forEach(tie => {
+      const start = noteLookup.get(`${tie.startMeasure}:${tie.startIndex}`);
+      const end   = noteLookup.get(`${tie.endMeasure}:${tie.endIndex}`);
+      if (!start || !end) return;
 
-}
+      const startLayout = measureLayout[tie.startMeasure];
+      const endLayout   = measureLayout[tie.endMeasure];
+
+      const startSystem = startLayout.systemIndex;
+      const endSystem   = endLayout.systemIndex;
+
+      const isSelected = selection?.type === "tie" && selection.id === tie.id;
+
+      if (startSystem === endSystem) {
+        drawTieSegment({
+          x1: start.vfNote.getAbsoluteX(),
+          y1: start.vfNote.getYs()[0],
+          x2: end.vfNote.getAbsoluteX(),
+          y2: end.vfNote.getYs()[0],
+          isSelected,
+          curveLayer,
+          hitLayer,
+          tie,
+          setSelection
+        });
+        return;
+      }
+
+      const rightX = startLayout.stave.getTieEndX();
+      const yA = start.vfNote.getYs()[0];
+
+      drawTieSegment({
+        x1: start.vfNote.getAbsoluteX(),
+        y1: yA,
+        x2: rightX,
+        y2: yA,
+        isSelected,
+        curveLayer,
+        hitLayer,
+        tie,
+        setSelection
+      });
+
+      const leftX = endLayout.stave.getTieStartX();
+      const yB = end.vfNote.getYs()[0];
+
+      drawTieSegment({
+        x1: leftX,
+        y1: yB,
+        x2: end.vfNote.getAbsoluteX(),
+        y2: yB,
+        isSelected,
+        curveLayer,
+        hitLayer,
+        tie,
+        setSelection
+      });
+    });
+  } // drawTies
 
 
 
@@ -658,8 +494,8 @@ hit.addEventListener("pointerdown", e => {
 
 hitLayer.appendChild(hit);
 
-  });
-}
+  }); // slurs.forEach
+} // drawSlurs
 
 
 
@@ -668,6 +504,7 @@ hitLayer.appendChild(hit);
 
   // ⭐ StrictMode‑safe VexFlow render
   useLayoutEffect(() => {
+    console.log("USE LAYOUT EFFECT")
     if (!lsContainerRef.current) return;
     if (dragRef.current) return; // freeze during drag
 
@@ -703,201 +540,345 @@ hitLayer.appendChild(hit);
     const noteLookup = new Map();
     const measureLayout = []
 
+
+
+
+
+function pitchToVexflowKey(pitch) {
+  // pitch is like "C4", "Eb4", "F#3"
+  const match = pitch.match(/^([A-Ga-g])(b|#)?(\d)$/);
+  if (!match) throw new Error("Invalid pitch: " + pitch);
+
+  let [, letter, accidental, octave] = match;
+
+  letter = letter.toLowerCase(); // VexFlow requires lowercase
+  accidental = accidental || "";
+
+  return `${letter}${accidental}/${octave}`;
+}
+
+
+
+const durationMap = {
+  w: "1",
+  h: "2",
+  q: "4",
+  "8": "8",
+  "16": "16"
+};
+
+function buildVexflowNotes(melody) {
+  return melody.map(n => {
+    const isRest = n.pitches.length === 0;
+
+    const vfDur = durationMap[n.duration];
+    const dur = isRest ? vfDur + "r" : vfDur;
+
+    const keys = isRest
+      ? ["b/4"]
+      : n.pitches.map(p => pitchToVexflowKey(p));
+
+    const vfNote = new VF.StaveNote({
+      keys,
+      duration: dur,
+      auto_stem: true
+    });
+
+    const dots = n.dots || 0;
+    for (let i = 0; i < dots; i++) {
+      vfNote.addDotToAll();
+    }
+
+    // ⭐ Manually fix ticks for dots (so Voice strict works)
+    if (dots > 0) {
+      const base = vfNote.getIntrinsicTicks(); // 4096 for quarter
+      const factor = Math.pow(1.5, dots);      // 1 dot → 1.5, 2 dots → 2.25, etc.
+      vfNote.setIntrinsicTicks(base * factor);
+    }
+
+    return vfNote;
+  });
+}
+
+
+
+
+
+
+// function buildStrictVoice(vfNotes) {
+//   const voice = new VF.Voice({
+//     num_beats: 4,
+//     beat_value: 4,
+//     resolution: VF.RESOLUTION
+//   });
+
+//   voice.setStrict(true);
+//   voice.addTickables(vfNotes);
+
+//   return voice;
+// }
+
+
+function formatStrictVoice(voice, staveWidth) {
+  const formatter = new VF.Formatter();
+
+  // ⭐ REQUIRED IN VEXFLOW 4:
+  // joinVoices builds ModifierContexts + TickContexts
+  formatter.joinVoices([voice]);
+
+  // ⭐ REQUIRED IN VEXFLOW 4:
+  // format applies dot multipliers and updates intrinsicTicks
+  formatter.format([voice], staveWidth);
+}
+
+
+
+function buildStrictVoice(vfNotes) {
+  const voice = new VF.Voice({
+    num_beats: 4,
+    beat_value: 4,
+    resolution: VF.RESOLUTION
+  });
+
+  voice.setStrict(true);
+  voice.addTickables(vfNotes);
+
+  // 🔍 DEBUG: inspect voice BEFORE formatting
+  console.log("VOICE PRE-FORMAT ----------------");
+  console.log("time:", voice.time);
+  console.log("totalTicks:", voice.totalTicks);
+  console.log("ticksUsed:", voice.ticksUsed);
+
+  voice.tickables.forEach((t, idx) => {
+    console.log(
+      `note ${idx}:`,
+      "dur:", t.getDuration(),
+      "intrinsicTicks:", t.getIntrinsicTicks()
+    );
+  });
+  console.log("--------------");
+
+  return voice;
+}
+
+// function formatStrictVoice(voice, staveWidth) {
+//   // 🚫 TEMP: do nothing so we can see the pre-format state
+//   return;
+// }
+
+
     // -----------------------------
     // Render measures + notes
     // -----------------------------
-    measures.forEach((measure, i) => {
-      const row = Math.floor(i / colsPerRow);
-      const col = i % colsPerRow;
+   
+   // -----------------------------
+// Render measures + notes (STRICT TIMING)
+// -----------------------------
+// -----------------------------
+// Render measures + notes (STRICT TIMING + HELPERS)
+// -----------------------------
+measures.forEach((measure, i) => {
+  const row = Math.floor(i / colsPerRow);
+  const col = i % colsPerRow;
 
-      const x = 20 + col * staveWidth;
-      const y = 40 + row * staveHeight;
-       const stave = new VF.Stave(x, y, staveWidth);
+  const x = 20 + col * staveWidth;
+  const y = 40 + row * staveHeight;
+  const stave = new VF.Stave(x, y, staveWidth);
 
-      measureLayout[i] = {
-                    x,
-                    y,
-                    width: staveWidth,
-                    row, 
-                    stave
-                  };
+  measureLayout[i] = {
+    x,
+    y,
+    width: staveWidth,
+    row,
+    systemIndex: row,
+    stave
+  };
+
+  // FIRST MEASURE: CLEF, TIME, KEY
+  if (i === 0) {
+    stave.addClef("treble");
+    stave.addTimeSignature("4/4");
+    stave.addKeySignature(leadSheet.key || "G");
+  }
+
+  // DRAW STAVE
+  const measureGroup = ctx.openGroup();
+  stave.setContext(ctx).draw();
+  ctx.closeGroup();
+  measureElements.current.set(measure.id, measureGroup);
+
+  // SEMITONE STEP
+  const lineSpacing = stave.getSpacingBetweenLines();
+  semitoneStepRef.current = (lineSpacing / 2) * (7 / 12);
+
+  // -----------------------------
+  // 1. BUILD NOTES
+  // -----------------------------
+  const vfNotes = buildVexflowNotes(measure.melody || []);
+
+  // -----------------------------
+  // 2. ATTACH NOTES TO STAVE
+  //    (required BEFORE formatting)
+  // -----------------------------
+  vfNotes.forEach(n => n.setStave(stave));
+
+  // -----------------------------
+  // 3. STRICT VOICE
+  // -----------------------------
+  const voice = buildStrictVoice(vfNotes);
+
+  // -----------------------------
+  // 4. FORMAT (now safe)
+  // -----------------------------
+  formatStrictVoice(voice, staveWidth);
 
 
-      let currentSystem = 0;
-        let lastY = null;
+  console.log("VOICE DEBUG ----------------");
+console.log("time:", voice.time);
+console.log("totalTicks:", voice.totalTicks);
+console.log("ticksUsed:", voice.ticksUsed);
 
-        for (let m = 0; m < measureLayout.length; m++) {
-          const layout = measureLayout[m];
-          const stave = layout.stave;
-
-          const y = stave.getBoundingBox().getY();
-
-          if (lastY !== null && Math.abs(y - lastY) > 20) {
-            currentSystem++;
-          }
-
-          layout.systemIndex = currentSystem;
-          lastY = y;
-        }
+voice.tickables.forEach((t, idx) => {
+  console.log(
+    `note ${idx}:`,
+    "dur:", measure.melody[idx]?.duration,
+    "dots:", measure.melody[idx]?.dots,
+    "intrinsicTicks:", t.getIntrinsicTicks()
+  );
+});
+console.log("--------------");
 
 
 
+  // -----------------------------
+  // 5. DRAW NOTES + HITBOXES
+  // -----------------------------
+  vfNotes.forEach((vfNote, idx) => {
+    const id = measure.melody[idx]?.id;
 
-      if (i === 0) {
-        stave.addClef("treble");
-        stave.addTimeSignature("4/4");
-        stave.addKeySignature(leadSheet.key || "G");
+    noteLookup.set(`${i}:${idx}`, { vfNote, id });
+
+    const g = ctx.openGroup();
+    vfNote.setContext(ctx).draw();
+    ctx.closeGroup();
+
+    // CARET
+    if (caret &&
+        caret.measure === i &&
+        caret.index === idx) {
+      const noteX = vfNote.getAbsoluteX();
+      caretDrawInfo = {
+        x: noteX,
+        top: y - 5,
+        bottom: y + staveHeight - 5
+      };
+    }
+
+    // ORIGINAL Y
+    const ys = vfNote.getYs();
+    if (ys && ys.length > 0 && id) {
+      originalYRef.current[id] = ys[0];
+    }
+
+    // HITBOX
+    const hitGroup = ctx.openGroup();
+    const bbox = vfNote.getBoundingBox();
+    if (bbox) {
+      const padding = 6;
+      const rect = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "rect"
+      );
+      rect.setAttribute("x", bbox.getX() - padding);
+      rect.setAttribute("y", bbox.getY() - padding);
+      rect.setAttribute("width", bbox.getW() + padding * 2);
+      rect.setAttribute("height", bbox.getH() + padding * 2);
+      rect.setAttribute("fill", "transparent");
+      rect.setAttribute("pointer-events", "all");
+      hitGroup.appendChild(rect);
+    }
+    ctx.closeGroup();
+
+    // SELECTION
+    if (selection?.type === "note" && selection.id === id) {
+      g.classList.add("selected-note");
+    }
+
+    hitGroup.style.cursor = "pointer";
+
+    // DRAG + CLICK HANDLER
+    hitGroup.addEventListener("mousedown", e => {
+      e.preventDefault();
+
+      if (noteInputMode) {
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        setCaret({ measure: i, index: idx });
+        return;
       }
 
-      const measureGroup = ctx.openGroup();
-      stave.setContext(ctx).draw();
-      ctx.closeGroup();
-      measureElements.current.set(measure.id, measureGroup);
+      g.style.pointerEvents = "none";
+      hitGroup.style.pointerEvents = "all";
 
-      const lineSpacing = stave.getSpacingBetweenLines();
-      const semitoneStep = (lineSpacing / 2) * (7 / 12);
-      semitoneStepRef.current = semitoneStep;
+      const startX = e.clientX;
+      const startY = e.clientY;
+      let moved = false;
 
-      const accidentalMemory = {};
+      const onMove = ev => {
+        const dx = ev.clientX - startX;
+        const dy = ev.clientY - startY;
 
-   const notes = (measure.melody || []).map(n => {
-  const token = typeof n === "string" ? n : n.token;
-  const id = typeof n === "string" ? null : n.id;
-  const vfNote = tokenToVFNote(token, leadSheet.key, accidentalMemory);
-  return { vfNote, id };
-}).filter(n => n.vfNote);  // ✅ drop nulls
-
-const voice = new VF.Voice({ num_beats: 4, beat_value: 4 });
-voice.addTickables(notes.map(n => n.vfNote));
-
-
-      const formatter = new VF.Formatter();
-      formatter.joinVoices([voice]);
-      formatter.formatToStave([voice], stave);
-
-      // NOTE DRAWING LOOP
-      notes.forEach((n, idx) => {
-
-
-        const { vfNote, id } = n;
-        vfNote.setStave(stave);
-      noteLookup.set(`${i}:${idx}`, { vfNote, id });
-
-
-        const g = ctx.openGroup();
-        vfNote.setContext(ctx).draw();
-        ctx.closeGroup();
-
-        if (caret &&
-            caret.measure === i &&
-            caret.index === idx) {
-          const noteX = vfNote.getAbsoluteX();
-          caretDrawInfo = {
-            x: noteX,
-            top: y - 5,
-            bottom: y + staveHeight - 5
-          };
+        if (!moved && Math.hypot(dx, dy) > 3) {
+          moved = true;
+          onNoteSelect?.(id);
+          onNoteDragStart(id, startX, startY, g);
         }
+      };
 
-        const ys = vfNote.getYs();
-        if (ys && ys.length > 0 && id) {
-          originalYRef.current[id] = ys[0];
+      const onUp = () => {
+        window.removeEventListener("mousemove", onMove);
+        window.removeEventListener("mouseup", onUp);
+        if (!moved) {
+          onNoteSelect?.(id);
         }
+      };
 
-        const hitGroup = ctx.openGroup();
-        const bbox = vfNote.getBoundingBox();
-        if (bbox) {
-          const padding = 6;
-          const rect = document.createElementNS(
-            "http://www.w3.org/2000/svg",
-            "rect"
-          );
-          rect.setAttribute("x", bbox.getX() - padding);
-          rect.setAttribute("y", bbox.getY() - padding);
-          rect.setAttribute("width", bbox.getW() + padding * 2);
-          rect.setAttribute("height", bbox.getH() + padding * 2);
-          rect.setAttribute("fill", "transparent");
-          rect.setAttribute("pointer-events", "all");
-          hitGroup.appendChild(rect);
-        }
-        ctx.closeGroup();
-        // console.log("RENDER NOTE LOOP", "   \selection: ", selection)
-        if (selection?.type==="note" && selection?.id === id) {
-          console.log("marking as selected", id )
-          g.classList.add("selected-note");
-        }
+      window.addEventListener("mousemove", onMove);
+      window.addEventListener("mouseup", onUp);
+    });
 
-        hitGroup.style.cursor = "pointer";
+    if (id) {
+      noteElements.current.set(id, g);
+    }
 
-        // notes mousedown handler
-        hitGroup.addEventListener("mousedown", e => {
-          
-          e.preventDefault();
+    g.style.pointerEvents = "none";
+    hitGroup.style.pointerEvents = "all";
+  });
 
-          if (noteInputMode) {
-            e.stopPropagation();
-            e.stopImmediatePropagation();
-            setCaret({ measure: i, index: idx });
-            return;
-          }
+  // CHORD SYMBOLS
+  if (measure.chords?.length) {
+    const left = stave.getNoteStartX();
+    const right = stave.getX() + stave.getWidth() - 20;
+    const beatSpacing = (right - left) / 4;
 
-
-          g.style.pointerEvents = "none";       // note graphics never block clicks
-          hitGroup.style.pointerEvents = "all"; // only hitbox receives events
+    measure.chords.forEach((symbol, b) => {
+      const xPos = left + beatSpacing * b;
+      ctx.save();
+      ctx.setFont("Arial", 14, "");
+      ctx.fillText(symbol, xPos, y - 10);
+      ctx.restore();
+    });
+  }
+});
 
 
 
-          const startX = e.clientX;
-          const startY = e.clientY;
-          let moved = false;
+    
 
-          const onMove = ev => {
-            const dx = ev.clientX - startX;
-            const dy = ev.clientY - startY;
 
-            if (!moved && Math.hypot(dx, dy) > 3) {
-              moved = true;
-              onNoteSelect?.(id);
-              onNoteDragStart(id, startX, startY, g);
-            }
-          };
 
-          const onUp = () => {
-            window.removeEventListener("mousemove", onMove);
-            window.removeEventListener("mouseup", onUp);
-            if (!moved) {
-              onNoteSelect?.(id);
-            }
-          };
 
-          window.addEventListener("mousemove", onMove);
-          window.addEventListener("mouseup", onUp);
-        }); // end mousedown handler
 
-        if (id) {
-          noteElements.current.set(id, g);
-        }
-
-      g.style.pointerEvents = "none"; // the VexFlow note graphics
-    hitGroup.style.pointerEvents = "all"; // your note hitbox
-
-      });  // note drawing loop
-
-      // Chords
-      if (measure.chords?.length) {
-        const left = stave.getNoteStartX();
-        const right = stave.getX() + stave.getWidth() - 20;
-        const beatSpacing = (right - left) / 4;
-
-        measure.chords.forEach((symbol, b) => {
-          const xPos = left + beatSpacing * b;
-          ctx.save();
-          ctx.setFont("Arial", 14, "");
-          ctx.fillText(symbol, xPos, y - 10);
-          ctx.restore();
-        });
-      }
-    }); // end measures.forEach drawing
 
 
 
@@ -919,7 +900,7 @@ voice.addTickables(notes.map(n => n.vfNote));
   tc.setX(x).preFormat();
 
   return note;
-}
+} // createAnchorNote
 
 
 

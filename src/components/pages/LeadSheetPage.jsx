@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect, useRef } from "react";
 import Toolbar from "/src/components/toolbar/toolbar.jsx";
 
 import { TransportBar } from "../lead-sheet/TransportBar";
-import  LeadSheetRenderer, {parseToken, durationMap}  from "../lead-sheet/LeadSheetRenderer";
+import  LeadSheetRenderer, { durationMap}  from "../lead-sheet/LeadSheetRenderer";
 // import { InspectorPanel } from "../lead-sheet/InspectorPanel";
 // import { FretboardPreview } from "../lead-sheet/FretboardPreview";
 import FretboardSVG from "/src/components/fretboard/FretboardSVG.jsx";
@@ -79,16 +79,6 @@ function midiToPitch(midi) {
   return note + octave;
 }
 
-function transposeToken(token, semitones) {
-  const pitch = token.slice(0, -1);
-  const dur = token.slice(-1);
-
-  const midi = pitchToMidi(pitch);
-  const newMidi = midi + semitones;
-  const newPitch = midiToPitch(newMidi);
-
-  return newPitch + dur;
-}
 
 
 // Helpers
@@ -471,17 +461,17 @@ function onToolbarTieClick() {
 // simple switch from a note to a rest.  No duration change.
 
 const handleToolbarRestChange = useCallback((newDur) => {
-  const duration = newDur;   // ⭐ capture it here
+  const duration = newDur;
 
-console.log("HANDLE TOOLBAR DURATION CHANGE", "   /nduration: ", duration, "   \nnoteInputMode: ", noteInputMode, "   \nselection: ", selection)
   if (noteInputMode) {
     setInputDuration(duration);
 
     const { measure, index } = caret;
 
-    // Insert a note at the caret
     setPendingInsert({
-      pitch: "C4",        // ⭐ default pitch (or last pitch, or caret pitch)
+      pitches: [],          // REST
+      duration,
+      dots: 0,
       measureIndex: measure,
       melodyIndex: index
     });
@@ -489,9 +479,8 @@ console.log("HANDLE TOOLBAR DURATION CHANGE", "   /nduration: ", duration, "   \
     return;
   }
 
-  // ⭐ NORMAL MODE: edit selection note
+  // NORMAL MODE
   if (selection?.id && selection?.type === "note") {
-
     setLeadSheet(prev => {
       const next = structuredClone(prev);
 
@@ -500,51 +489,39 @@ console.log("HANDLE TOOLBAR DURATION CHANGE", "   /nduration: ", duration, "   \
         const note = measure.melody.find(n => n.id === selection.id);
         if (!note) continue;
 
-        const oldToken = note.token;
-        const isRest = oldToken.endsWith("r");
-
-        const newToken = isRest
-          ? duration + "r"
-          : oldToken.slice(0, -1) + duration;
-
-        console.log("newToken:", newToken, "oldToken:", oldToken);
-
-        // ⭐ APPLY RIPPLE EDIT AND CAPTURE RETURN VALUE
         const updatedMeasure = applyRippleEdit(
           measure,
           note.id,
-          newToken
+          {
+            pitches: [],     // REST
+            duration,
+            dots: 0
+          }
         );
 
-        console.log("ripple returned:", updatedMeasure);
+        next.measures[measureIndex] = updatedMeasure;
+      }
 
-        // ⭐ REPLACE THE MEASURE IN STATE
-      next.measures[measureIndex] = updatedMeasure;
-    }
-
-    console.log("setLeadSheet returning:", next);
-    return next;
+      return next;
     });
   }
 }, [noteInputMode, caret, selection]);
-
-
 
 
 
 
 const handleToolbarDurationChange = useCallback((newDur) => {
-  const duration = newDur;   // ⭐ capture it here
+  const duration = newDur;
 
-console.log("HANDLE TOOLBAR DURATION CHANGE", "   /nduration: ", duration, "   \nnoteInputMode: ", noteInputMode, "   \nselection: ", selection)
   if (noteInputMode) {
     setInputDuration(duration);
 
     const { measure, index } = caret;
 
-    // Insert a note at the caret
     setPendingInsert({
-      pitch: "C4",        // ⭐ default pitch (or last pitch, or caret pitch)
+      pitches: ["C4"],   // default pitch
+      duration,
+      dots: 0,
       measureIndex: measure,
       melodyIndex: index
     });
@@ -552,9 +529,8 @@ console.log("HANDLE TOOLBAR DURATION CHANGE", "   /nduration: ", duration, "   \
     return;
   }
 
-  // ⭐ NORMAL MODE: edit selection note
+  // NORMAL MODE
   if (selection?.id && selection?.type === "note") {
-
     setLeadSheet(prev => {
       const next = structuredClone(prev);
 
@@ -563,67 +539,72 @@ console.log("HANDLE TOOLBAR DURATION CHANGE", "   /nduration: ", duration, "   \
         const note = measure.melody.find(n => n.id === selection.id);
         if (!note) continue;
 
-        const oldToken = note.token;
-        const isRest = oldToken.endsWith("r");
-
-        const newToken = isRest
-          ? duration + "r"
-          : oldToken.slice(0, -1) + duration;
-
-        console.log("newToken:", newToken, "oldToken:", oldToken);
-
-        // ⭐ APPLY RIPPLE EDIT AND CAPTURE RETURN VALUE
         const updatedMeasure = applyRippleEdit(
           measure,
           note.id,
-          newToken
+          {
+            pitches: note.pitches,   // keep pitch
+            duration,
+            dots: note.dots || 0
+          }
         );
 
-        console.log("ripple returned:", updatedMeasure);
+        next.measures[measureIndex] = updatedMeasure;
+      }
 
-        // ⭐ REPLACE THE MEASURE IN STATE
-      next.measures[measureIndex] = updatedMeasure;
-    }
-
-    console.log("setLeadSheet returning:", next);
-    return next;
+      return next;
     });
   }
 }, [noteInputMode, caret, selection]);
 
 
+
+
+
 function handleAccidentalClick(acc) {
-  const accidental = acc
-  console.log("handleAccidentalClick called acc:", accidental)
-  // ⭐ INPUT MODE: set accidental for next inserted note
   if (noteInputMode) {
     setInputAccidental(acc);
     return;
   }
 
-  // ⭐ NORMAL MODE: edit selection note
-  if (!selection) return;
+  if (!selection?.id) return;
 
   setLeadSheet(prev => {
     const next = structuredClone(prev);
 
     for (let measureIndex = 0; measureIndex < next.measures.length; measureIndex++) {
       const measure = next.measures[measureIndex];
-      const note = measure.melody.find(n => n.id === selection);
+      const note = measure.melody.find(n => n.id === selection.id);
       if (!note) continue;
 
-      // ⭐ Update accidental on the note
-      // note.accidental = accidental;
-      console.log("note to be updated with accidental: ", accidental, "note: ", note)
-      // If your token encodes accidentals, update token here
-      note.token = updateTokenWithAccidental(note.token, acc);
+      if (note.pitches && note.pitches.length > 0) {
+        const oldPitch = note.pitches[0];
+
+        // Extract letter + octave
+        const letter = oldPitch[0].toUpperCase();
+        const octave = oldPitch[oldPitch.length - 1];
+
+        // Build new pitch
+        const newPitch = `${letter}${acc}${octave}`;
+        note.pitches = [newPitch];
+
+        // Update guitar mapping
+        const gf = pitchToGuitar(newPitch);
+        if (gf) {
+          note.string = gf.string;
+          note.fret = gf.fret;
+        }
+      }
 
       next.measures[measureIndex] = measure;
     }
-    console.log("returning next: ", next)
+
     return next;
   });
 }
+
+
+
 
 
   // 5. All useEffect FIFTH
@@ -646,49 +627,49 @@ This is the cleanest way to track when the setter caused a change.
 
 
 useEffect(() => {
-
-    console.log("ripple-edit EXECUTING", "\n   pendingInsert: ", pendingInsert);
-
   if (!pendingInsert) return;
 
   const { pitch, measureIndex, melodyIndex } = pendingInsert;
 
-  console.log("ripple-edit effect fired. pendingInsert:", pendingInsert);
-
   setLeadSheet(prev => {
-        
-
     const next = structuredClone(prev);
     const measure = next.measures[measureIndex];
 
-    const token = pitch + inputDuration;
+    // ⭐ Build new-format note
+    const newNote = {
+      id: crypto.randomUUID(),
+      pitches: pitch ? [pitch] : [],   // [] = rest
+      duration: inputDuration,         // "q", "h", "8", etc.
+      dots: 0,
+      string: null,
+      fret: null
+    };
 
+    // Insert into melody
     const newMelody = [
       ...measure.melody.slice(0, melodyIndex),
-      {
-        id: crypto.randomUUID(),
-        token,
-        string: null,
-        fret: null
-      },
+      newNote,
       ...measure.melody.slice(melodyIndex)
     ];
 
-    // IMPORTANT: apply ripple edit *before* returning state
+    // ⭐ Apply ripple edit BEFORE returning state
     const updatedMeasure = applyRippleEdit(
       { ...measure, melody: newMelody },
-      null,
-      null,
+      null,                 // editedNoteId
+      null,                 // newNoteData
       { insertedIndex: melodyIndex }
     );
 
     next.measures[measureIndex] = updatedMeasure;
-
     return next;
   });
 
   setPendingInsert(null);
 }, [pendingInsert, inputDuration]);
+
+
+
+
 
 
 
@@ -819,6 +800,7 @@ useEffect(() => {
 }, [noteInputMode ]);
 
 
+
 const advanceCaret = (measureIndex, tokenIndex, leadSheet) => {
   const measure = leadSheet.measures[measureIndex];
   const tokenCount = measure.melody.length;
@@ -943,48 +925,44 @@ onMouseUpRef.current = () => {
   };
 }, []);
 
-
 const handleNoteSelect = (id) => {
-  console.log("SELECTING NOTE ID: ", id)
-    if (!noteInputMode) {
-    setSelection({type: "note", id: id});
-    // set the noteInputDuration to the new selected note duration
-    // this will update the duration tools to the curent duration value of selected note
-    let token = null
-    for(const m of leadSheet.measures) {
-      for(const n of m.melody) {
-        if(n.id==id) {
-          token=n.token
+  console.log("SELECTING NOTE ID:", id);
+
+  if (!noteInputMode) {
+    setSelection({ type: "note", id });
+
+    // Find the selected note
+    let selected = null;
+    for (const m of leadSheet.measures) {
+      for (const n of m.melody) {
+        if (n.id === id) {
+          selected = n;
           break;
-          }
         }
-      if(token !== null) break;
       }
-    
-    // get duration from token
-       // REST
-    let duration = null
-  if (token?.endsWith("r")) {
-    duration = token.charAt(0)
-    setSelRest(true)
+      if (selected) break;
+    }
+
+    if (!selected) return;
+
+    // New-format fields
+    const pitches = selected.pitches || [];
+    const duration = selected.duration || "q";
+    const dots = selected.dots || 0;
+
+    // REST?
+    const isRest = pitches.length === 0;
+    setSelRest(isRest);
+
+    // Update toolbar duration
+    console.log("SETTING SELECTED DURATION:", duration);
+    setInputDuration(duration);
+
+    // If you want to update dots in the UI, do it here:
+    // setInputDots(dots);
   }
-
-
-   else{ 
-    duration= parseToken(token).duration 
-   setSelRest(false)
-   } 
-    console.log("SETTING SELECTED DURATION: ", duration)
-      setInputDuration(duration)
-   
-  
-      // setInputDuration={setInputDuration}
-  }
-
-
-
-
 };
+
 
 
 
@@ -1011,34 +989,6 @@ useEffect(() => {
 
 
 
-
-function updateTokenWithAccidental(token, acc) {
-  // Handle rests: leave them unchanged
-  if (token.endsWith("r")) {
-    return token; // or handle rest accidentals differently if you ever need to
-  }
-
-  // Expect formats like: C4q, C#4q, Eb4h, etc.
-  const match = token.match(/^([A-Ga-g])([#b]?)(\d)(.+)$/);
-  if (!match) {
-    console.warn("updateTokenWithAccidental: unexpected token format:", token);
-    return token;
-  }
-
-  const [, letter, , octave, dur] = match;
-
-  let accSymbol = "";
-  switch (acc) {
-    case "sharp":        accSymbol = "#";  break;
-    case "flat":         accSymbol = "b";  break;
-    case "natural":      accSymbol = "";   break; // no accidental symbol
-    case "double-sharp": accSymbol = "##"; break;
-    case "double-flat":  accSymbol = "bb"; break;
-    default:             accSymbol = "";
-  }
-
-  return `${letter}${accSymbol}${octave}${dur}`;
-}
 
 
 
@@ -1088,8 +1038,34 @@ function setDuration(token, newDur) {
 
 const MEASURE_TICKS = 1024;
 
-function applyRippleEdit(measure, editedNoteId, newToken, opts = {}) {
-  console.log("APPLY RIPPLE EDIT \n. measure: ", measure, "\n. editedNoteId: ",  editedNoteId, "\n. newToken: ", newToken, "\n  opts: ", opts )
+
+
+// dotted multiplier: 1 dot = 1.5x, 2 dots = 1.75x, etc.
+function dottedMultiplier(dots) {
+  let mult = 1;
+  let add = 0.5;
+  for (let i = 0; i < dots; i++) {
+    mult += add;
+    add *= 0.5;
+  }
+  return mult;
+}
+
+function getTicksFromNote(n) {
+  const base = durationToTicks[n.duration] || 256;
+  return base * dottedMultiplier(n.dots || 0);
+}
+
+function applyRippleEdit(measure, editedNoteId, newNoteData, opts = {}) {
+  console.log(
+    "APPLY RIPPLE EDIT",
+    "\nmeasure:", measure,
+    "\neditedNoteId:", editedNoteId,
+    "\nnewNoteData:", newNoteData,
+    "\nopts:", opts
+  );
+
+  // Clone measure + melody
   const next = {
     ...measure,
     melody: measure.melody.map(n => ({ ...n }))
@@ -1098,46 +1074,99 @@ function applyRippleEdit(measure, editedNoteId, newToken, opts = {}) {
   const notes = next.melody;
   let index = -1;
 
+  //
+  // --- APPLY EDITED NOTE ---
+  //
   if (editedNoteId) {
     index = notes.findIndex(n => n.id === editedNoteId);
     if (index === -1) return next;
-    notes[index].token = newToken;
+
+    // Replace duration/pitches/dots
+    notes[index] = {
+      ...notes[index],
+      ...newNoteData
+    };
   }
 
+  //
+  // --- INSERTION MODE ---
+  //
   if (opts.insertedIndex !== undefined) {
     index = opts.insertedIndex;
   }
 
-  let total = notes.reduce((sum, n) => sum + getTicks(n.token), 0);
+  //
+  // --- COMPUTE TOTAL TICKS ---
+  //
+  let total = notes.reduce((sum, n) => sum + getTicksFromNote(n), 0);
 
+  //
+  // ============================================================
+  // OVERFLOW HANDLING
+  // ============================================================
+  //
   if (total > MEASURE_TICKS) {
-    console.log("fixing for overflow")
+    console.log("fixing overflow");
     let overflow = total - MEASURE_TICKS;
 
     for (let i = index + 1; i < notes.length && overflow > 0; i++) {
       const n = notes[i];
-      const ticks = getTicks(n.token);
+      const ticks = getTicksFromNote(n);
 
       if (ticks <= overflow) {
+        // Remove whole note/rest
         overflow -= ticks;
         notes.splice(i, 1);
         i--;
       } else {
+        // Shorten note
         const remaining = ticks - overflow;
 
-        const exactDur = Object.keys(durationToTicks)
-          .find(d => durationToTicks[d] === remaining);
+        // Find exact duration match
+        let newDur = null;
+        let newDots = 0;
 
-        if (exactDur) {
-          n.token = setDuration(n.token, exactDur);
-        } else {
-          const fallback = Object.keys(durationToTicks)
-            .reverse()
-            .find(d => durationToTicks[d] < remaining);
-
-          if (fallback) {
-            n.token = setDuration(n.token, fallback);
+        // Try exact match first
+        for (const [dur, baseTicks] of Object.entries(durationToTicks)) {
+          if (baseTicks === remaining) {
+            newDur = dur;
+            newDots = 0;
+            break;
           }
+        }
+
+        // Try dotted matches
+        if (!newDur) {
+          for (const [dur, baseTicks] of Object.entries(durationToTicks)) {
+            for (let d = 1; d <= 2; d++) {
+              if (Math.round(baseTicks * dottedMultiplier(d)) === remaining) {
+                newDur = dur;
+                newDots = d;
+                break;
+              }
+            }
+            if (newDur) break;
+          }
+        }
+
+        // Fallback: choose largest duration < remaining
+        if (!newDur) {
+          const sorted = Object.entries(durationToTicks)
+            .sort((a, b) => b[1] - a[1]);
+
+          for (const [dur, baseTicks] of sorted) {
+            if (baseTicks < remaining) {
+              newDur = dur;
+              newDots = 0;
+              break;
+            }
+          }
+        }
+
+        // Apply shortened duration
+        if (newDur) {
+          n.duration = newDur;
+          n.dots = newDots;
         }
 
         overflow = 0;
@@ -1145,104 +1174,141 @@ function applyRippleEdit(measure, editedNoteId, newToken, opts = {}) {
     }
   }
 
-  total = notes.reduce((sum, n) => sum + getTicks(n.token), 0);
+  //
+  // ============================================================
+  // UNDERFLOW HANDLING
+  // ============================================================
+  //
+  total = notes.reduce((sum, n) => sum + getTicksFromNote(n), 0);
 
-  
-if (total < MEASURE_TICKS) {
-  console.log("fixing for underflow");
-  let under = MEASURE_TICKS - total;
-  let insertPos = index + 1;
+  if (total < MEASURE_TICKS) {
+    console.log("fixing underflow");
+    let under = MEASURE_TICKS - total;
+    let insertPos = index + 1;
 
-  // ⭐ Sort durations by tick length descending
-  const sortedDurations = Object.entries(durationToTicks)
-    .sort((a, b) => b[1] - a[1]); // [duration, ticks]
+    // Sort durations by tick length descending
+    const sortedDurations = Object.entries(durationToTicks)
+      .sort((a, b) => b[1] - a[1]); // [duration, ticks]
 
-  while (under > 0) {
-    // ⭐ Pick the largest duration <= under
-    const [dur, ticks] = sortedDurations.find(([d, t]) => t <= under);
+    while (under > 0) {
+      // Pick largest duration <= under
+      const match = sortedDurations.find(([dur, ticks]) => ticks <= under);
+      if (!match) break;
 
-    const newId = crypto.randomUUID();
-    console.log(
-      "adding rest at", insertPos,
-      "id:", newId,
-      "token:", dur + "r"
-    );
+      const [dur, ticks] = match;
 
-    notes.splice(insertPos, 0, {
-      id: newId,
-      token: dur + "r",
-      string: null,
-      fret: null
-    });
+      const newId = crypto.randomUUID();
+      console.log("adding rest at", insertPos, "id:", newId);
 
-    insertPos++;
-    under -= ticks;
+      notes.splice(insertPos, 0, {
+        id: newId,
+        pitches: [],     // REST
+        duration: dur,
+        dots: 0,
+        string: null,
+        fret: null
+      });
+
+      insertPos++;
+      under -= ticks;
+    }
   }
-}
 
-console.log("   next: ", next)
+  console.log("next:", next);
   return next;
 }
 
 
 
 
-
-
-
-function extractPitch(token) {
-  if (!token) return null;
-
-  // Rests
-  if (token[0].toUpperCase() === "R") return null;
-
-  // Match: Letter + optional accidental + octave
-  // Examples matched: C4, C#4, Db3, F##5 (rare), Bb10
-  const match = token.match(/^([A-Ga-g])([#b]?)(\d+)/);
-  if (!match) return null;
-
-  const letter = match[1].toUpperCase();
-  const accidental = match[2] || "";
-  const octave = match[3];
-
-  return `${letter}${accidental}${octave}`;
+function extractPitchFromNote(note) {
+  if (!note || !note.pitches || note.pitches.length === 0) return null;
+  return note.pitches[0]; // single‑note melody
 }
+
+
+
+function transposePitch(pitch, semitones) {
+  // pitch like "C#4"
+  const letter = pitch[0].toUpperCase();
+  const accidental = pitch.length === 3 ? pitch[1] : "";
+  const octave = parseInt(pitch[pitch.length - 1], 10);
+
+  const pitchClassMap = {
+    C: 0, "C#": 1, Db: 1,
+    D: 2, "D#": 3, Eb: 3,
+    E: 4,
+    F: 5, "F#": 6, Gb: 6,
+    G: 7, "G#": 8, Ab: 8,
+    A: 9, "A#": 10, Bb: 10,
+    B: 11
+  };
+
+  const pc = pitchClassMap[letter + accidental];
+  let midi = octave * 12 + pc;
+  midi += semitones;
+
+  const newOct = Math.floor(midi / 12);
+  const newPc = midi % 12;
+
+  const reverseMap = {
+    0: "C", 1: "C#", 2: "D", 3: "D#",
+    4: "E", 5: "F", 6: "F#", 7: "G",
+    8: "G#", 9: "A", 10: "A#", 11: "B"
+  };
+
+  return reverseMap[newPc] + newOct;
+}
+
+
 
 
 function updateDraggedNote(noteId, semitones, durationSteps) {
   setLeadSheet(prev => {
-            console.trace("useEffect setLeadSheet prev: ", prev, " noteInputMode: ", noteInputMode )
+    const next = structuredClone(prev);
 
-    const next = structuredClone(prev);   // ⭐ MUST clone
-// console.log("UPDATE DRAGGED NOTE: ", noteId, semitones)
     for (const measure of next.measures) {
       const note = measure.melody.find(n => n.id === noteId);
       if (!note) continue;
-      // console.log("Existing note token: ", note.token)
-      // transpose pitch
-      const newToken = transposeToken(note.token, semitones);
-      const pitch = extractPitch(newToken);
-// console.log("New token: ", newToken, "pitch: ", pitch)
-      if (pitch) {
-        const gf = pitchToGuitar(pitch);
+
+      //
+      // ⭐ PITCH UPDATE (new format)
+      //
+      if (note.pitches && note.pitches.length > 0) {
+        const oldPitch = note.pitches[0];
+        const newPitch = transposePitch(oldPitch, semitones);
+
+        note.pitches = [newPitch];
+
+        // update guitar mapping
+        const gf = pitchToGuitar(newPitch);
         if (gf) {
           note.string = gf.string;
           note.fret = gf.fret;
         }
       }
 
-      note.token = newToken;
+      //
+      // ⭐ DURATION UPDATE (new format)
+      //
+    if (durationSteps !== 0) {
+        const order = ["16", "8", "q", "h", "w"];
+        let idx = order.indexOf(note.duration);
 
-      // duration update
-      if (durationSteps !== 0) {
-        note.durationSteps = (note.durationSteps || 0) + durationSteps;
+        // Default to quarter if somehow invalid
+        if (idx === -1) idx = 2;
+
+        // ⭐ CLAMP the index so it never escapes the valid range
+        idx = Math.min(Math.max(idx + durationSteps, 0), order.length - 1);
+
+        note.duration = order[idx];
       }
+
     }
 
-    return next; // ⭐ MUST return a new object
+    return next;
   });
 }
-
 
 
 

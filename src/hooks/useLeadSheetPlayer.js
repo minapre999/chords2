@@ -75,44 +75,70 @@ export function useLeadSheetPlayer(props ) {
 
  const buildSteps = useCallback(() => {
   const events = [];
-  let cursor = 0;
+  let cursor = 0; // seconds
+
+  // Map from your new duration symbols → Tone.js durations
+  const durationMap = {
+    w: "1n",
+    h: "2n",
+    q: "4n",
+    "8": "8n",
+    "16": "16n"
+  };
 
   for (const measure of leadSheet.measures) {
     for (const n of measure.melody) {
-      const token = n.token;
-      const isRest = token.endsWith("r");
+      const pitches = n.pitches || [];
+      const durationSymbol = n.duration || "q";
+      const dots = n.dots || 0;
 
-      const durationMap = {
-        w: "1n",
-        h: "2n",
-        q: "4n",
-        "8": "8n",
-        "16": "16n"
-      };
+      const isRest = pitches.length === 0;
 
-      const durSymbol = token.match(/w|h|q|8|16/)?.[0] || "q";
-      const duration = durationMap[durSymbol] || "4n";
+      // Base Tone.js duration
+      let toneDur = durationMap[durationSymbol] || "4n";
 
-      // ⭐ FIXED: extract pitch correctly
-      const pitch = token
-        .replace(/r$/, "")        // remove rest marker
-        .replace(/w|h|q|8|16/, ""); // remove duration symbol
+      // Apply dots: each dot adds 50% of previous value
+      if (dots > 0) {
+        let base = Tone.Time(toneDur).toSeconds();
+        let total = base;
+        let add = base * 0.5;
+        for (let i = 0; i < dots; i++) {
+          total += add;
+          add *= 0.5;
+        }
+        toneDur = total; // seconds
+      }
+
+      // If no dots, convert Tone.js notation → seconds
+      const durationSeconds =
+        typeof toneDur === "string"
+          ? Tone.Time(toneDur).toSeconds()
+          : toneDur;
+
+      // Playback pitch: single note or chord
+      const note =
+        isRest
+          ? null
+          : pitches.length === 1
+            ? pitches[0]
+            : pitches; // Tone.js supports arrays for chords
 
       events.push({
         time: cursor,
-        note: pitch,
-        duration,
+        note,
+        duration: durationSeconds,
         isRest,
         id: n.id,
         measureId: measure.id
       });
 
-      cursor += Tone.Time(duration).toSeconds();
+      cursor += durationSeconds;
     }
   }
 
   return events;
 }, [leadSheet]);
+
 
 
 
