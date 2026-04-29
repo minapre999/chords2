@@ -1,0 +1,18 @@
+ 
+.btn-duration {
+    font-family: "Bravura";
+    width: 30px;
+    height: 40px;
+    line-height: 50px;
+    padding-top: 6px;
+    border: 1px solid darkgray;
+    background-color: #eee;
+    text-align: center;
+    font-size: 28px !important;
+    cursor: pointer;
+  }
+
+  .btn-duration:hover {
+
+    background-color: lightgray;
+  }

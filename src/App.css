@@ -8,6 +8,32 @@
 }
 
 
+@font-face {
+  font-family: "BravuraText";
+  src: url("/fonts/BravuraText.otf") format("opentype");
+}
+
+@font-face {
+  font-family: "Bravura";
+  src: url("/fonts/Bravura.otf") format("opentype");
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "PetalumaText";
+  src: url("/fonts/PetalumaText.otf") format("opentype");
+}
+
+@font-face {
+  font-family: "Petaluma";
+  src: url("/fonts/Petaluma.otf") format("opentype");
+  font-weight: normal;
+  font-style: normal;
+}
+
+
+
 .counter {
   font-size: 16px;
   padding: 5px 10px;

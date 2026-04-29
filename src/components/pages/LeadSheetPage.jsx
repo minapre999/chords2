@@ -462,7 +462,7 @@ function onToolbarTieClick() {
 const handleToolbarDurationChange = useCallback((newDur) => {
   const duration = newDur;   // ⭐ capture it here
 
-
+console.log("HANDLE TOOLBAR DURATION CHANGE", "   /nduration: ", duration, "   \nnoteInputMode: ", noteInputMode, "   \nselection: ", selection)
   if (noteInputMode) {
     setInputDuration(duration);
 
@@ -479,41 +479,42 @@ const handleToolbarDurationChange = useCallback((newDur) => {
   }
 
   // ⭐ NORMAL MODE: edit selection note
-  if (!selection) return;
+  if (selection?.id && selection?.type === "note") {
 
-  setLeadSheet(prev => {
-    const next = structuredClone(prev);
+    setLeadSheet(prev => {
+      const next = structuredClone(prev);
 
-    for (let measureIndex = 0; measureIndex < next.measures.length; measureIndex++) {
-      const measure = next.measures[measureIndex];
-      const note = measure.melody.find(n => n.id === selection);
-      if (!note) continue;
+      for (let measureIndex = 0; measureIndex < next.measures.length; measureIndex++) {
+        const measure = next.measures[measureIndex];
+        const note = measure.melody.find(n => n.id === selection.id);
+        if (!note) continue;
 
-      const oldToken = note.token;
-      const isRest = oldToken.endsWith("r");
+        const oldToken = note.token;
+        const isRest = oldToken.endsWith("r");
 
-      const newToken = isRest
-        ? duration + "r"
-        : oldToken.slice(0, -1) + duration;
+        const newToken = isRest
+          ? duration + "r"
+          : oldToken.slice(0, -1) + duration;
 
-      console.log("newToken:", newToken, "oldToken:", oldToken);
+        console.log("newToken:", newToken, "oldToken:", oldToken);
 
-      // ⭐ APPLY RIPPLE EDIT AND CAPTURE RETURN VALUE
-      const updatedMeasure = applyRippleEdit(
-        measure,
-        note.id,
-        newToken
-      );
+        // ⭐ APPLY RIPPLE EDIT AND CAPTURE RETURN VALUE
+        const updatedMeasure = applyRippleEdit(
+          measure,
+          note.id,
+          newToken
+        );
 
-      console.log("ripple returned:", updatedMeasure);
+        console.log("ripple returned:", updatedMeasure);
 
-      // ⭐ REPLACE THE MEASURE IN STATE
-    next.measures[measureIndex] = updatedMeasure;
+        // ⭐ REPLACE THE MEASURE IN STATE
+      next.measures[measureIndex] = updatedMeasure;
+    }
+
+    console.log("setLeadSheet returning:", next);
+    return next;
+    });
   }
-
-  console.log("setLeadSheet returning:", next);
-  return next;
-  });
 }, [noteInputMode, caret, selection]);
 
 
