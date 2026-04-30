@@ -307,6 +307,7 @@ const handleUp = useCallback(() => {
 
   const { noteId, semitones, durationSteps } = dragPreview;
 
+  console.log("HANDLE UP")
   updateDraggedNote(noteId, semitones, durationSteps);
 
   noteElements.current.forEach(g => g.removeAttribute("transform"));
@@ -1343,6 +1344,7 @@ function transposePitch(pitch, semitones) {
 
 
 function updateDraggedNote(noteId, semitones, durationSteps) {
+  console.log("UPDATE DRAGGED NOTE")
   setLeadSheet(prev => {
     const next = structuredClone(prev);
 

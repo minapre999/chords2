@@ -506,9 +506,11 @@ hitLayer.appendChild(hit);
 
   // ⭐ StrictMode‑safe VexFlow render
   useLayoutEffect(() => {
-    console.log("USE LAYOUT EFFECT")
+    
     if (!lsContainerRef.current) return;
     if (dragRef.current) return; // freeze during drag
+
+    console.log("USE LAYOUT EFFECT")
 
     // StrictMode dev double‑invoke guard
     if (effectGuard.current) return;
@@ -711,9 +713,7 @@ measures.forEach((measure, i) => {
   ctx.closeGroup();
   measureElements.current.set(measure.id, measureGroup);
 
-  // SEMITONE STEP
-  const lineSpacing = stave.getSpacingBetweenLines();
-  semitoneStepRef.current = (lineSpacing / 2) * (7 / 12);
+
 
   // -----------------------------
   // 1. BUILD NOTES
@@ -735,6 +735,12 @@ measures.forEach((measure, i) => {
   // 4. FORMAT (now safe)
   // -----------------------------
   formatStrictVoice(voice, staveWidth);
+
+
+
+  // ⭐ 5. NOW compute semitone step
+const lineSpacing = stave.getSpacingBetweenLines();
+semitoneStepRef.current = (lineSpacing / 2) * (7 / 12);
 
 
 //   console.log("VOICE DEBUG ----------------");
@@ -834,7 +840,7 @@ voice.tickables.forEach((t, idx) => {
 
         if (!moved && Math.hypot(dx, dy) > 3) {
           moved = true;
-          onNoteSelect?.(id);
+          // onNoteSelect?.(id);
           onNoteDragStart(id, startX, startY, g);
         }
       };
