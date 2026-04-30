@@ -36,9 +36,9 @@
   stroke-width: 3px !important;
 }
 
-.selected-note {
+/* .selected-note {
   filter: drop-shadow(0 0 4px #00f);
-}
+} */
 
 .selected-note * {
   stroke: #00aaff !important;

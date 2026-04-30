@@ -86,11 +86,13 @@ function semitoneToPitch(baseMidi, offset) {
 
 
 export const durationMap = {
-  "w": "1",
-  "h": "2",
-  "q": "4",
+  w: "1",
+  h: "2",
+  q: "4",
   "8": "8",
-  "16": "16"
+  "16": "16",
+  "e": "8",
+  "s": "16"
 };
 
 
@@ -564,7 +566,9 @@ const durationMap = {
   h: "2",
   q: "4",
   "8": "8",
-  "16": "16"
+  "16": "16",
+  "e": "8",
+  "s": "16"
 };
 
 function buildVexflowNotes(melody) {
@@ -644,19 +648,19 @@ function buildStrictVoice(vfNotes) {
   voice.addTickables(vfNotes);
 
   // 🔍 DEBUG: inspect voice BEFORE formatting
-  console.log("VOICE PRE-FORMAT ----------------");
-  console.log("time:", voice.time);
-  console.log("totalTicks:", voice.totalTicks);
-  console.log("ticksUsed:", voice.ticksUsed);
+  // console.log("VOICE PRE-FORMAT ----------------");
+  // console.log("time:", voice.time);
+  // console.log("totalTicks:", voice.totalTicks);
+  // console.log("ticksUsed:", voice.ticksUsed);
 
   voice.tickables.forEach((t, idx) => {
-    console.log(
-      `note ${idx}:`,
-      "dur:", t.getDuration(),
-      "intrinsicTicks:", t.getIntrinsicTicks()
-    );
+    // console.log(
+    //   `note ${idx}:`,
+    //   "dur:", t.getDuration(),
+    //   "intrinsicTicks:", t.getIntrinsicTicks()
+    // );
   });
-  console.log("--------------");
+  // console.log("--------------");
 
   return voice;
 }
@@ -733,20 +737,20 @@ measures.forEach((measure, i) => {
   formatStrictVoice(voice, staveWidth);
 
 
-  console.log("VOICE DEBUG ----------------");
-console.log("time:", voice.time);
-console.log("totalTicks:", voice.totalTicks);
-console.log("ticksUsed:", voice.ticksUsed);
+//   console.log("VOICE DEBUG ----------------");
+// console.log("time:", voice.time);
+// console.log("totalTicks:", voice.totalTicks);
+// console.log("ticksUsed:", voice.ticksUsed);
 
 voice.tickables.forEach((t, idx) => {
-  console.log(
-    `note ${idx}:`,
-    "dur:", measure.melody[idx]?.duration,
-    "dots:", measure.melody[idx]?.dots,
-    "intrinsicTicks:", t.getIntrinsicTicks()
-  );
+  // console.log(
+  //   `note ${idx}:`,
+  //   "dur:", measure.melody[idx]?.duration,
+  //   "dots:", measure.melody[idx]?.dots,
+  //   "intrinsicTicks:", t.getIntrinsicTicks()
+  // );
 });
-console.log("--------------");
+// console.log("--------------");
 
 
 
@@ -984,7 +988,7 @@ lastMeasureLayoutRef.current = measureLayout;
       measureElements.current.clear();
       originalYRef.current = {};
     };
-  }, [measures, selection, noteInputMode, caret, dragRef, leadSheet.ties]); // useLayoutEffect
+  }, [measures, selection, caret, dragRef, leadSheet.ties]); // useLayoutEffect
 
 
 

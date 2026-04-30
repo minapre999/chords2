@@ -237,6 +237,9 @@ useEffect(() => {
   window.leadSheet = leadSheet;
 }, [leadSheet]);
 
+useEffect(() => {
+  window.selection = selection;
+}, [ selection]);
 
 
 
@@ -457,24 +460,85 @@ function onToolbarTieClick() {
 
 
 
+
+
 // user has applied a rest to the highlighted note
 // simple switch from a note to a rest.  No duration change.
 
-const handleToolbarRestChange = useCallback((newDur) => {
-  const duration = newDur;
-
+const noteToDotted = useCallback((newDotted) => {
+ 
+console.log("HANDLE TOGGLE NOTE DOTTED", "   \nnewDotted: ", newDotted)
   if (noteInputMode) {
-    setInputDuration(duration);
+    // setInputDuration(duration);
 
-    const { measure, index } = caret;
+    // const { measure, index } = caret;
 
-    setPendingInsert({
-      pitches: [],          // REST
-      duration,
-      dots: 0,
-      measureIndex: measure,
-      melodyIndex: index
+    // setPendingInsert({
+    //   pitches: [],          // REST
+    //   duration,
+    //   dots: 0,
+    //   measureIndex: measure,
+    //   melodyIndex: index
+    // });
+
+    return;
+  }
+
+  // NORMAL MODE
+  if (selection?.id && selection?.type === "note") {
+    setLeadSheet(prev => {
+      const next = structuredClone(prev);
+
+      for (let measureIndex = 0; measureIndex < next.measures.length; measureIndex++) {
+          const measure = next.measures[measureIndex];
+          const note = measure.melody.find(n => n.id === selection.id);
+          console.log('measureIndex: ', measureIndex)
+          if (!note) continue;
+        
+          newDotted === true ? note.dots = 1 : note.dots = 0
+          
+            console.log('applying ripple edit ...')
+          const updatedMeasure = applyRippleEdit(
+            measure,
+            note.id,
+            {
+              pitches: note.pitches,     // REST
+              duration: note.duration,
+              dots: note.dots
+            }
+          );
+
+          next.measures[measureIndex] = updatedMeasure;
+          }
+
+
+      console.log("NOTE TO DOTTED", "   \nnext: ", next)
+      return next;
     });
+  }
+}, [selDotted, noteInputMode, caret, selection]);
+
+
+
+
+// user has applied a rest to the highlighted note
+// simple switch from a note to a rest.  No duration change.
+
+const noteToRest = useCallback(() => {
+ 
+console.log("HANDLE TOOL BAR REST CHANGE")
+  if (noteInputMode) {
+    // setInputDuration(duration);
+
+    // const { measure, index } = caret;
+
+    // setPendingInsert({
+    //   pitches: [],          // REST
+    //   duration,
+    //   dots: 0,
+    //   measureIndex: measure,
+    //   melodyIndex: index
+    // });
 
     return;
   }
@@ -488,44 +552,40 @@ const handleToolbarRestChange = useCallback((newDur) => {
         const measure = next.measures[measureIndex];
         const note = measure.melody.find(n => n.id === selection.id);
         if (!note) continue;
+        note.pitches=[]
+// no change in duration so no need. to apply a ripple edit
 
-        const updatedMeasure = applyRippleEdit(
-          measure,
-          note.id,
-          {
-            pitches: [],     // REST
-            duration,
-            dots: 0
-          }
-        );
-
-        next.measures[measureIndex] = updatedMeasure;
+        next.measures[measureIndex] = measure;
       }
 
       return next;
     });
   }
-}, [noteInputMode, caret, selection]);
+}, [selRest, noteInputMode, caret, selection]);
 
 
 
 
 const handleToolbarDurationChange = useCallback((newDur) => {
+
+  console.log("HANDLE DURATION CHANGE")
+
   const duration = newDur;
 
   if (noteInputMode) {
-    setInputDuration(duration);
+        if(selection) {
+        setInputDuration(duration);
 
-    const { measure, index } = caret;
+        const { measure, index } = caret;
 
-    setPendingInsert({
-      pitches: ["C4"],   // default pitch
-      duration,
-      dots: 0,
-      measureIndex: measure,
-      melodyIndex: index
-    });
-
+        setPendingInsert({
+          pitches: ["C4"],   // default pitch
+          duration,
+          dots: 0,
+          measureIndex: measure,
+          melodyIndex: index
+        });
+      }
     return;
   }
 
@@ -925,6 +985,11 @@ onMouseUpRef.current = () => {
   };
 }, []);
 
+
+
+
+
+
 const handleNoteSelect = (id) => {
   console.log("SELECTING NOTE ID:", id);
 
@@ -954,6 +1019,8 @@ const handleNoteSelect = (id) => {
     const isRest = pitches.length === 0;
     setSelRest(isRest);
 
+    // dotted note
+    selected.dots > 0 ?  setSelDotted(true) : setSelDotted( false)
     // Update toolbar duration
     console.log("SETTING SELECTED DURATION:", duration);
     setInputDuration(duration);
@@ -1015,7 +1082,14 @@ const durationToTicks = {
   "h": 512,
   "q": 256,
   "e": 128,
-  "s": 64
+  "s": 64,
+
+  //  "1": 1024,
+  // "2": 512,
+  // "4": 256,
+  // "8": 128,
+  // "16": 64
+
 };
 
 function getTicks(token) {
@@ -1055,6 +1129,11 @@ function getTicksFromNote(n) {
   const base = durationToTicks[n.duration] || 256;
   return base * dottedMultiplier(n.dots || 0);
 }
+
+
+
+
+
 
 function applyRippleEdit(measure, editedNoteId, newNoteData, opts = {}) {
   console.log(
@@ -1339,15 +1418,18 @@ function updateDraggedNote(noteId, semitones, durationSteps) {
           noteInputMode={noteInputMode}
           setNoteInputMode={setNoteInputMode}
           handleToolbarDurationChange={handleToolbarDurationChange}
+          noteToRest={noteToRest}
           handleAccidentalClick={handleAccidentalClick}
           onToolbarTieClick={onToolbarTieClick}
           onToolbarSlurClick={onToolbarSlurClick}
           inputDuration={inputDuration}
           setInputDuration={setInputDuration}
+          selection={selection}
           selRest={selRest}
           setSelRest={setSelRest}
           selDotted={selDotted}
           setSelDotted={setSelDotted}
+          noteToDotted={noteToDotted}
           
         />
     

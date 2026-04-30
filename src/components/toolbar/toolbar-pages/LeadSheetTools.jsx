@@ -53,6 +53,9 @@ const{  isPlaying, setIsPlaying,
             setSelRest,
             selDotted,
             setSelDotted,
+            noteToDotted,
+            noteToRest,
+            selection
            }=props
 
 const { startAudio, samplerReady, scaleSampler } = useToneEngine();
@@ -61,13 +64,34 @@ const { startAudio, samplerReady, scaleSampler } = useToneEngine();
 
 const onRest =  () => {
 // console.log("CLICKED ON REST" , "\nselRest: ", selRest)
-selRest === true ? setSelRest(false) : setSelRest(true)
+if(noteInputMode) {
+    selRest === true ? setSelRest(false) : setSelRest(true) 
+    }
+else{
+ if( selection?.type === "note") {
+      noteToRest()
+       setSelRest(true) 
+      }
+}
+
 };
+
+
 
 const onDotted =  () => {
 // console.log("CLICKED ON DOTTED", "   \nselDotted: ", selDotted)
-selDotted === true ? setSelDotted(false) : setSelDotted(true)
-};
+
+let newSelDotted = (selDotted === true) ? false : true
+
+if( selection?.type === "note") {
+      noteToDotted(newSelDotted)
+      }
+
+setSelDotted(newSelDotted)
+}
+
+
+
 
 
 
