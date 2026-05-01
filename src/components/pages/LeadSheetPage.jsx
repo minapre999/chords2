@@ -10,6 +10,7 @@ import * as Tone from "tone";
 import { useToneEngine } from "/src/context/ToneEngineContext";
 import { useLeadSheetPlayer } from "/src/hooks/useLeadSheetPlayer";
 import RenderData, {RenderNote} from "/src/render-notes.js"
+import NoteInputCursor  from "/src/components/lead-sheet/NoteInputCursor.jsx"
 
 import FloatingPalette from "/src/components/panels/FloatingPalette.jsx"
 
@@ -159,6 +160,8 @@ const applyRippleEditRef = useRef(null);
 const advanceCaretRef = useRef(null);
 const onMouseUpRef = useRef(() => {});
 const dragRef = useRef(null);
+const lsContainerRef = useRef(null);
+
 
   // 2. All useState SECOND
   const [leadSheet, setLeadSheet] = useState(initialLeadSheet);
@@ -208,9 +211,69 @@ const [selection, setSelection] = useState(null);
 
 // this is the core of the note input system
 const [noteInputMode, setNoteInputMode] = useState(false);
+const noteInputModeRef = useRef(false);
+
+
+
+
+useEffect(() => {
+  noteInputModeRef.current = noteInputMode;
+}, [noteInputMode]);
+
+
+
+// useEffect(() => {
+//   let internalValue = noteInputModeRef.current;
+
+//   Object.defineProperty(noteInputModeRef, "current", {
+//     get() {
+//       return internalValue;
+//     },
+//     set(v) {
+//       console.log("🔥 noteInputModeRef.current SET TO:", v, new Error().stack);
+//       internalValue = v;
+//     }
+//   });
+// }, []);
+
+
+
+
 const [inputAccidental, setInputAccidental] = useState(null);
 const [caret, setCaret] = useState({ measure: 0, index: 0 });
 const [pendingInsert, _setPendingInsert] = useState(null);
+
+// cursors for note input mode
+const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
+const [cursorPitch, setCursorPitch] = useState("C4");
+const [cursorVisible, setCursorVisible] = useState(false);
+const [cursorStaveInfo, setCursorStaveInfo] = useState(null);
+
+useEffect(() => {
+  const container = lsContainerRef.current;
+  if (!container) return;
+
+  const onEnter = () => {
+    // console.log("ENTER CONTAINER");
+    setCursorVisible(true);
+  };
+
+  const onLeave = () => {
+    // console.log("LEAVE CONTAINER");
+    setCursorVisible(false);
+  };
+
+  container.addEventListener("mouseenter", onEnter);
+  container.addEventListener("mouseleave", onLeave);
+
+  return () => {
+    container.removeEventListener("mouseenter", onEnter);
+    container.removeEventListener("mouseleave", onLeave);
+  };
+}, []);
+
+
+
 
 // Muscescore like interactivity
 // inputDuration - current selected duration
@@ -569,7 +632,7 @@ console.log("HANDLE TOOL BAR REST CHANGE")
 
 const handleToolbarDurationChange = useCallback((newDur) => {
 
-  console.log("HANDLE DURATION CHANGE")
+  // console.log("HANDLE DURATION CHANGE")
 
   const duration = newDur;
 
@@ -927,6 +990,27 @@ const handleNoteDragStart = (noteId, startX, startY, g) => {
     g,
   };
 };
+
+
+
+
+
+
+const handleMouseMove = (x, y, staveInfo) => {
+  if (!staveInfo) return;
+
+  // Update cursor position
+  setCursorPos({ x, y });
+
+  // NEW: pass staff geometry to cursor
+  setCursorStaveInfo({
+    topY: staveInfo.topY,
+    spacing: staveInfo.spacing
+  });
+};
+
+
+
 
 
 
@@ -1392,11 +1476,6 @@ function updateDraggedNote(noteId, semitones, durationSteps) {
 }
 
 
-
-
-
-
-
   return (
 
 
@@ -1491,39 +1570,66 @@ function updateDraggedNote(noteId, semitones, durationSteps) {
       >
         {/* LEFT: scrollable lead sheet */}
         <div
-          style={{
-            flex: 2,
-            minHeight: 0,
-            overflowY: "auto",   // this MUST scroll
-            border: "1px solid #ddd",
-            borderRadius: 4,
-            padding: 8,
-            boxSizing: "border-box"
-          }}
+         style={{
+      flex: 2,
+      minHeight: 0,
+      overflowY: "auto",   // this MUST scroll
+      border: "1px solid #ddd",
+      borderRadius: 4,
+      padding: 8,
+      boxSizing: "border-box",
+      position: "relative"   // ⭐ REQUIRED FOR CURSOR ALIGNMENT
+    }}
         >
           <LeadSheetRenderer
             {...props}
-            leadSheet={leadSheet}
-            renderDataUI={renderDataUI}
-            setRenderDataUI={setRenderDataUI}
-            rendererRef={rendererRef} 
-            onNoteDragStart={handleNoteDragStart}
-             measures={leadSheet.measures}
-             onNoteSelect={handleNoteSelect}
-             dragPreview={dragPreview} 
-             setDragPreview={setDragPreview}
-             dragRef={dragRef}
-            noteInputMode={noteInputMode}
-            onNoteInput={onNoteInput}
-            caret={caret}
-            setCaret={setCaret}
-            tieStart={tieStart}
-            setTieStart={setTieStart}
-            selection={selection}
-          setSelection={setSelection}
-          onTieDelete={onTieDelete}
-           onSlurDelete={onSlurDelete}
+        leadSheet={leadSheet}
+        lsContainerRef={lsContainerRef}
+        renderDataUI={renderDataUI}
+        setRenderDataUI={setRenderDataUI}
+        rendererRef={rendererRef} 
+        onNoteDragStart={handleNoteDragStart}
+        measures={leadSheet.measures}
+        onNoteSelect={handleNoteSelect}
+        dragPreview={dragPreview} 
+        setDragPreview={setDragPreview}
+        dragRef={dragRef}
+        noteInputMode={noteInputMode}
+        onNoteInput={onNoteInput}
+        caret={caret}
+        setCaret={setCaret}
+        tieStart={tieStart}
+        setTieStart={setTieStart}
+        selection={selection}
+        setSelection={setSelection}
+        onTieDelete={onTieDelete}
+        onSlurDelete={onSlurDelete}
+        noteInputModeRef={noteInputModeRef}
+        onMouseMove={handleMouseMove}
+   
           />
+
+          <NoteInputCursor
+            lsContainerRef={lsContainerRef}
+            visible={noteInputMode && cursorVisible}
+            pos={cursorPos}
+            duration={inputDuration}
+            pitch={cursorPitch}
+            topY={cursorStaveInfo?.topY}
+            spacing={cursorStaveInfo?.spacing}
+            style={{
+        position: "absolute",
+        top: 0,
+        left: 0,
+        width: "100%",
+        height: "100%",
+        pointerEvents: "none",
+        overflow: "visible",
+        zIndex: 9999
+      }}
+          />
+
+
         </div>
 
         {/* RIGHT: inspector + fretboard */}

@@ -145,7 +145,13 @@ const dottedCrotchet = "\uECA5 \uE1E7"
 
         <div className="toolbar-group">
               <button
-            onClick={() => setNoteInputMode(m => !m)}
+            onClick={() => {
+              if( noteInputMode) { setNoteInputMode(false) }
+              else { setNoteInputMode(true) }
+              // setNoteInputMode(m => !m) 
+            }
+            }
+
             style={{ background: noteInputMode ? "#88f" : "#eee" }}
           >
             Note Input

@@ -112,10 +112,13 @@ export default function LeadSheetRenderer(props) {
     onTieDelete,
     selection,
     setSelection,
+    noteInputModeRef,
+    onMouseMove,
+    lsContainerRef,
     ...rest
   } = props;
 
-  const lsContainerRef = useRef(null);
+
   const noteElements = useRef(new Map());
   const measureElements = useRef(new Map());
   const playheadRef = useRef(null);
@@ -500,7 +503,20 @@ hitLayer.appendChild(hit);
 } // drawSlurs
 
 
+function findStaveAtY(y, layout) {
+  if (!layout) return null;
 
+  for (const m of layout) {
+    const top = m.hitTop;
+    const bottom = m.hitTop + m.hitHeight;
+
+    if (y >= top && y <= bottom) {
+      return m;
+    }
+  }
+
+  return null;
+}
 
 
 
@@ -677,28 +693,43 @@ function buildStrictVoice(vfNotes) {
     // Render measures + notes
     // -----------------------------
    
-   // -----------------------------
-// Render measures + notes (STRICT TIMING)
-// -----------------------------
-// -----------------------------
-// Render measures + notes (STRICT TIMING + HELPERS)
-// -----------------------------
 measures.forEach((measure, i) => {
   const row = Math.floor(i / colsPerRow);
   const col = i % colsPerRow;
 
   const x = 20 + col * staveWidth;
-  const y = 40 + row * staveHeight;
-  const stave = new VF.Stave(x, y, staveWidth);
+const y = 40 + row * staveHeight;
+const stave = new VF.Stave(x, y, staveWidth);
 
-  measureLayout[i] = {
-    x,
-    y,
-    width: staveWidth,
-    row,
-    systemIndex: row,
-    stave
-  };
+// FIRST MEASURE: CLEF, TIME, KEY
+if (i === 0) {
+  stave.addClef("treble");
+  stave.addTimeSignature("4/4");
+  stave.addKeySignature(leadSheet.key || "G");
+}
+
+// DRAW STAVE
+const measureGroup = ctx.openGroup();
+stave.setContext(ctx).draw();
+ctx.closeGroup();
+measureElements.current.set(measure.id, measureGroup);
+
+// ⭐ AFTER DRAW: use REAL bounding box
+const bbox = stave.getBoundingBox();
+
+measureLayout[i] = {
+  x,
+  y,                      // original grid y (keep if you need it)
+  width: staveWidth,
+  row,
+  systemIndex: row,
+  stave,
+  topY: stave.getYForLine(0),
+  spacing: stave.getSpacingBetweenLines(),
+  hitTop: bbox.getY(),           // ← for hit‑testing
+  hitHeight: bbox.getH()         // ← for hit‑testing
+};
+
 
   // FIRST MEASURE: CLEF, TIME, KEY
   if (i === 0) {
@@ -707,11 +738,8 @@ measures.forEach((measure, i) => {
     stave.addKeySignature(leadSheet.key || "G");
   }
 
-  // DRAW STAVE
-  const measureGroup = ctx.openGroup();
-  stave.setContext(ctx).draw();
-  ctx.closeGroup();
-  measureElements.current.set(measure.id, measureGroup);
+
+
 
 
 
@@ -879,17 +907,11 @@ voice.tickables.forEach((t, idx) => {
       ctx.restore();
     });
   }
-});
+});  // END RENDERING
 
 
 
     
-
-
-
-
-
-
 
 
 
@@ -919,10 +941,23 @@ voice.tickables.forEach((t, idx) => {
 const svgList = lsContainerRef.current.querySelectorAll("svg");
 const svg = svgList[svgList.length - 1];
 
+
 if (!svg || svg.parentNode !== lsContainerRef.current) {
   console.error("Lead-sheet SVG not found");
   return;
 }
+
+
+// const container = lsContainerRef.current;
+
+// container.addEventListener("mouseenter", () => setCursorVisible(true));
+// container.addEventListener("mouseleave", () => setCursorVisible(false));
+
+
+
+
+
+
 
 
 
@@ -985,16 +1020,19 @@ lastMeasureLayoutRef.current = measureLayout;
 
 }
 
-    return () => {
-      effectGuard.current = false;
-      if (lsContainerRef.current) {
-        lsContainerRef.current.innerHTML = "";
-      }
-      noteElements.current.clear();
-      measureElements.current.clear();
-      originalYRef.current = {};
-    };
+return () => {
+  effectGuard.current = false;
+
+ 
+  if (lsContainerRef.current) {
+    lsContainerRef.current.innerHTML = "";
+  }
+  noteElements.current.clear();
+  measureElements.current.clear();
+  originalYRef.current = {};
+};
   }, [measures, selection, caret, dragRef, leadSheet.ties]); // useLayoutEffect
+
 
 
 
@@ -1020,6 +1058,74 @@ lastMeasureLayoutRef.current = measureLayout;
     g.setAttribute("transform", `translate(${dx}, ${dy})`);
   }, [dragPreview, dragRef]);
 
+
+
+  
+
+  useEffect(() => {
+  const container = lsContainerRef.current;
+  if (!container) return;
+
+  const svgList = container.querySelectorAll("svg");
+  const svg = svgList[svgList.length - 1];
+  if (!svg) return;
+
+  function handleMouseMove(e) {
+  if (!noteInputModeRef.current) return;
+
+  try {
+    
+
+
+    const pt = svg.createSVGPoint();
+    pt.x = e.clientX;
+    pt.y = e.clientY;
+
+    const ctm = svg.getScreenCTM();
+    if (!ctm) return;
+
+    // CTM already accounts for scroll + container offset
+    const svgP = pt.matrixTransform(ctm.inverse());
+
+    const staveInfo = findStaveAtY(
+      svgP.y,
+      lastMeasureLayoutRef.current
+    );
+
+    if (!staveInfo || !onMouseMove) return;
+
+
+//     console.log("client", e.clientX, e.clientY);
+// console.log("svgP", svgP.x, svgP.y);
+
+// const rect = svg.getBoundingClientRect();
+// console.log("rect", rect.left, rect.top);
+
+
+
+
+    onMouseMove(svgP.x, svgP.y, staveInfo);
+  } catch (err) {
+    console.error("mousemove error:", err);
+  }
+}
+
+
+  window.addEventListener("mousemove", handleMouseMove);
+
+  return () => {
+    window.removeEventListener("mousemove", handleMouseMove);
+  };
+}, [onMouseMove]);
+
+
+
+
+
+
+
+
+  
   return (
     <div style={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
       <div
@@ -1031,5 +1137,3 @@ lastMeasureLayoutRef.current = measureLayout;
     </div>
   );
 }
-
-
