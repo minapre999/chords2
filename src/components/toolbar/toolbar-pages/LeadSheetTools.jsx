@@ -44,6 +44,7 @@ const{  isPlaying, setIsPlaying,
             isPaused, setIsPaused,
             showPalette, setShowPalette,
             noteInputMode, setNoteInputMode,
+            noteInputModeRef,
             handleAccidentalClick,
             onToolbarTieClick,
             onToolbarSlurClick,
@@ -59,6 +60,12 @@ const{  isPlaying, setIsPlaying,
            }=props
 
 const { startAudio, samplerReady, scaleSampler } = useToneEngine();
+
+// debugging
+useEffect(() => {
+  window.noteInputMode = noteInputMode;
+  window.noteInputModeRef = noteInputModeRef
+}, [ noteInputMode]);
 
 
 
@@ -147,8 +154,7 @@ const dottedCrotchet = "\uECA5 \uE1E7"
               <button
             onClick={() => {
               if( noteInputMode) { setNoteInputMode(false) }
-              else { setNoteInputMode(true) }
-              // setNoteInputMode(m => !m) 
+                  else { setNoteInputMode(true) }
             }
             }
 

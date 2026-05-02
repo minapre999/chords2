@@ -85,6 +85,25 @@ function semitoneToPitch(baseMidi, offset) {
 }
 
 
+function pitchToMidi(pitch) {
+  const note = pitch.slice(0, -1);
+  const octave = Number(pitch.slice(-1));
+
+  const map = { C:0, "C#":1, Db:1, D:2, "D#":3, Eb:3, E:4, F:5, "F#":6, Gb:6, G:7, "G#":8, Ab:8, A:9, "A#":10, Bb:10, B:11 };
+
+  return 12 * (octave + 1) + map[note];
+}
+
+function midiToPitch(midi) {
+  const names = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+  const note = names[midi % 12];
+  const octave = Math.floor(midi / 12) - 1;
+  return note + octave;
+}
+
+
+
+
 export const durationMap = {
   w: "1",
   h: "2",
@@ -115,10 +134,11 @@ export default function LeadSheetRenderer(props) {
     noteInputModeRef,
     onMouseMove,
     lsContainerRef,
+    onNoteInput,
     ...rest
   } = props;
 
-
+// console.log("onNoteInput: ", onNoteInput)
   const noteElements = useRef(new Map());
   const measureElements = useRef(new Map());
   const playheadRef = useRef(null);
@@ -381,7 +401,8 @@ function drawSlurs({
   setSelection,
   lsContainerRef,
   slurHitLayerRef,
-  slurCurveLayerRef
+  slurCurveLayerRef,
+  
 }) {
   const svgList = lsContainerRef.current?.querySelectorAll("svg");
   const svg = svgList?.[svgList.length - 1];
@@ -526,7 +547,7 @@ function findStaveAtY(y, layout) {
     if (!lsContainerRef.current) return;
     if (dragRef.current) return; // freeze during drag
 
-    console.log("USE LAYOUT EFFECT")
+    // console.log("USE LAYOUT EFFECT")
 
     // StrictMode dev double‑invoke guard
     if (effectGuard.current) return;
@@ -555,6 +576,16 @@ function findStaveAtY(y, layout) {
     renderer.resize(svgWidth, svgHeight);
 
     const ctx = renderer.getContext();
+    // const svg = ctx.svg;   // ⭐ THIS is the missing line
+
+    const svgList = lsContainerRef.current.querySelectorAll("svg");
+const svg = svgList[svgList.length - 1];
+
+
+if (!svg || svg.parentNode !== lsContainerRef.current) {
+  console.error("Lead-sheet SVG not found");
+  return;
+}
 
 
     const noteLookup = new Map();
@@ -566,6 +597,7 @@ function findStaveAtY(y, layout) {
 
 function pitchToVexflowKey(pitch) {
   // pitch is like "C4", "Eb4", "F#3"
+  // console.log("pitchToVexflowKey: ", pitch)
   const match = pitch.match(/^([A-Ga-g])(b|#)?(\d)$/);
   if (!match) throw new Error("Invalid pitch: " + pitch);
 
@@ -590,6 +622,7 @@ const durationMap = {
 };
 
 function buildVexflowNotes(melody) {
+  // console.log("buildVexflowNotes: ", melody)
   return melody.map(n => {
     const isRest = n.pitches.length === 0;
 
@@ -683,6 +716,70 @@ function buildStrictVoice(vfNotes) {
   return voice;
 }
 
+
+
+
+function pitchFromY(y, staveInfo) {
+  const { topY, spacing } = staveInfo;
+
+  // diatonic steps: each line/space = 1 step
+  // y increases downward, so going UP the staff is negative delta
+  const diatonicSteps = Math.round((topY - y) / (spacing / 2));
+
+  // Reference: F4 at topY (MIDI 60)
+  const baseMidi = 77;      // C4
+  const baseDegree = 0;     // 0 = C, 1 = D, 2 = E, 3 = F, 4 = G, 5 = A, 6 = B
+
+  // Major scale semitone pattern relative to C
+  const semis = [0, 2, 4, 5, 7, 9, 11];
+
+  // Total diatonic degree offset from base
+  const totalDegree = baseDegree + diatonicSteps;
+
+  // How many full octaves up/down in diatonic space
+  const octaveOffset = Math.floor(totalDegree / 7);
+
+  // Degree within the octave (0–6), wrapped correctly for negatives
+  const degree = ((totalDegree % 7) + 7) % 7;
+
+  // Semitone offset from base C within the octave
+  const semitoneOffset = semis[degree] - semis[baseDegree];
+
+  // Final MIDI: base + octaves + within‑octave offset
+  return baseMidi + octaveOffset * 12 + semitoneOffset;
+}
+
+
+
+
+
+function computeBeatFromX(x, staveInfo) {
+  
+  const { measureX, measureWidth, beats } = staveInfo;
+
+  const rel = x - measureX;
+  const clamped = Math.max(0, Math.min(rel, measureWidth));
+
+  // console.log("computeBeatFromX: ", {x, measureX, measureWidth, beats, staveInfo, clamped} )
+
+  return Math.floor((clamped / measureWidth) * beats);
+}
+
+
+
+function clientToSvgPoint(event, svg) {
+  const pt = svg.createSVGPoint();
+  pt.x = event.clientX;
+  pt.y = event.clientY;
+
+  // Transform into SVG space
+  const svgP = pt.matrixTransform(svg.getScreenCTM().inverse());
+  return svgP;
+}
+
+
+
+
 // function formatStrictVoice(voice, staveWidth) {
 //   // 🚫 TEMP: do nothing so we can see the pre-format state
 //   return;
@@ -693,16 +790,16 @@ function buildStrictVoice(vfNotes) {
     // Render measures + notes
     // -----------------------------
    
-measures.forEach((measure, i) => {
-  const row = Math.floor(i / colsPerRow);
-  const col = i % colsPerRow;
+measures.forEach((measure, measureIdx) => {
+  const row = Math.floor(measureIdx / colsPerRow);
+  const col = measureIdx % colsPerRow;
 
   const x = 20 + col * staveWidth;
 const y = 40 + row * staveHeight;
 const stave = new VF.Stave(x, y, staveWidth);
 
 // FIRST MEASURE: CLEF, TIME, KEY
-if (i === 0) {
+if (measureIdx === 0) {
   stave.addClef("treble");
   stave.addTimeSignature("4/4");
   stave.addKeySignature(leadSheet.key || "G");
@@ -717,22 +814,62 @@ measureElements.current.set(measure.id, measureGroup);
 // ⭐ AFTER DRAW: use REAL bounding box
 const bbox = stave.getBoundingBox();
 
-measureLayout[i] = {
-  x,
-  y,                      // original grid y (keep if you need it)
-  width: staveWidth,
+
+measureLayout[measureIdx] = {
+  measureX: x,
+  measureY: y,                      // original grid y (keep if you need it)
+  measureWidth: staveWidth,
   row,
   systemIndex: row,
   stave,
   topY: stave.getYForLine(0),
   spacing: stave.getSpacingBetweenLines(),
   hitTop: bbox.getY(),           // ← for hit‑testing
-  hitHeight: bbox.getH()         // ← for hit‑testing
+  hitHeight: bbox.getH(),        // ← for hit‑testing
+beats: 4,  // hard code for now, later when support other time sigatures set is to leadSheet.timeSigNumerator
 };
 
 
+// Transparent staff hit area for note input
+const staffHit = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+
+const topY = stave.getYForLine(0);
+const spacing = stave.getSpacingBetweenLines();
+
+// Enough vertical range for full guitar pitch range
+const hitPadding = 12 * (spacing / 2); // 12 diatonic steps above/below
+
+staffHit.setAttribute("x", x);
+staffHit.setAttribute("y", topY - hitPadding);
+staffHit.setAttribute("width", staveWidth);
+staffHit.setAttribute("height", hitPadding * 2 + 5 * spacing);
+staffHit.setAttribute("fill", "transparent");
+staffHit.setAttribute("pointer-events", "all");
+
+
+staffHit.addEventListener("mousedown", (e) => {
+  if (!noteInputModeRef.current) return;
+
+  const svgP = clientToSvgPoint(e, svg);
+
+  const staveInfo = measureLayout[measureIdx];
+  const pitch = pitchFromY(svgP.y, staveInfo);
+  const beatIndex = computeBeatFromX(svgP.x, staveInfo);
+console.log("before onNoteInput ", "\n.  svgP.y,: ", svgP.y, "\n.  pitch: ", pitch)
+  onNoteInput(pitch, measureIdx, beatIndex);
+});
+
+svg.appendChild(staffHit);
+
+
+
+
+
+
+
+
   // FIRST MEASURE: CLEF, TIME, KEY
-  if (i === 0) {
+  if (measureIdx === 0) {
     stave.addClef("treble");
     stave.addTimeSignature("4/4");
     stave.addKeySignature(leadSheet.key || "G");
@@ -794,15 +931,43 @@ voice.tickables.forEach((t, idx) => {
   vfNotes.forEach((vfNote, idx) => {
     const id = measure.melody[idx]?.id;
 
-    noteLookup.set(`${i}:${idx}`, { vfNote, id });
+    noteLookup.set(`${measureIdx}:${idx}`, { vfNote, id });
 
     const g = ctx.openGroup();
     vfNote.setContext(ctx).draw();
     ctx.closeGroup();
 
+
+
+
+
+
+
+
+// Ensure clicking a note does NOT insert
+g.addEventListener("mousedown", (e) => {
+  e.stopPropagation();
+
+  if (noteInputModeRef.current) {
+    // MuseScore behavior: clicking a note moves caret, does NOT insert
+    const svgP = clientToSvgPoint(e, svg);
+    moveCaretToNote(n, svgP);
+    return;
+  }
+
+  onNoteSelect(n.id);
+});  // FINISH DRAWING LOOP
+
+
+
+
+
+
+
+
     // CARET
     if (caret &&
-        caret.measure === i &&
+        caret.measure === measureIdx &&
         caret.index === idx) {
       const noteX = vfNote.getAbsoluteX();
       caretDrawInfo = {
@@ -851,7 +1016,7 @@ voice.tickables.forEach((t, idx) => {
       if (noteInputMode) {
         e.stopPropagation();
         e.stopImmediatePropagation();
-        setCaret({ measure: i, index: idx });
+        setCaret({ measure: measureIdx, index: idx });
         return;
       }
 
@@ -907,12 +1072,72 @@ voice.tickables.forEach((t, idx) => {
       ctx.restore();
     });
   }
+
+
+svg.appendChild(staffHit);
+
 });  // END RENDERING
 
 
+// // -----------------------------
+// // PHASE 2 — COMPUTE HIT ZONES
+// // -----------------------------
+// for (let i = 0; i < measureLayout.length; i++) {
+//   const info = measureLayout[i];
+
+//   const thisTop = info.topY;
+//   const thisBottom = info.topY + 4 * info.spacing;
+
+//   const prev = measureLayout[i - 1];
+//   const next = measureLayout[i + 1];
+
+//   let hitTop, hitBottom;
+
+//   if (prev && prev.row === info.row - 1) {
+//     hitTop = (prev.topY + thisTop) / 2;
+//   } else {
+//     hitTop = thisTop - 6 * info.spacing;
+//   }
+
+//   if (next && next.row === info.row + 1) {
+//     hitBottom = (thisBottom + next.topY) / 2;
+//   } else {
+//     hitBottom = thisBottom + 6 * info.spacing;
+//   }
+
+//   info.hitTop = hitTop;
+//   info.hitHeight = hitBottom - hitTop;
+// }
 
     
 
+
+// // -----------------------------
+// // PHASE 3 — CREATE HIT AREAS
+// // -----------------------------
+// for (let measureIdx = 0; measureIdx < measureLayout.length; measureIdx++) {
+//   const info = measureLayout[measureIdx];
+
+//   const staffHit = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+//   staffHit.setAttribute("x", info.measureX);
+//   staffHit.setAttribute("y", info.hitTop);
+//   staffHit.setAttribute("width", info.measureWidth);
+//   staffHit.setAttribute("height", info.hitHeight);
+//   staffHit.setAttribute("fill", "transparent");
+//   staffHit.setAttribute("pointer-events", "all");
+
+//   staffHit.addEventListener("mousedown", (e) => {
+//     if (!noteInputModeRef.current) return;
+
+//     const svgP = clientToSvgPoint(e, svg);
+//     const pitch = pitchFromY(svgP.y, info);
+//     const beatIndex = computeBeatFromX(svgP.x, info);
+
+//     onNoteInput(pitch, measureIdx, beatIndex);
+//   });
+
+//   svg.appendChild(staffHit);
+// }
 
 
 
@@ -938,14 +1163,7 @@ voice.tickables.forEach((t, idx) => {
 
 
 
-const svgList = lsContainerRef.current.querySelectorAll("svg");
-const svg = svgList[svgList.length - 1];
 
-
-if (!svg || svg.parentNode !== lsContainerRef.current) {
-  console.error("Lead-sheet SVG not found");
-  return;
-}
 
 
 // const container = lsContainerRef.current;
@@ -1074,8 +1292,6 @@ return () => {
   if (!noteInputModeRef.current) return;
 
   try {
-    
-
 
     const pt = svg.createSVGPoint();
     pt.x = e.clientX;
@@ -1092,6 +1308,9 @@ return () => {
       lastMeasureLayoutRef.current
     );
 
+    // console.log("staveInfo: ", "\n. measureY: ", staveInfo.measureY, "\n. topY: ",  staveInfo.topY, "\n. measureWidth: ", staveInfo.measureWidth, 
+    //   "\n. row: ", staveInfo.row, "\n. measureX: ", staveInfo.measureX)
+    //   console.log("\n.   ", staveInfo )
     if (!staveInfo || !onMouseMove) return;
 
 

@@ -64,22 +64,6 @@ The new duration is saved into your lead sheet model.
 
 
 
-function pitchToMidi(pitch) {
-  const note = pitch.slice(0, -1);
-  const octave = Number(pitch.slice(-1));
-
-  const map = { C:0, "C#":1, Db:1, D:2, "D#":3, Eb:3, E:4, F:5, "F#":6, Gb:6, G:7, "G#":8, Ab:8, A:9, "A#":10, Bb:10, B:11 };
-
-  return 12 * (octave + 1) + map[note];
-}
-
-function midiToPitch(midi) {
-  const names = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
-  const note = names[midi % 12];
-  const octave = Math.floor(midi / 12) - 1;
-  return note + octave;
-}
-
 
 
 // Helpers
@@ -348,19 +332,164 @@ const { leadSheetSampler } = useToneEngine();
 
         // 4. All useCallback FOURTH
 
+function midiToPitchName(midi) {
+  const names = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+  const note = names[midi % 12];
+  const octave = Math.floor(midi / 12) - 1;
+  return `${note}${octave}`;
+}
 
-const onNoteInput = useCallback((pitch, measureIndex, melodyIndex) => {
-  console.log("onNoteInput fired:", { pitch, measureIndex, melodyIndex, noteInputMode });
 
-  if (!noteInputMode) {
+// function applyRippleEdit(measure, editedNoteId, newNoteData, opts = {}) {
+// console.log("insertNote before splice: ",{beatIndex, pitchName},  measure.melody.map((n)=>n.pitches[0]+" - " +n.duration))
+
+/*
+insertNote logic
+- if duration is identical to current duration (inc. dots), then add note as additional note for the beat 
+i.e. append to the pitch array
+- if duration is not identica and new duration is less than existing duration,  insert the note as a new note at the beat, then subtract the duration of the existing note from the
+new duration
+- if duration is not identical and the new duration is greater than existing duration, inser the note as a new note at the beat, then apply ripple edit
+
+*/
+
+function insertNote({ pitch, duration, measureIndex, beatIndex }) {
+  setLeadSheet(prev => {
+    const next = structuredClone(prev);
+    const measure = next.measures[measureIndex];
+
+    // 1. Convert MIDI → pitch name
+    const pitchName = midiToPitchName(pitch);
+
+    // 2. Build guitar mapping once per insert
+    const guitarMap = pitchToGuitar();   // your function
+    const gf = guitarMap[pitchName] || { string: null, fret: null };
+
+    const existing = measure.melody[beatIndex];
+
+    // Helper: ticks
+    const newTicks = getTicks(duration);
+    const existingTicks = existing ? getTicks(existing.duration) : null;
+
+    // ------------------------------------------------------------
+    // CASE 1 — Same duration → chord input
+    // ------------------------------------------------------------
+    if (existing &&
+        existing.duration === duration &&
+        (existing.dots || 0) === 0) {
+
+      // Append pitch if not already present
+      if (!existing.pitches.includes(pitchName)) {
+        existing.pitches.push(pitchName);
+      }
+
+      // Append string/fret arrays (parallel to pitches)
+      if (!existing.strings) existing.strings = [];
+      if (!existing.frets) existing.frets = [];
+
+      existing.strings.push(gf.string);
+      existing.frets.push(gf.fret);
+
+      return next;
+    }
+
+    // ------------------------------------------------------------
+    // CASE 2 — New duration < existing duration
+    // Insert new note, then shorten existing note
+    // ------------------------------------------------------------
+    if (existing && newTicks < existingTicks) {
+
+      // Insert new note at beatIndex
+      measure.melody.splice(beatIndex, 0, {
+        id: crypto.randomUUID(),
+        pitches: [pitchName],
+        duration,
+        dots: 0,
+        string: gf.string,
+        fret: gf.fret
+      });
+
+      // Shorten existing note
+      const remainingTicks = existingTicks - newTicks;
+      const newDur = ticksToDuration(remainingTicks);
+
+      existing.duration = newDur;
+      existing.dots = 0;
+
+      return next;
+    }
+
+    // ------------------------------------------------------------
+    // CASE 3 — New duration > existing duration
+    // Insert new note, then ripple edit
+    // ------------------------------------------------------------
+    if (existing && newTicks > existingTicks) {
+
+      // Insert new note
+      const newId = crypto.randomUUID();
+
+      measure.melody.splice(beatIndex, 0, {
+        id: newId,
+        pitches: [pitchName],
+        duration,
+        dots: 0,
+        string: gf.string,
+        fret: gf.fret
+      });
+
+      // Ripple edit
+      applyRippleEdit(measure, newId, duration);
+
+      return next;
+    }
+
+    // ------------------------------------------------------------
+    // CASE 4 — No existing note → simple insert
+    // ------------------------------------------------------------
+    measure.melody.splice(beatIndex, 0, {
+      id: crypto.randomUUID(),
+      pitches: [pitchName],
+      duration,
+      dots: 0,
+      string: gf.string,
+      fret: gf.fret
+    });
+
+    return next;
+  });
+}
+
+
+
+
+
+
+
+const onNoteInput = useCallback((pitch, measureIndex, beatIndex) => {
+  // console.log("onNoteInput fired:", { pitch, measureIndex, melodyIndex, noteInputMode });
+   console.log("onNoteInput fired:",  pitch, measureIndex, beatIndex, "\n.  noteInputModeRef.current: ", noteInputModeRef.current);
+
+  if (!noteInputModeRef.current) {
     console.log("IGNORED — mode off");
     return;
   }
 
-  console.log("SETTING pendingInsert from onNoteInput");
-  setPendingInsert({ pitch, measureIndex, melodyIndex });
+   insertNote({
+    pitch,
+    duration: inputDuration,
+    measureIndex,
+    beatIndex
+  });
 
-}, [noteInputMode, inputDuration]);
+  moveCaretForward();
+
+
+
+
+  // console.log("SETTING pendingInsert from onNoteInput");
+  // setPendingInsert({ pitch, measureIndex, melodyIndex });
+
+}, [ inputDuration]);
 
 
 
@@ -925,6 +1054,34 @@ useEffect(() => {
 
 
 
+function moveCaretForward() {
+  setCaret(prev => {
+    const next = { ...prev };
+
+    next.index += 1;
+
+    const beats = 4; // or leadSheet.timeSigNumerator
+    const lastMeasure = leadSheet.measures.length - 1;
+
+    // Move to next measure if needed
+    if (next.index >= beats) {
+      next.index = 0;
+      next.measure += 1;
+    }
+
+    // Clamp at end of score
+    if (next.measure > lastMeasure) {
+      next.measure = lastMeasure;
+      next.index = beats - 1;
+    }
+
+    return next;
+  });
+}
+
+
+
+
 const advanceCaret = (measureIndex, tokenIndex, leadSheet) => {
   const measure = leadSheet.measures[measureIndex];
   const tokenCount = measure.melody.length;
@@ -1076,7 +1233,7 @@ onMouseUpRef.current = () => {
 
 
 const handleNoteSelect = (id) => {
-  console.log("SELECTING NOTE ID:", id);
+  // console.log("SELECTING NOTE ID:", id);
 
   if (!noteInputMode) {
     setSelection({ type: "note", id });
@@ -1107,7 +1264,7 @@ const handleNoteSelect = (id) => {
     // dotted note
     selected.dots > 0 ?  setSelDotted(true) : setSelDotted( false)
     // Update toolbar duration
-    console.log("SETTING SELECTED DURATION:", duration);
+    // console.log("SETTING SELECTED DURATION:", duration);
     setInputDuration(duration);
 
     // If you want to update dots in the UI, do it here:
@@ -1498,6 +1655,7 @@ function updateDraggedNote(noteId, semitones, durationSteps) {
           setPos={setLsPalettePos}
           noteInputMode={noteInputMode}
           setNoteInputMode={setNoteInputMode}
+          noteInputModeRef={noteInputModeRef}
           handleToolbarDurationChange={handleToolbarDurationChange}
           noteToRest={noteToRest}
           handleAccidentalClick={handleAccidentalClick}

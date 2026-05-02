@@ -71,7 +71,7 @@ export default function NoteInputCursor({
     }
   }
 
-  console.log("cursor y:", y, "topY:", topY, "spacing:", spacing);
+//   console.log(" cursor y:", y, "topY:", topY, "spacing:", spacing);
 
   return (
     <svg
