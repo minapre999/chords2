@@ -196,6 +196,19 @@ export default function LeadSheetRenderer(props) {
     });
   }, [selection, leadSheet.slurs]);
 
+
+  useEffect(() => {
+  updateHitAreasForMode(noteInputMode);
+}, [noteInputMode]);
+
+    function updateHitAreasForMode(isInputMode) {
+  document.querySelectorAll(".staff-hit").forEach(rect => {
+    rect.style.pointerEvents = isInputMode ? "all" : "none";
+  });
+}
+
+
+
   //
   // Imperative API
   //
@@ -595,6 +608,8 @@ if (!svg || svg.parentNode !== lsContainerRef.current) {
 
 
 
+
+
 function pitchToVexflowKey(pitch) {
   // pitch is like "C4", "Eb4", "F#3"
   // console.log("pitchToVexflowKey: ", pitch)
@@ -695,26 +710,12 @@ function buildStrictVoice(vfNotes) {
     resolution: VF.RESOLUTION
   });
 
-  voice.setStrict(true);
+  voice.setMode(VF.Voice.Mode.STRICT);
   voice.addTickables(vfNotes);
-
-  // 🔍 DEBUG: inspect voice BEFORE formatting
-  // console.log("VOICE PRE-FORMAT ----------------");
-  // console.log("time:", voice.time);
-  // console.log("totalTicks:", voice.totalTicks);
-  // console.log("ticksUsed:", voice.ticksUsed);
-
-  voice.tickables.forEach((t, idx) => {
-    // console.log(
-    //   `note ${idx}:`,
-    //   "dur:", t.getDuration(),
-    //   "intrinsicTicks:", t.getIntrinsicTicks()
-    // );
-  });
-  // console.log("--------------");
 
   return voice;
 }
+
 
 
 
@@ -780,11 +781,6 @@ function clientToSvgPoint(event, svg) {
 
 
 
-// function formatStrictVoice(voice, staveWidth) {
-//   // 🚫 TEMP: do nothing so we can see the pre-format state
-//   return;
-// }
-
 
     // -----------------------------
     // Render measures + notes
@@ -839,12 +835,20 @@ const spacing = stave.getSpacingBetweenLines();
 // Enough vertical range for full guitar pitch range
 const hitPadding = 12 * (spacing / 2); // 12 diatonic steps above/below
 
+staffHit.classList.add("staff-hit");
 staffHit.setAttribute("x", x);
 staffHit.setAttribute("y", topY - hitPadding);
 staffHit.setAttribute("width", staveWidth);
 staffHit.setAttribute("height", hitPadding * 2 + 5 * spacing);
 staffHit.setAttribute("fill", "transparent");
-staffHit.setAttribute("pointer-events", "all");
+
+/*
+no pointer events ensures:
+    In normal mode → clicking a note selects it
+    Hit areas do NOT block note clicks
+    need to change to "all" when in note-input mode
+    */
+staffHit.setAttribute("pointer-events", "none");
 
 
 staffHit.addEventListener("mousedown", (e) => {
@@ -860,21 +864,6 @@ console.log("before onNoteInput ", "\n.  svgP.y,: ", svgP.y, "\n.  pitch: ", pit
 });
 
 svg.appendChild(staffHit);
-
-
-
-
-
-
-
-
-  // FIRST MEASURE: CLEF, TIME, KEY
-  if (measureIdx === 0) {
-    stave.addClef("treble");
-    stave.addTimeSignature("4/4");
-    stave.addKeySignature(leadSheet.key || "G");
-  }
-
 
 
 
@@ -896,10 +885,28 @@ svg.appendChild(staffHit);
   // -----------------------------
   const voice = buildStrictVoice(vfNotes);
 
+//   if (voice.ticksUsed !== voice.totalTicks) {
+//   console.warn(
+//     `Measure ${measureIdx} tick mismatch:`,
+//     "total:", voice.totalTicks,
+//     "used:", voice.ticksUsed
+//   );
+// }
+
+
   // -----------------------------
   // 4. FORMAT (now safe)
   // -----------------------------
-  formatStrictVoice(voice, staveWidth);
+
+
+  // formatStrictVoice(voice, staveWidth);
+const noteStartX = stave.getNoteStartX();
+const noteEndX = x + staveWidth; // x is your stave's left position
+
+const availableWidth = noteEndX - noteStartX;
+
+const formatter = new VF.Formatter();
+formatter.joinVoices([voice]).format([voice], availableWidth);
 
 
 
@@ -1078,66 +1085,6 @@ svg.appendChild(staffHit);
 
 });  // END RENDERING
 
-
-// // -----------------------------
-// // PHASE 2 — COMPUTE HIT ZONES
-// // -----------------------------
-// for (let i = 0; i < measureLayout.length; i++) {
-//   const info = measureLayout[i];
-
-//   const thisTop = info.topY;
-//   const thisBottom = info.topY + 4 * info.spacing;
-
-//   const prev = measureLayout[i - 1];
-//   const next = measureLayout[i + 1];
-
-//   let hitTop, hitBottom;
-
-//   if (prev && prev.row === info.row - 1) {
-//     hitTop = (prev.topY + thisTop) / 2;
-//   } else {
-//     hitTop = thisTop - 6 * info.spacing;
-//   }
-
-//   if (next && next.row === info.row + 1) {
-//     hitBottom = (thisBottom + next.topY) / 2;
-//   } else {
-//     hitBottom = thisBottom + 6 * info.spacing;
-//   }
-
-//   info.hitTop = hitTop;
-//   info.hitHeight = hitBottom - hitTop;
-// }
-
-    
-
-
-// // -----------------------------
-// // PHASE 3 — CREATE HIT AREAS
-// // -----------------------------
-// for (let measureIdx = 0; measureIdx < measureLayout.length; measureIdx++) {
-//   const info = measureLayout[measureIdx];
-
-//   const staffHit = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-//   staffHit.setAttribute("x", info.measureX);
-//   staffHit.setAttribute("y", info.hitTop);
-//   staffHit.setAttribute("width", info.measureWidth);
-//   staffHit.setAttribute("height", info.hitHeight);
-//   staffHit.setAttribute("fill", "transparent");
-//   staffHit.setAttribute("pointer-events", "all");
-
-//   staffHit.addEventListener("mousedown", (e) => {
-//     if (!noteInputModeRef.current) return;
-
-//     const svgP = clientToSvgPoint(e, svg);
-//     const pitch = pitchFromY(svgP.y, info);
-//     const beatIndex = computeBeatFromX(svgP.x, info);
-
-//     onNoteInput(pitch, measureIdx, beatIndex);
-//   });
-
-//   svg.appendChild(staffHit);
-// }
 
 
 
