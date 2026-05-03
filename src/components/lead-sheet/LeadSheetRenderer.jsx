@@ -132,11 +132,16 @@ export default function LeadSheetRenderer(props) {
     selection,
     setSelection,
     noteInputModeRef,
-    onMouseMove,
+    // onMouseMove,
     lsContainerRef,
     onNoteInput,
+    setCursorPos,
+    cursorStaveInfo,
+    setCursorStaveInfo,
     ...rest
   } = props;
+
+
 
 // console.log("onNoteInput: ", onNoteInput)
   const noteElements = useRef(new Map());
@@ -287,9 +292,9 @@ export default function LeadSheetRenderer(props) {
 
     const hitHeight = 8;
     const hitYOffset = 4;
-    const topY = Math.max(y1, y2);
+    const topLineY = Math.max(y1, y2);
 
-    hit.setAttribute("y", topY + hitYOffset);
+    hit.setAttribute("y", topLineY + hitYOffset);
     hit.setAttribute("height", hitHeight);
     hit.setAttribute("fill", "transparent");
 
@@ -515,9 +520,9 @@ hit.setAttribute("width", Math.abs(x2 - x1));
 // thin strip below the curve
 const hitHeight = 8;
 const hitYOffset = 4;
-const topY = Math.max(y1, y2);
+const topLineY = Math.max(y1, y2);
 
-hit.setAttribute("y", topY + hitYOffset);
+hit.setAttribute("y", topLineY + hitYOffset);
 hit.setAttribute("height", hitHeight);
 
 hit.setAttribute("fill", "transparent");
@@ -534,15 +539,22 @@ hit.addEventListener("pointerdown", e => {
 hitLayer.appendChild(hit);
 
   }); // slurs.forEach
-} // drawSlurs
+} // DRAW SLURS
+
+
+
 
 
 function findStaveAtY(y, layout) {
   if (!layout) return null;
 
   for (const m of layout) {
-    const top = m.hitTop;
-    const bottom = m.hitTop + m.hitHeight;
+    const topLineY = m.topLineY;      // ← use the real top line
+    const spacing = m.spacing;
+
+    const hitPadding = 12 * (spacing / 2);
+    const top = topLineY - hitPadding;
+    const bottom = topLineY + hitPadding + 5 * spacing;
 
     if (y >= top && y <= bottom) {
       return m;
@@ -551,6 +563,341 @@ function findStaveAtY(y, layout) {
 
   return null;
 }
+
+
+
+
+
+function clientToSvgPoint(e, svg) {
+  const rect = svg.getBoundingClientRect();
+  return {
+    x: e.clientX - rect.left,
+    y: e.clientY - rect.top
+  };
+}
+
+
+function snapToStaveLine( y, staveInfo){
+  // just need to snap to the nearest half space
+const { topLineY, spacing } = staveInfo;
+const halfSpacing = spacing / 2;
+let snapY = Math.floor(y/5)*5 // snap to the next lowest half space
+
+// hard code this for now assume 17 max frets and standard tuning
+// F5 is the top line, F6 = fret 13, A6 = fret 17, B6 = fret19
+// E4 is the bottom line, E5 is the lowest not
+
+console.log("snapToStaveLine", {y, snapY})
+return snapY
+  }
+
+
+function pitchFromY(y, staveInfo) {
+  const { topLineY, spacing } = staveInfo;
+  // console.log("pitchFromY CALLED", { y, staveInfo });
+  // ⭐ FIX: your Y is consistently one staff-step too high
+  // so we shift it DOWN by halfSpacing to correct it
+  const halfSpacing = spacing / 2;
+  // const correctedY = y + halfSpacing;
+  const correctedY = y;
+
+  // Each staff step (line/space) = spacing / 2
+  const diatonicSteps = Math.round((correctedY - topLineY) / halfSpacing);
+
+  // Treble clef reference: top line = F5 = MIDI 77
+  const baseMidi = 77;      // F5
+  const baseDegree = 3;     // 0=C,1=D,2=E,3=F,4=G,5=A,6=B
+
+  // Major scale semitone pattern relative to C
+  const semis = [0, 2, 4, 5, 7, 9, 11];
+
+  // Moving DOWN the staff lowers the diatonic degree
+  const totalDegree = baseDegree - diatonicSteps;
+
+  // Octave offset in diatonic space
+  const octaveOffset = Math.floor(totalDegree / 7);
+
+  // Degree within octave (0–6), wrapped for negatives
+  const degree = ((totalDegree % 7) + 7) % 7;
+
+  // Semitone offset from F within the octave
+  const semitoneOffset = semis[degree] - semis[baseDegree];
+
+  // Final MIDI
+  return baseMidi + octaveOffset * 12 + semitoneOffset;
+}
+
+
+
+
+function yFromPitch(midi, staveInfo) {
+  const { topLineY, spacing } = staveInfo;
+  const halfSpacing = spacing / 2;
+
+  // Treble clef reference: F5 = MIDI 77 at line 0
+  const baseMidi = 77;
+  const baseDegree = 3; // F
+
+  // Major scale semitone pattern relative to C
+  const semis = [0, 2, 4, 5, 7, 9, 11];
+
+  // Semitone distance from F5
+  const semitoneDelta = midi - baseMidi;
+
+  // Convert semitone delta → diatonic steps
+  let diatonicSteps = 0;
+  let remaining = semitoneDelta;
+
+  // Move by octaves first
+  while (remaining >= 12) {
+    diatonicSteps += 7;
+    remaining -= 12;
+  }
+  while (remaining <= -12) {
+    diatonicSteps -= 7;
+    remaining += 12;
+  }
+
+  // Now find the closest diatonic degree within the octave
+  let bestDegree = 0;
+  let bestDiff = Infinity;
+
+  for (let deg = 0; deg < 7; deg++) {
+    const semitone = semis[deg] - semis[baseDegree];
+    const diff = Math.abs(semitone - remaining);
+    if (diff < bestDiff) {
+      bestDiff = diff;
+      bestDegree = deg;
+    }
+  }
+
+  diatonicSteps += bestDegree;
+
+  // Convert diatonic steps → Y
+  return topLineY + diatonicSteps * halfSpacing;
+}
+
+
+
+function computeBeatFromX(x, staveInfo) {
+  
+  const { measureX, measureWidth, beats } = staveInfo;
+
+  const rel = x - measureX;
+  const clamped = Math.max(0, Math.min(rel, measureWidth));
+
+  // console.log("computeBeatFromX: ", {x, measureX, measureWidth, beats, staveInfo, clamped} )
+
+  return Math.floor((clamped / measureWidth) * beats);
+}
+
+
+
+
+// function cursorYFromPitch(midi, staveInfo) {
+//   const { stave } = staveInfo;
+
+//   // VexFlow treble clef mapping: MIDI → lineIndex
+//   const midiToLineIndex = {
+//     77: 0,   // F5
+//     76: 0.5, // E5
+//     74: 1,   // D5
+//     72: 1.5, // C5
+//     71: 2,   // B4
+//     69: 2.5, // A4
+//     67: 3,   // G4
+//     65: 3.5, // F4
+//     64: 4,   // E4
+//     62: 4.5, // D4
+//     60: 5,   // C4
+//     59: 5.5, // B3
+//     57: 6,   // A3
+//     55: 6.5, // G3
+//     53: 7,   // F3
+//     52: 7.5, // E3
+//     50: 8,   // D3
+//     48: 8.5, // C3
+//   };
+
+//   // Find nearest mapped pitch
+//   let closest = 77;
+//   for (const p in midiToLineIndex) {
+//     if (Math.abs(midi - p) < Math.abs(midi - closest)) {
+//       closest = p;
+//     }
+//   }
+
+//   const lineIndex = midiToLineIndex[closest];
+
+//   return stave.getYForLine(lineIndex);
+// }
+
+
+
+function cursorYFromPitch(midi, staveInfo) {
+  const { stave } = staveInfo;
+
+  // E5 = MIDI 76 = lineIndex -0.5 (space above top line)
+
+  
+  const lineIndex = (76 - midi) / 2 - 0.5;
+
+  return stave.getYForLine(lineIndex);
+}
+
+
+
+
+
+// function cursorYFromPitch(midi, staveInfo) {
+//   const { topLineY, spacing } = staveInfo;
+//   const half = spacing / 2;
+
+//   // Same reference as pitchFromY
+//   const baseMidi = 77; // F5
+//   const baseDegree = 3;
+//   const semis = [0, 2, 4, 5, 7, 9, 11];
+
+//   // Convert MIDI back to diatonic degree
+//   const semitoneOffset = midi - baseMidi;
+
+//   // Find degree within octave
+//   let degree = semis.indexOf((semitoneOffset % 12 + 12) % 12);
+//   if (degree === -1) {
+//     // handle accidentals by rounding to nearest diatonic
+//     degree = semis.reduce((best, s, i) =>
+//       Math.abs(s - (semitoneOffset % 12)) <
+//       Math.abs(semis[best] - (semitoneOffset % 12))
+//         ? i
+//         : best,
+//       0
+//     );
+//   }
+
+//   const octaveOffset = Math.floor(semitoneOffset / 12);
+//   const totalDegree = baseDegree + degree + octaveOffset * 7;
+
+//   // ⭐ Correct direction: DOWNWARD Y = LOWER pitch
+//   const diatonicSteps = baseDegree - totalDegree;
+
+//   return topLineY + diatonicSteps * half;
+// }
+
+
+
+function getCursorLedgerLines(midi, staveInfo) {
+  const { topLineY, spacing } = staveInfo;
+  const half = spacing / 2;
+
+  const y = cursorYFromPitch(midi, staveInfo);
+  // const steps = Math.round((y - topLineY) / half);
+const steps = (y - staveInfo.topLineY) / (staveInfo.spacing / 2);
+
+  const ledgerLines = [];
+
+  // ABOVE staff
+  if (steps <= -2) {
+    for (let s = -2; s >= steps; s -= 2) {
+      ledgerLines.push(topLineY + s * half);
+    }
+  }
+
+  // BELOW staff
+  if (steps >= 10) {
+    for (let s = 10; s <= steps; s += 2) {
+      ledgerLines.push(topLineY + s * half);
+    }
+  }
+
+  return ledgerLines;
+}
+
+
+
+
+function pitchToVexflowKey(pitch) {
+  // pitch is like "C4", "Eb4", "F#3"
+  // console.log("pitchToVexflowKey: ", pitch)
+  const match = pitch.match(/^([A-Ga-g])(b|#)?(\d)$/);
+  if (!match) throw new Error("Invalid pitch: " + pitch);
+
+  let [, letter, accidental, octave] = match;
+
+  letter = letter.toLowerCase(); // VexFlow requires lowercase
+  accidental = accidental || "";
+
+  return `${letter}${accidental}/${octave}`;
+}
+
+
+function buildVexflowNotes(melody) {
+    const VF = window.Vex.Flow;
+  // console.log("buildVexflowNotes: ", melody)
+  return melody.map(n => {
+    const isRest = n.pitches.length === 0;
+
+    const vfDur = durationMap[n.duration];
+    const dur = isRest ? vfDur + "r" : vfDur;
+
+    const keys = isRest
+      ? ["b/4"]
+      : n.pitches.map(p => pitchToVexflowKey(p));
+
+    const vfNote = new VF.StaveNote({
+      keys,
+      duration: dur,
+      auto_stem: true
+    });
+
+    const dots = n.dots || 0;
+    for (let i = 0; i < dots; i++) {
+      vfNote.addDotToAll();
+    }
+
+    // ⭐ Manually fix ticks for dots (so Voice strict works)
+    if (dots > 0) {
+      const base = vfNote.getIntrinsicTicks(); // 4096 for quarter
+      const factor = Math.pow(1.5, dots);      // 1 dot → 1.5, 2 dots → 2.25, etc.
+      vfNote.setIntrinsicTicks(base * factor);
+    }
+
+    return vfNote;
+  });
+}
+
+
+
+
+function formatStrictVoice(voice, staveWidth) {
+    const VF = window.Vex.Flow;
+  const formatter = new VF.Formatter();
+
+  // ⭐ REQUIRED IN VEXFLOW 4:
+  // joinVoices builds ModifierContexts + TickContexts
+  formatter.joinVoices([voice]);
+
+  // ⭐ REQUIRED IN VEXFLOW 4:
+  // format applies dot multipliers and updates intrinsicTicks
+  formatter.format([voice], staveWidth);
+}
+
+
+
+function buildStrictVoice(vfNotes) {
+    const VF = window.Vex.Flow;
+  const voice = new VF.Voice({
+    num_beats: 4,
+    beat_value: 4,
+    resolution: VF.RESOLUTION
+  });
+
+  voice.setMode(VF.Voice.Mode.STRICT);
+  voice.addTickables(vfNotes);
+
+  return voice;
+}
+
+
 
 
 
@@ -605,27 +952,6 @@ if (!svg || svg.parentNode !== lsContainerRef.current) {
     const measureLayout = []
 
 
-
-
-
-
-
-function pitchToVexflowKey(pitch) {
-  // pitch is like "C4", "Eb4", "F#3"
-  // console.log("pitchToVexflowKey: ", pitch)
-  const match = pitch.match(/^([A-Ga-g])(b|#)?(\d)$/);
-  if (!match) throw new Error("Invalid pitch: " + pitch);
-
-  let [, letter, accidental, octave] = match;
-
-  letter = letter.toLowerCase(); // VexFlow requires lowercase
-  accidental = accidental || "";
-
-  return `${letter}${accidental}/${octave}`;
-}
-
-
-
 const durationMap = {
   w: "1",
   h: "2",
@@ -636,149 +962,15 @@ const durationMap = {
   "s": "16"
 };
 
-function buildVexflowNotes(melody) {
-  // console.log("buildVexflowNotes: ", melody)
-  return melody.map(n => {
-    const isRest = n.pitches.length === 0;
 
-    const vfDur = durationMap[n.duration];
-    const dur = isRest ? vfDur + "r" : vfDur;
+// function pitchToVexflowKey(midi) {
+//   const pitchClasses = ["c", "c#", "d", "d#", "e", "f", "f#", "g", "g#", "a", "a#", "b"];
 
-    const keys = isRest
-      ? ["b/4"]
-      : n.pitches.map(p => pitchToVexflowKey(p));
+//   const pc = midi % 12;
+//   const octave = Math.floor(midi / 12) - 1; // MIDI 60 → C4
 
-    const vfNote = new VF.StaveNote({
-      keys,
-      duration: dur,
-      auto_stem: true
-    });
-
-    const dots = n.dots || 0;
-    for (let i = 0; i < dots; i++) {
-      vfNote.addDotToAll();
-    }
-
-    // ⭐ Manually fix ticks for dots (so Voice strict works)
-    if (dots > 0) {
-      const base = vfNote.getIntrinsicTicks(); // 4096 for quarter
-      const factor = Math.pow(1.5, dots);      // 1 dot → 1.5, 2 dots → 2.25, etc.
-      vfNote.setIntrinsicTicks(base * factor);
-    }
-
-    return vfNote;
-  });
-}
-
-
-
-
-
-
-// function buildStrictVoice(vfNotes) {
-//   const voice = new VF.Voice({
-//     num_beats: 4,
-//     beat_value: 4,
-//     resolution: VF.RESOLUTION
-//   });
-
-//   voice.setStrict(true);
-//   voice.addTickables(vfNotes);
-
-//   return voice;
+//   return `${pitchClasses[pc]}/${octave}`;
 // }
-
-
-function formatStrictVoice(voice, staveWidth) {
-  const formatter = new VF.Formatter();
-
-  // ⭐ REQUIRED IN VEXFLOW 4:
-  // joinVoices builds ModifierContexts + TickContexts
-  formatter.joinVoices([voice]);
-
-  // ⭐ REQUIRED IN VEXFLOW 4:
-  // format applies dot multipliers and updates intrinsicTicks
-  formatter.format([voice], staveWidth);
-}
-
-
-
-function buildStrictVoice(vfNotes) {
-  const voice = new VF.Voice({
-    num_beats: 4,
-    beat_value: 4,
-    resolution: VF.RESOLUTION
-  });
-
-  voice.setMode(VF.Voice.Mode.STRICT);
-  voice.addTickables(vfNotes);
-
-  return voice;
-}
-
-
-
-
-
-function pitchFromY(y, staveInfo) {
-  const { topY, spacing } = staveInfo;
-
-  // diatonic steps: each line/space = 1 step
-  // y increases downward, so going UP the staff is negative delta
-  const diatonicSteps = Math.round((topY - y) / (spacing / 2));
-
-  // Reference: F4 at topY (MIDI 60)
-  const baseMidi = 77;      // C4
-  const baseDegree = 0;     // 0 = C, 1 = D, 2 = E, 3 = F, 4 = G, 5 = A, 6 = B
-
-  // Major scale semitone pattern relative to C
-  const semis = [0, 2, 4, 5, 7, 9, 11];
-
-  // Total diatonic degree offset from base
-  const totalDegree = baseDegree + diatonicSteps;
-
-  // How many full octaves up/down in diatonic space
-  const octaveOffset = Math.floor(totalDegree / 7);
-
-  // Degree within the octave (0–6), wrapped correctly for negatives
-  const degree = ((totalDegree % 7) + 7) % 7;
-
-  // Semitone offset from base C within the octave
-  const semitoneOffset = semis[degree] - semis[baseDegree];
-
-  // Final MIDI: base + octaves + within‑octave offset
-  return baseMidi + octaveOffset * 12 + semitoneOffset;
-}
-
-
-
-
-
-function computeBeatFromX(x, staveInfo) {
-  
-  const { measureX, measureWidth, beats } = staveInfo;
-
-  const rel = x - measureX;
-  const clamped = Math.max(0, Math.min(rel, measureWidth));
-
-  // console.log("computeBeatFromX: ", {x, measureX, measureWidth, beats, staveInfo, clamped} )
-
-  return Math.floor((clamped / measureWidth) * beats);
-}
-
-
-
-function clientToSvgPoint(event, svg) {
-  const pt = svg.createSVGPoint();
-  pt.x = event.clientX;
-  pt.y = event.clientY;
-
-  // Transform into SVG space
-  const svgP = pt.matrixTransform(svg.getScreenCTM().inverse());
-  return svgP;
-}
-
-
 
 
 
@@ -804,6 +996,10 @@ if (measureIdx === 0) {
 // DRAW STAVE
 const measureGroup = ctx.openGroup();
 stave.setContext(ctx).draw();
+// if(measureIdx === 0){
+// console.log("DRAWN STAVE OBJECT", stave);
+// }
+
 ctx.closeGroup();
 measureElements.current.set(measure.id, measureGroup);
 
@@ -813,23 +1009,25 @@ const bbox = stave.getBoundingBox();
 
 measureLayout[measureIdx] = {
   measureX: x,
-  measureY: y,                      // original grid y (keep if you need it)
+  measureY: y,
   measureWidth: staveWidth,
   row,
   systemIndex: row,
   stave,
-  topY: stave.getYForLine(0),
+  topLineY: stave.getYForLine(0),
   spacing: stave.getSpacingBetweenLines(),
-  hitTop: bbox.getY(),           // ← for hit‑testing
-  hitHeight: bbox.getH(),        // ← for hit‑testing
-beats: 4,  // hard code for now, later when support other time sigatures set is to leadSheet.timeSigNumerator
+  hitTop: bbox.getY(),
+  hitHeight: bbox.getH(),
+  beats: 4
 };
+
+// console.log("MEASURE LAYOUT ENTRY", measureLayout[measureIdx]);
 
 
 // Transparent staff hit area for note input
 const staffHit = document.createElementNS("http://www.w3.org/2000/svg", "rect");
 
-const topY = stave.getYForLine(0);
+const topLineY = stave.getYForLine(0);
 const spacing = stave.getSpacingBetweenLines();
 
 // Enough vertical range for full guitar pitch range
@@ -837,7 +1035,7 @@ const hitPadding = 12 * (spacing / 2); // 12 diatonic steps above/below
 
 staffHit.classList.add("staff-hit");
 staffHit.setAttribute("x", x);
-staffHit.setAttribute("y", topY - hitPadding);
+staffHit.setAttribute("y", topLineY - hitPadding);
 staffHit.setAttribute("width", staveWidth);
 staffHit.setAttribute("height", hitPadding * 2 + 5 * spacing);
 staffHit.setAttribute("fill", "transparent");
@@ -857,6 +1055,7 @@ staffHit.addEventListener("mousedown", (e) => {
   const svgP = clientToSvgPoint(e, svg);
 
   const staveInfo = measureLayout[measureIdx];
+
   const pitch = pitchFromY(svgP.y, staveInfo);
   const beatIndex = computeBeatFromX(svgP.x, staveInfo);
 console.log("before onNoteInput ", "\n.  svgP.y,: ", svgP.y, "\n.  pitch: ", pitch)
@@ -973,16 +1172,31 @@ g.addEventListener("mousedown", (e) => {
 
 
     // CARET
-    if (caret &&
-        caret.measure === measureIdx &&
-        caret.index === idx) {
-      const noteX = vfNote.getAbsoluteX();
-      caretDrawInfo = {
-        x: noteX,
-        top: y - 5,
-        bottom: y + staveHeight - 5
-      };
-    }
+  if (caret &&
+    caret.measure === measureIdx &&
+    caret.index === idx) {
+
+  const staveInfo = measureLayout[measureIdx];
+
+  // 1. Compute cursor Y from pitch
+  const cursorY = cursorYFromPitch(caret.midi, staveInfo);
+
+  // 2. Compute ledger lines for cursor
+  const ledgerYs = getCursorLedgerLines(caret.midi, staveInfo);
+
+  // 3. Compute cursor X
+  const noteX = vfNote.getAbsoluteX();
+
+  // 4. Store everything for drawing
+  caretDrawInfo = {
+    x: noteX,
+    y: cursorY,
+    ledgerYs
+  };
+}
+
+
+
 
     // ORIGINAL Y
     const ys = vfNote.getYs();
@@ -1225,7 +1439,28 @@ return () => {
 
 
 
-  
+ 
+
+const onMouseMove = (x, y, staveInfo) => {
+   if (!staveInfo) return;
+
+  // Convert raw Y → pitch → snapped Y
+  const midi = pitchFromY(y, staveInfo);
+  // const snappedY = cursorYFromPitch(midi, staveInfo);
+   const snappedY = snapToStaveLine(y, staveInfo)
+
+  setCursorPos({ x, y: snappedY });
+
+
+  // setCursorPos({ x, y: snappedY,  midi });
+
+ setCursorStaveInfo(staveInfo);
+};
+
+
+
+
+// MOUSE MOVE HANDLER FOR INSERT NOTES 
 
   useEffect(() => {
   const container = lsContainerRef.current;
@@ -1236,53 +1471,44 @@ return () => {
   if (!svg) return;
 
   function handleMouseMove(e) {
-  if (!noteInputModeRef.current) return;
+    if (!noteInputModeRef.current) return;
 
-  try {
+    try {
+      // Convert to SVG coords
+      const svgP = clientToSvgPoint(e, svg);
 
-    const pt = svg.createSVGPoint();
-    pt.x = e.clientX;
-    pt.y = e.clientY;
+      const staveInfo = findStaveAtY(
+        svgP.y,
+        lastMeasureLayoutRef.current
+      );
 
-    const ctm = svg.getScreenCTM();
-    if (!ctm) return;
+      if (!staveInfo || !onMouseMove) return;
 
-    // CTM already accounts for scroll + container offset
-    const svgP = pt.matrixTransform(ctm.inverse());
+      // ⭐⭐⭐ DEBUG PRINT — THIS IS WHAT WE NEED ⭐⭐⭐
+      const half = staveInfo.spacing / 2;
+      const steps = (svgP.y - staveInfo.topLineY) / half;
 
-    const staveInfo = findStaveAtY(
-      svgP.y,
-      lastMeasureLayoutRef.current
-    );
+      // console.log("DEBUG LEDGER TEST", {
+      //   rawClientY: e.clientY,
+      //   svgY: svgP.y,
+      //   staveTopY: staveInfo.topLineY,
+      //   spacing: staveInfo.spacing,
+      //   halfSpacing: half,
+      //   computedSteps: steps,
+      //   roundedSteps: Math.round(steps)
+      // });
+      // // ⭐⭐⭐ END DEBUG ⭐⭐⭐
 
-    // console.log("staveInfo: ", "\n. measureY: ", staveInfo.measureY, "\n. topY: ",  staveInfo.topY, "\n. measureWidth: ", staveInfo.measureWidth, 
-    //   "\n. row: ", staveInfo.row, "\n. measureX: ", staveInfo.measureX)
-    //   console.log("\n.   ", staveInfo )
-    if (!staveInfo || !onMouseMove) return;
-
-
-//     console.log("client", e.clientX, e.clientY);
-// console.log("svgP", svgP.x, svgP.y);
-
-// const rect = svg.getBoundingClientRect();
-// console.log("rect", rect.left, rect.top);
-
-
-
-
-    onMouseMove(svgP.x, svgP.y, staveInfo);
-  } catch (err) {
-    console.error("mousemove error:", err);
+      onMouseMove(svgP.x, svgP.y, staveInfo);
+    } catch (err) {
+      console.error("mousemove error:", err);
+    }
   }
-}
-
 
   window.addEventListener("mousemove", handleMouseMove);
-
-  return () => {
-    window.removeEventListener("mousemove", handleMouseMove);
-  };
+  return () => window.removeEventListener("mousemove", handleMouseMove);
 }, [onMouseMove]);
+
 
 
 

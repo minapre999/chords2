@@ -228,8 +228,9 @@ const [caret, setCaret] = useState({ measure: 0, index: 0 });
 const [pendingInsert, _setPendingInsert] = useState(null);
 
 // cursors for note input mode
-const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
+
 const [cursorPitch, setCursorPitch] = useState("C4");
+const [cursorPos, setCursorPos] = useState({ x: 0, y: 0,  cursorPitch});
 const [cursorVisible, setCursorVisible] = useState(false);
 const [cursorStaveInfo, setCursorStaveInfo] = useState(null);
 
@@ -1153,18 +1154,20 @@ const handleNoteDragStart = (noteId, startX, startY, g) => {
 
 
 
-const handleMouseMove = (x, y, staveInfo) => {
-  if (!staveInfo) return;
+// const handleMouseMove = (x, y, staveInfo) => {
+//   if (!staveInfo) return;
 
-  // Update cursor position
-  setCursorPos({ x, y });
 
-  // NEW: pass staff geometry to cursor
-  setCursorStaveInfo({
-    topY: staveInfo.topY,
-    spacing: staveInfo.spacing
-  });
-};
+
+//   // Update cursor position
+//   setCursorPos({ x, y });
+
+//   // NEW: pass staff geometry to cursor
+//   setCursorStaveInfo({
+//     topLineY: staveInfo.topLineY,
+//     spacing: staveInfo.spacing
+//   });
+// };
 
 
 
@@ -1728,13 +1731,14 @@ function updateDraggedNote(noteId, semitones, durationSteps) {
       >
         {/* LEFT: scrollable lead sheet */}
         <div
+        className = "lsScrollContainer"
          style={{
       flex: 2,
       minHeight: 0,
       overflowY: "auto",   // this MUST scroll
       border: "1px solid #ddd",
       borderRadius: 4,
-      padding: 8,
+      // padding: 8,    // ⭐ important: don't use padding as this causes the VexFlow svg coordinates to be out by the padding
       boxSizing: "border-box",
       position: "relative"   // ⭐ REQUIRED FOR CURSOR ALIGNMENT
     }}
@@ -1763,18 +1767,22 @@ function updateDraggedNote(noteId, semitones, durationSteps) {
         onTieDelete={onTieDelete}
         onSlurDelete={onSlurDelete}
         noteInputModeRef={noteInputModeRef}
-        onMouseMove={handleMouseMove}
+        setCursorPos={setCursorPos}
+        cursorStaveInfo={cursorStaveInfo}
+        setCursorStaveInfo={setCursorStaveInfo}
+        // onMouseMove={handleMouseMove}
    
           />
-
+{cursorVisible && cursorStaveInfo && (
           <NoteInputCursor
             lsContainerRef={lsContainerRef}
             visible={noteInputMode && cursorVisible}
             pos={cursorPos}
             duration={inputDuration}
             pitch={cursorPitch}
-            topY={cursorStaveInfo?.topY}
+            topLineY={cursorStaveInfo?.topLineY}
             spacing={cursorStaveInfo?.spacing}
+            stave={cursorStaveInfo?.stave}   // ⭐ ADD THIS
             style={{
         position: "absolute",
         top: 0,
@@ -1786,7 +1794,7 @@ function updateDraggedNote(noteId, semitones, durationSteps) {
         zIndex: 9999
       }}
           />
-
+)}
 
         </div>
 
