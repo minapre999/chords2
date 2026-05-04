@@ -1,6 +1,13 @@
 
 import "./NoteInputCursor.css"
 
+
+/*
+updated to rely solely on geometry, not pitch / midi etc
+the conversion from geometry to pitch happens on the mousedown when note is actually entered
+*/
+
+
 export default function NoteInputCursor({
   visible,
   pos,
@@ -25,6 +32,7 @@ if (!visible || !pos || topLineY == null || !spacing || !stave) {
   return null;
 }
 
+console.log()
 
 /*
 pox.y is 70 when hovering over top line, but 135 when hovering over bottom line.  It should be 120.
@@ -54,7 +62,7 @@ pos={cursorPos} and the only place setCursorPos is called is in onMouseMove in t
 
 
   const { x, y } = pos;
-console.log({x,y})
+// console.log({x,y})
 
 
 
@@ -96,10 +104,10 @@ if (stave) {
 
 let ly = topY - spacing
 let lineIndex=0 
-console.log({y, ly, topY, bottomY, lineSpacing})
+// console.log({y, ly, topY, bottomY, lineSpacing})
 if (y < topY ) {
     while( ly > y) {
-        console.log("ly: ", ly)
+        // console.log("ly: ", ly)
         lines.push(<line class="leger-line" key={`la-${lineIndex}`} x1={x-24} x2={x+2} y1={ly} y2={ly} strokeWidth="1.5"/>);
         ly-=spacing // going up so negative
         lineIndex++
@@ -112,7 +120,7 @@ if (y < topY ) {
   if (y > ly ) {
          
     while( ly < y) {
-        console.log("ly: ", ly)
+        // console.log("ly: ", ly)
         lines.push(<line class="leger-line"  key={`la-${lineIndex}`} x1={x-24} x2={x+2} y1={ly+spacing} y2={ly+spacing} strokeWidth="1.5"/>);
         ly+=spacing // going down so positive
         lineIndex++

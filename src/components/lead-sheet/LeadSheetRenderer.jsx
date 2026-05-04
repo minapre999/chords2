@@ -163,6 +163,10 @@ export default function LeadSheetRenderer(props) {
   const lastNoteLookupRef = useRef(null);
   const lastMeasureLayoutRef = useRef(null);
 
+  const vfCacheRef = useRef(new Map());
+
+
+
   //
   // Re-draw ties when selection or ties change
   //
@@ -545,6 +549,31 @@ hitLayer.appendChild(hit);
 
 
 
+
+function findStaveAtXY(x, y, layout) {
+  if (!layout) return null;
+
+  for (const m of layout) {
+    const topLineY = m.topLineY;      // ← use the real top line
+    const left = m.measureX
+    const right = left + m.measureWidth
+    const spacing = m.spacing;
+
+    const hitPadding = 12 * (spacing / 2);
+    const top = topLineY - hitPadding;
+    const bottom = topLineY + hitPadding + 5 * spacing;
+
+    // console.log("findStaveAtXY", {m, x, y, top, bottom, left, right})
+    if (y >= top && y <= bottom && x>= left && x <= right) {
+      return m;
+    }
+  }
+
+  return null;
+}
+
+
+
 function findStaveAtY(y, layout) {
   if (!layout) return null;
 
@@ -587,7 +616,7 @@ let snapY = Math.floor(y/5)*5 // snap to the next lowest half space
 // F5 is the top line, F6 = fret 13, A6 = fret 17, B6 = fret19
 // E4 is the bottom line, E5 is the lowest not
 
-console.log("snapToStaveLine", {y, snapY})
+// console.log("snapToStaveLine", {y, snapY})
 return snapY
   }
 
@@ -689,6 +718,85 @@ function computeBeatFromX(x, staveInfo) {
   // console.log("computeBeatFromX: ", {x, measureX, measureWidth, beats, staveInfo, clamped} )
 
   return Math.floor((clamped / measureWidth) * beats);
+}
+
+
+
+
+
+
+
+
+function findNoteAtX(x, noteBoxes) {
+  return noteBoxes.find(box => x >= box.x1 && x <= box.x2);
+}
+
+// for  closest note instead of strict containment:
+function findClosestNoteAtX(x, noteBoxes) {
+  let best = null;
+  let bestDist = Infinity;
+
+  for (const box of noteBoxes) {
+    const center = (box.x1 + box.x2) / 2;
+    const dist = Math.abs(center - x);
+    if (dist < bestDist) {
+      bestDist = dist;
+      best = box;
+    }
+  }
+  return best;
+}
+
+
+
+
+
+function getNoteBoundingBoxes(vfNotes) {
+  return vfNotes.map(note => {
+    const bb = note.getBoundingBox();
+    return {
+      note,
+      x1: bb.getX(),
+      x2: bb.getX() + bb.getW(),
+      y1: bb.getY(),
+      y2: bb.getY() + bb.getH(),
+      width: bb.getW(),
+      height: bb.getH(),
+    };
+  });
+}
+
+
+function getNoteRectFromX(x, vfNotes) {
+  const boxes = vfNotes.map(note => {
+    const bb = note.getBoundingBox();
+    return {
+      note,
+      x1: bb.getX(),
+      x2: bb.getX() + bb.getW(),
+      y1: bb.getY(),
+      y2: bb.getY() + bb.getH(),
+      width: bb.getW(),
+      height: bb.getH(),
+    };
+  });
+
+  // strict containment
+  const hit = boxes.find(b => x >= b.x1 && x <= b.x2);
+  if (hit) return hit;
+
+  // fallback: closest note
+  let best = null;
+  let bestDist = Infinity;
+  for (const b of boxes) {
+    const center = (b.x1 + b.x2) / 2;
+    const dist = Math.abs(center - x);
+    if (dist < bestDist) {
+      bestDist = dist;
+      best = b;
+    }
+  }
+  return best;
 }
 
 
@@ -1018,7 +1126,9 @@ measureLayout[measureIdx] = {
   spacing: stave.getSpacingBetweenLines(),
   hitTop: bbox.getY(),
   hitHeight: bbox.getH(),
-  beats: 4
+  beats: 4,
+  // index: measureIdx,
+  measureId: measure.id
 };
 
 // console.log("MEASURE LAYOUT ENTRY", measureLayout[measureIdx]);
@@ -1048,7 +1158,7 @@ no pointer events ensures:
     */
 staffHit.setAttribute("pointer-events", "none");
 
-
+// NOTE INPUT EVENT HANDLER
 staffHit.addEventListener("mousedown", (e) => {
   if (!noteInputModeRef.current) return;
 
@@ -1057,7 +1167,9 @@ staffHit.addEventListener("mousedown", (e) => {
   const staveInfo = measureLayout[measureIdx];
 
   const pitch = pitchFromY(svgP.y, staveInfo);
+
   const beatIndex = computeBeatFromX(svgP.x, staveInfo);
+
 console.log("before onNoteInput ", "\n.  svgP.y,: ", svgP.y, "\n.  pitch: ", pitch)
   onNoteInput(pitch, measureIdx, beatIndex);
 });
@@ -1072,6 +1184,13 @@ svg.appendChild(staffHit);
   // 1. BUILD NOTES
   // -----------------------------
   const vfNotes = buildVexflowNotes(measure.melody || []);
+
+  vfCacheRef.current.set(measure.id, {
+  vfNotes: vfNotes,          // array of StaveNotes
+    measure: measure,          // optional
+});
+
+
 
   // -----------------------------
   // 2. ATTACH NOTES TO STAVE
@@ -1162,12 +1281,7 @@ g.addEventListener("mousedown", (e) => {
   }
 
   onNoteSelect(n.id);
-});  // FINISH DRAWING LOOP
-
-
-
-
-
+});  
 
 
 
@@ -1297,8 +1411,12 @@ g.addEventListener("mousedown", (e) => {
 
 svg.appendChild(staffHit);
 
-});  // END RENDERING
+});  // END RENDERING - FINISH DRAWING LOOP
 
+
+
+
+console.log("measureLayout: ÷", measureLayout)
 
 
 
@@ -1443,13 +1561,25 @@ return () => {
 
 const onMouseMove = (x, y, staveInfo) => {
    if (!staveInfo) return;
-
+// console.log("ON MOUSE MOVE ", {x, y, staveInfo})
+  //  console.log("ON MOUSE MOVE")
   // Convert raw Y → pitch → snapped Y
   const midi = pitchFromY(y, staveInfo);
   // const snappedY = cursorYFromPitch(midi, staveInfo);
    const snappedY = snapToStaveLine(y, staveInfo)
+let snappedX = x
 
-  setCursorPos({ x, y: snappedY });
+
+// console.log( {staveInfo, vfCacheRef} )
+const { vfNotes } = vfCacheRef.current.get(staveInfo.measureId);
+
+const rect = getNoteRectFromX(x, vfNotes);
+if (rect) {
+  // console.log("Note:", rect.note);
+  // console.log("Rect:", rect.x1, rect.y1, rect.width, rect.height);
+  snappedX=rect.x1 + rect.width
+}
+  setCursorPos({ x: snappedX, y: snappedY });
 
 
   // setCursorPos({ x, y: snappedY,  midi });
@@ -1463,12 +1593,14 @@ const onMouseMove = (x, y, staveInfo) => {
 // MOUSE MOVE HANDLER FOR INSERT NOTES 
 
   useEffect(() => {
+
   const container = lsContainerRef.current;
   if (!container) return;
 
   const svgList = container.querySelectorAll("svg");
   const svg = svgList[svgList.length - 1];
   if (!svg) return;
+    // console.log("MOUSE MOVE USEEFFECT")
 
   function handleMouseMove(e) {
     if (!noteInputModeRef.current) return;
@@ -1477,11 +1609,12 @@ const onMouseMove = (x, y, staveInfo) => {
       // Convert to SVG coords
       const svgP = clientToSvgPoint(e, svg);
 
-      const staveInfo = findStaveAtY(
+      const staveInfo = findStaveAtXY(
+        svgP.x,
         svgP.y,
         lastMeasureLayoutRef.current
       );
-
+      // console.log("MOUSE MOVE", {staveInfo})
       if (!staveInfo || !onMouseMove) return;
 
       // ⭐⭐⭐ DEBUG PRINT — THIS IS WHAT WE NEED ⭐⭐⭐
