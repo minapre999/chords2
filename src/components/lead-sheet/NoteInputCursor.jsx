@@ -17,6 +17,10 @@ export default function NoteInputCursor({
   stave,
   lsContainerRef
 }) {
+
+   if (!visible) return null;
+
+
   function durationToGlyph(dur) {
     const SMUFL = {
       s: "\uECA9", // 16th
@@ -32,7 +36,7 @@ if (!visible || !pos || topLineY == null || !spacing || !stave) {
   return null;
 }
 
-console.log()
+
 
 /*
 pox.y is 70 when hovering over top line, but 135 when hovering over bottom line.  It should be 120.
@@ -149,7 +153,7 @@ if (y < topY ) {
         zIndex: 9999,
           stroke: "#00aaff",
             fill: "#00aaff",
-
+        
       }}
     >
       {/* ⭐ Ledger lines MUST be outside <text> */}

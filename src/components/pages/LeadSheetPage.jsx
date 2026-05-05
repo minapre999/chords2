@@ -1771,9 +1771,8 @@ function updateDraggedNote(noteId, semitones, durationSteps) {
         cursorStaveInfo={cursorStaveInfo}
         setCursorStaveInfo={setCursorStaveInfo}
         // onMouseMove={handleMouseMove}
-   
           />
-{cursorVisible && cursorStaveInfo && (
+
           <NoteInputCursor
             lsContainerRef={lsContainerRef}
             visible={noteInputMode && cursorVisible}
@@ -1791,34 +1790,16 @@ function updateDraggedNote(noteId, semitones, durationSteps) {
         height: "100%",
         pointerEvents: "none",
         overflow: "visible",
-        zIndex: 9999
+        zIndex: 9999,
+
+   
       }}
           />
-)}
+
 
         </div>
 
-        {/* RIGHT: inspector + fretboard */}
-        <div
-          style={{
-            flex: 1,
-            display: "flex",
-            flexDirection: "column",
-            gap: 8,
-            minHeight: 0
-          }}
-        >
-          {/* <InspectorPanel
-            selection={selection}
-            leadSheet={leadSheet}
-            onChange={updateLeadSheet}
-          /> */}
-          {/* <FretboardPreview
-            selection={selection}
-            leadSheet={leadSheet}
-            onChange={updateLeadSheet}
-          /> */}
-        </div>
+     
       </div>
     </div>
     </div>

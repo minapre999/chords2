@@ -167,6 +167,14 @@ export default function LeadSheetRenderer(props) {
 
 
 
+  // for debugging
+  useEffect(() => {
+    window.vfCacheRef = vfCacheRef;
+    window.caret = caret
+  }, [leadSheet]);
+ 
+
+
   //
   // Re-draw ties when selection or ties change
   //
@@ -218,6 +226,16 @@ export default function LeadSheetRenderer(props) {
 
 
 
+// debugging
+
+window.addEventListener("mousedown", e => {
+  const el = document.elementFromPoint(e.clientX, e.clientY);
+  console.log("TOP ELEMENT:", el);
+});
+
+
+
+
   //
   // Imperative API
   //
@@ -248,14 +266,18 @@ export default function LeadSheetRenderer(props) {
   //
   // Draw caret
   //
-  const drawCaret = (svg, x, yTop, yBottom) => {
+  const drawCaret = (svg, drawInfo) => {
+   
+    const {x,yTop, yBottom, width} = drawInfo
+    console.log("drawCaret", {svg, x, yTop, yBottom})
     const caretLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
     caretLine.setAttribute("x1", x);
     caretLine.setAttribute("x2", x);
     caretLine.setAttribute("y1", yTop);
     caretLine.setAttribute("y2", yBottom);
     caretLine.setAttribute("stroke", "#4a7aff");
-    caretLine.setAttribute("stroke-width", "2");
+     caretLine.setAttribute("opacity", "0.3");
+    caretLine.setAttribute("stroke-width", width * 2);
     caretLine.setAttribute("pointer-events", "none");
     svg.appendChild(caretLine);
   }; // drawCaret
@@ -301,6 +323,11 @@ export default function LeadSheetRenderer(props) {
     hit.setAttribute("y", topLineY + hitYOffset);
     hit.setAttribute("height", hitHeight);
     hit.setAttribute("fill", "transparent");
+
+    // debugging 
+    hit.setAttribute("fill", "rgba(204, 255, 0, 0.5)");
+hit.setAttribute("stroke", "rgba(221, 255, 0, 0.5)");
+
 
     hit.style.pointerEvents = "all";
     hit.style.cursor = "pointer";
@@ -571,28 +598,6 @@ function findStaveAtXY(x, y, layout) {
 
   return null;
 }
-
-
-
-function findStaveAtY(y, layout) {
-  if (!layout) return null;
-
-  for (const m of layout) {
-    const topLineY = m.topLineY;      // ← use the real top line
-    const spacing = m.spacing;
-
-    const hitPadding = 12 * (spacing / 2);
-    const top = topLineY - hitPadding;
-    const bottom = topLineY + hitPadding + 5 * spacing;
-
-    if (y >= top && y <= bottom) {
-      return m;
-    }
-  }
-
-  return null;
-}
-
 
 
 
@@ -1085,7 +1090,7 @@ const durationMap = {
     // -----------------------------
     // Render measures + notes
     // -----------------------------
-   
+   console.log("REDRAWING")
 measures.forEach((measure, measureIdx) => {
   const row = Math.floor(measureIdx / colsPerRow);
   const col = measureIdx % colsPerRow;
@@ -1150,6 +1155,11 @@ staffHit.setAttribute("width", staveWidth);
 staffHit.setAttribute("height", hitPadding * 2 + 5 * spacing);
 staffHit.setAttribute("fill", "transparent");
 
+// for debugging - make the hit boxes visible
+staffHit.setAttribute("fill", "rgba(179, 155, 161, 0.13)");
+staffHit.setAttribute("stroke", "rgba(233, 7, 7, 0.34)");
+
+
 /*
 no pointer events ensures:
     In normal mode → clicking a note selects it
@@ -1159,7 +1169,9 @@ no pointer events ensures:
 staffHit.setAttribute("pointer-events", "none");
 
 // NOTE INPUT EVENT HANDLER
+
 staffHit.addEventListener("mousedown", (e) => {
+  console.log("ENTERING INPUT EVENT")
   if (!noteInputModeRef.current) return;
 
   const svgP = clientToSvgPoint(e, svg);
@@ -1286,9 +1298,13 @@ g.addEventListener("mousedown", (e) => {
 
 
     // CARET
+    // make the caret the width of the note and height of the stave
   if (caret &&
     caret.measure === measureIdx &&
     caret.index === idx) {
+    console.log({caret})
+      // const noteId = caret.measure.melody.filter((n)=>n.id)
+      // const vfNote = vfCacheRef[noteId]
 
   const staveInfo = measureLayout[measureIdx];
 
@@ -1304,9 +1320,14 @@ g.addEventListener("mousedown", (e) => {
   // 4. Store everything for drawing
   caretDrawInfo = {
     x: noteX,
-    y: cursorY,
+    yTop: staveInfo.topLineY,
+    yBottom: staveInfo.topLineY + staveInfo.spacing * 4,
+    width: vfNote.width,
     ledgerYs
   };
+
+  console.log("caretDrawInfo", caretDrawInfo)
+
 }
 
 
@@ -1318,7 +1339,7 @@ g.addEventListener("mousedown", (e) => {
       originalYRef.current[id] = ys[0];
     }
 
-    // HITBOX
+    // NOTE HITBOXES
     const hitGroup = ctx.openGroup();
     const bbox = vfNote.getBoundingBox();
     if (bbox) {
@@ -1332,6 +1353,15 @@ g.addEventListener("mousedown", (e) => {
       rect.setAttribute("width", bbox.getW() + padding * 2);
       rect.setAttribute("height", bbox.getH() + padding * 2);
       rect.setAttribute("fill", "transparent");
+
+         // debugging
+      rect.setAttribute("fill", "rgba(0, 187, 255, 0.07)");
+      rect.setAttribute("stroke", "rgba(0, 200, 255, 0.32)");
+
+
+   
+
+
       rect.setAttribute("pointer-events", "all");
       hitGroup.appendChild(rect);
     }
@@ -1474,11 +1504,18 @@ console.log("measureLayout: ÷", measureLayout)
       );
       playhead.setAttribute("stroke", "red");
       playhead.setAttribute("stroke-width", "2");
+
+      // debugging = set layer fill and stroke to greenish
+      playhead.setAttribute("fill", "rgba(94, 255, 0, 0.3)");
+      playhead.setAttribute("stroke", "rgba(3, 43, 33, 0.91)");
+
+
       svg.appendChild(playhead);
       playheadRef.current = playhead;
 
+        
       if (caretDrawInfo) {
-        drawCaret(svg, caretDrawInfo.x, caretDrawInfo.top, caretDrawInfo.bottom);
+        drawCaret(svg, caretDrawInfo);
       }
 
 // Inside LeadSheetRenderer, where you already have lsContainerRef and tieHitLayerRef
