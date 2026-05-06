@@ -15,7 +15,7 @@ export default function NoteInputCaret({
 if(!caret || !vfCacheRef) return null
  if( vfCacheRef.current.size == 0) return null
 if(caret.measure === undefined) {
-    console.log("caret.measure is undefined")
+    // console.log("caret.measure is undefined")
         return null}
 // if (!visible || !pos || topLineY == null || !spacing || !stave) {
 //   return null;
@@ -23,15 +23,15 @@ if(caret.measure === undefined) {
 
 
 if( leadSheet.measures.length <= caret.measure) return null;
-console.log("leadSheet.measures", leadSheet.measures, {caret})
+// console.log("leadSheet.measures", leadSheet.measures, {caret})
 
  const measure = leadSheet.measures[caret.measure]
  
-console.log({measure, vfCacheRef})
+// console.log({measure, vfCacheRef})
 const measureNotes = vfCacheRef?.current?.get(measure.id)
 const vfNote = measureNotes.vfNotes[caret.index]
 
-console.log("vfCacheRef?.current", vfCacheRef.current, {vfNote,measure, measureNotes},  )
+// console.log("vfCacheRef?.current", vfCacheRef.current, {vfNote,measure, measureNotes},  )
 const bb = vfNote.getBoundingBox();
 const x= bb.getX()
 const width= bb.getW()
@@ -54,7 +54,7 @@ const caretRect = <rect className="caret-rect" x={x} y={y} width={width} height=
   // --------------------------------------
 
 
-    console.log({caret})
+    // console.log({caret})
  
 
   return (

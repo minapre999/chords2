@@ -58,6 +58,7 @@ export default function DurationControls(props) {
           newDur={d}
 
           onClick={() => {
+            console.log("setting input duration: ", d)
             setInputDuration(d);
             handleToolbarDurationChange(d);
           }}

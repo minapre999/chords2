@@ -1233,7 +1233,7 @@ staffHit.setAttribute("pointer-events", "none");
 // NOTE INPUT EVENT HANDLER
 
 staffHit.addEventListener("mousedown", (e) => {
-  console.log("ENTERING INPUT EVENT")
+  // console.log("ENTERING INPUT EVENT")
   if (!noteInputModeRef.current) return;
 
   const svgP = clientToSvgPoint(e, svg);

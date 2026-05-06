@@ -77,28 +77,37 @@ const ENHARMONIC_EQUIV = {
   "A#": "Bb"
 };
 
+
+
+
 // Standard tuning: [stringNumber, midiNote]
 const TUNING = [
-  { string: 6, midi: 40 }, // E2
-  { string: 5, midi: 45 }, // A2
-  { string: 4, midi: 50 }, // D3
-  { string: 3, midi: 55 }, // G3
-  { string: 2, midi: 59 }, // B3
-  { string: 1, midi: 64 }  // E4
+  { string: 1, midi: 76 }, // E4, E5 == 88, B5=83
+  { string: 2, midi: 71 }, // B3 (C4 is middle C, 72)
+  { string: 3, midi: 67 }, // G3
+  { string: 4, midi: 62 }, // D3
+  { string: 5, midi: 57 }, // A2
+  { string: 6, midi: 52 }, // E2
+ 
 ];
 
 // Convert MIDI -> { name: "C#4", base: "C#", octave: 4 }
-function midiToNote(midi) {
-  const noteIndex = (midi + 3) % 12; // so that 60 -> C
-  const octave = Math.floor(midi / 12) - 1;
-  const base = NOTE_NAMES_SHARP[noteIndex];
+function midiToNote(midi, preferFlats = false) {
+  const noteIndex = midi % 12;              // 60 -> 0 (C), 61 -> 1 (C#), ...
+  const octave = Math.floor(midi / 12) - 1; // 60 -> 4, 69 -> 4, etc.
+
+  let base = NOTE_NAMES_SHARP[noteIndex];
+
+  if (preferFlats && ENHARMONIC_EQUIV[base]) {
+    base = ENHARMONIC_EQUIV[base];
+  }
+
   return { name: `${base}${octave}`, base, octave };
 }
-
 function pitchToGuitar({
-  minMidi = 40,  // E2
-  maxMidi = 76,  // E5
-  maxFret = 17
+  minMidi = 52,  // E2
+  maxMidi = 83,  // E6.  // D2=47, D3=59, D4=71, D5=83
+  maxFret = 19
 } = {}) {
   // console.log("pitchToGuitar")
   const map = {};
@@ -266,6 +275,18 @@ useEffect(() => {
 // inputDuration - current selected duration
 // must always have one selected duration
 const [inputDuration, setInputDuration] = useState("q"); // default quarter
+// vexflow holds onto the old version of inputDuration 
+// react cant update event listererns inside VexFlow groups automatically
+// solution is to remove inputDuaration from the dependency array and instead read it from a ref
+// update onNoteInput etc. to use the ref, not the stale closure
+const inputDurationRef = useRef(inputDuration); 
+
+useEffect(() => {
+  inputDurationRef.current = inputDuration;
+}, [inputDuration]);
+
+
+
 // rest selected is true or false.  If true, then clicking a note 
 // will replace it with a rest of the current selected duration
 const [selRest, setSelRest] = useState(false); // default quarter
@@ -285,7 +306,8 @@ const setPendingInsert = (value) => {
 // for debugging - can view the lead sheet contents in the console
 useEffect(() => {
   window.leadSheet = leadSheet;
-}, [leadSheet]);
+  window.inputDuration = inputDuration
+}, [leadSheet, inputDuration]);
 
 useEffect(() => {
   window.selection = selection;
@@ -407,7 +429,7 @@ function insertNote({ pitch, duration, measureIndex, beatIndex }) {
         id: crypto.randomUUID(),
         pitches: [pitchName],
         duration,
-        dots: 0,
+        dots: selDotted === true ? 1 : 0,
         string: gf.string,
         fret: gf.fret
       });
@@ -435,16 +457,29 @@ function insertNote({ pitch, duration, measureIndex, beatIndex }) {
         id: newId,
         pitches: [pitchName],
         duration,
-        dots: 0,
+        dots: selDotted===true ? 1 : 0, // note: the dots needs to be updated to take into acco
         string: gf.string,
         fret: gf.fret
       });
 
       // Ripple edit
       // applyRippleEdit(measure, newId, duration);
-      const measures = applyRippleAcrossMeasures(leadSheet.measures, measureIndex, newId, duration);
+      applyRippleAcrossMeasures(next.measures, 
+                          measureIndex, 
+                          newId,
+                         {
+                          pitches: [pitchName],
+                          dots: selDotted===true ? 1 : 0,
+                          duration: duration,
+                         },
+                          {insertedIndex: beatIndex}
+                          );
 
-      return measures[measureIndex];
+
+       
+
+
+      return next
     }
 
     // ------------------------------------------------------------
@@ -454,7 +489,7 @@ function insertNote({ pitch, duration, measureIndex, beatIndex }) {
       id: crypto.randomUUID(),
       pitches: [pitchName],
       duration,
-      dots: 0,
+      dots: selDotted===true ? 1 : 0,
       string: gf.string,
       fret: gf.fret
     });
@@ -471,16 +506,16 @@ function insertNote({ pitch, duration, measureIndex, beatIndex }) {
 
 const onNoteInput = useCallback((pitch, measureIndex, beatIndex) => {
   // console.log("onNoteInput fired:", { pitch, measureIndex, melodyIndex, noteInputMode });
-   console.log("onNoteInput fired:",  pitch, measureIndex, beatIndex, "\n.  noteInputModeRef.current: ", noteInputModeRef.current);
+   console.log("onNoteInput fired:",  {pitch, measureIndex, beatIndex,inputDurationRef}, "\n.  noteInputModeRef.current: ", noteInputModeRef.current);
 
   if (!noteInputModeRef.current) {
-    console.log("IGNORED — mode off");
+    // console.log("IGNORED — mode off");
     return;
   }
 
    insertNote({
     pitch,
-    duration: inputDuration,
+    duration: inputDurationRef.current,
     measureIndex,
     beatIndex
   });
@@ -489,12 +524,10 @@ setCaret(measureIndex, beatIndex)
   moveCaretForward();
 
 
-
-
   // console.log("SETTING pendingInsert from onNoteInput");
   // setPendingInsert({ pitch, measureIndex, melodyIndex });
 
-}, [ inputDuration]);
+}, [ leadSheet ]);
 
 
 
@@ -780,7 +813,7 @@ const handleToolbarDurationChange = useCallback((newDur) => {
         setPendingInsert({
           pitches: ["C4"],   // default pitch
           duration,
-          dots: 0,
+          dots: selDotted===true ? 1 : 0,
           measureIndex: measure,
           melodyIndex: index
         });
@@ -901,7 +934,7 @@ useEffect(() => {
       id: crypto.randomUUID(),
       pitches: pitch ? [pitch] : [],   // [] = rest
       duration: inputDuration,         // "q", "h", "8", etc.
-      dots: 0,
+      dots: selDotted===true ? 1 : 0,
       string: null,
       fret: null
     };
@@ -1467,7 +1500,9 @@ function applyRippleEdit(measure, editedNoteId, newNoteData, opts = {}) {
       notes[index].duration = duration;
       notes[index].dots = dots;
     }
-  } else {
+
+    
+  } else{ 
     // ==========================================================
     // NORMAL OVERFLOW: shorten/remove notes AFTER edited note
     // ==========================================================
@@ -1475,7 +1510,7 @@ function applyRippleEdit(measure, editedNoteId, newNoteData, opts = {}) {
 
     if (total > MEASURE_TICKS && index >= 0) {
       let overflow = total - MEASURE_TICKS;
-
+      let targN = null
       for (let i = index + 1; i < notes.length && overflow > 0; i++) {
         const n = notes[i];
         const ticks = getTicksFromNote(n);
@@ -1485,6 +1520,9 @@ function applyRippleEdit(measure, editedNoteId, newNoteData, opts = {}) {
           notes.splice(i, 1);
           i--;
         } else {
+        
+
+
           const remaining = ticks - overflow;
 
           let newDur = null;
@@ -1529,19 +1567,19 @@ function applyRippleEdit(measure, editedNoteId, newNoteData, opts = {}) {
           }
 
           overflow = 0;
-        }
+        
       }
-
+    
       // any leftover (rare) becomes propagated overflow
       const fixedTotal = notes.reduce((s, n) => s + getTicksFromNote(n), 0);
       overflowTicks = Math.max(0, fixedTotal - MEASURE_TICKS);
     }
   }
-
+  }
   // ============================================================
   // UNDERFLOW
   // ============================================================
-  let total = notes.reduce((s, n) => s + getTicksFromNote(n), 0);
+   const total = notes.reduce((s, n) => s + getTicksFromNote(n), 0);
   let underflowTicks = 0;
 
   if (total < MEASURE_TICKS) {
