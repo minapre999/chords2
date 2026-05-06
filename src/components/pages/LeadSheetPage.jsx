@@ -227,7 +227,6 @@ useEffect(() => {
 
 const [inputAccidental, setInputAccidental] = useState(null);
 const [caret, setCaret] = useState({ measure: 0, index: 0 });
-const [caretStaveInfo, setCaretStaveInfo] = useState(null);
 const [pendingInsert, _setPendingInsert] = useState(null);
 
 // cursors for note input mode
@@ -442,9 +441,10 @@ function insertNote({ pitch, duration, measureIndex, beatIndex }) {
       });
 
       // Ripple edit
-      applyRippleEdit(measure, newId, duration);
+      // applyRippleEdit(measure, newId, duration);
+      const measures = applyRippleAcrossMeasures(leadSheet.measures, measureIndex, newId, duration);
 
-      return next;
+      return measures[measureIndex];
     }
 
     // ------------------------------------------------------------
@@ -484,7 +484,8 @@ const onNoteInput = useCallback((pitch, measureIndex, beatIndex) => {
     measureIndex,
     beatIndex
   });
-
+console.log("setting caret", {measureIndex, beatIndex})
+setCaret(measureIndex, beatIndex)
   moveCaretForward();
 
 
@@ -695,8 +696,9 @@ console.log("HANDLE TOGGLE NOTE DOTTED", "   \nnewDotted: ", newDotted)
           newDotted === true ? note.dots = 1 : note.dots = 0
           
             console.log('applying ripple edit ...')
-          const updatedMeasure = applyRippleEdit(
-            measure,
+          const updatedMeasures = applyRippleAcrossMeasures(
+            leadSheet.measures,
+            measureIndex,
             note.id,
             {
               pitches: note.pitches,     // REST
@@ -705,7 +707,7 @@ console.log("HANDLE TOGGLE NOTE DOTTED", "   \nnewDotted: ", newDotted)
             }
           );
 
-          next.measures[measureIndex] = updatedMeasure;
+          next.measures[measureIndex] = updatedMeasures[measureIndex];
           }
 
 
@@ -796,8 +798,10 @@ const handleToolbarDurationChange = useCallback((newDur) => {
         const note = measure.melody.find(n => n.id === selection.id);
         if (!note) continue;
 
-        const updatedMeasure = applyRippleEdit(
-          measure,
+        const updatedMeasures = applyRippleAcrossMeasures(
+          leadSheet.measures,
+          measureIndex,
+       
           note.id,
           {
             pitches: note.pitches,   // keep pitch
@@ -806,7 +810,7 @@ const handleToolbarDurationChange = useCallback((newDur) => {
           }
         );
 
-        next.measures[measureIndex] = updatedMeasure;
+        next.measures[measureIndex] = updatedMeasures[measureIndex];
       }
 
       return next;
@@ -910,14 +914,16 @@ useEffect(() => {
     ];
 
     // ⭐ Apply ripple edit BEFORE returning state
-    const updatedMeasure = applyRippleEdit(
-      { ...measure, melody: newMelody },
+    const updatedMeasures= applyRippleAcrossMeasures(
+      leadSheet.measures,
+      measureIndex,
+      // { ...measure, melody: newMelody },
       null,                 // editedNoteId
       null,                 // newNoteData
       { insertedIndex: melodyIndex }
     );
 
-    next.measures[measureIndex] = updatedMeasure;
+    next.measures[measureIndex] = updatedMeasures[measureIndex];
     return next;
   });
 
@@ -1078,7 +1084,7 @@ function moveCaretForward() {
       next.measure = lastMeasure;
       next.index = beats - 1;
     }
-
+console.log("next caret", next)
     return next;
   });
 }
@@ -1382,17 +1388,43 @@ function getTicksFromNote(n) {
 
 
 
+function ticksToDuration(ticks) {
+  // 1. Exact match (no dots)
+  for (const [dur, base] of Object.entries(durationToTicks)) {
+    if (base === ticks) {
+      return { duration: dur, dots: 0 };
+    }
+  }
+
+  // 2. Dotted matches (1 or 2 dots)
+  for (const [dur, base] of Object.entries(durationToTicks)) {
+    for (let d = 1; d <= 2; d++) {
+      const dottedTicks = Math.round(base * dottedMultiplier(d));
+      if (dottedTicks === ticks) {
+        return { duration: dur, dots: d };
+      }
+    }
+  }
+
+  // 3. Fallback: choose largest duration < ticks
+  const sorted = Object.entries(durationToTicks)
+    .sort((a, b) => b[1] - a[1]); // descending
+
+  for (const [dur, base] of sorted) {
+    if (base < ticks) {
+      return { duration: dur, dots: 0 };
+    }
+  }
+
+  // 4. Absolute fallback (should never happen)
+  return { duration: "16", dots: 0 };
+}
+
+
+
+
 
 function applyRippleEdit(measure, editedNoteId, newNoteData, opts = {}) {
-  console.log(
-    "APPLY RIPPLE EDIT",
-    "\nmeasure:", measure,
-    "\neditedNoteId:", editedNoteId,
-    "\nnewNoteData:", newNoteData,
-    "\nopts:", opts
-  );
-
-  // Clone measure + melody
   const next = {
     ...measure,
     melody: measure.melody.map(n => ({ ...n }))
@@ -1401,135 +1433,134 @@ function applyRippleEdit(measure, editedNoteId, newNoteData, opts = {}) {
   const notes = next.melody;
   let index = -1;
 
-  //
   // --- APPLY EDITED NOTE ---
-  //
   if (editedNoteId) {
     index = notes.findIndex(n => n.id === editedNoteId);
-    if (index === -1) return next;
-
-    // Replace duration/pitches/dots
-    notes[index] = {
-      ...notes[index],
-      ...newNoteData
-    };
+    if (index === -1) {
+      return { measure: next, overflowTicks: 0, underflowTicks: 0 };
+    }
+    notes[index] = { ...notes[index], ...newNoteData };
   }
 
-  //
-  // --- INSERTION MODE ---
-  //
   if (opts.insertedIndex !== undefined) {
     index = opts.insertedIndex;
   }
 
-  //
-  // --- COMPUTE TOTAL TICKS ---
-  //
-  let total = notes.reduce((sum, n) => sum + getTicksFromNote(n), 0);
+  let overflowTicks = 0;
 
-  //
   // ============================================================
-  // OVERFLOW HANDLING
+  // OVERFLOW WHEN EDITED NOTE IS LAST IN MEASURE (Failure mode A)
   // ============================================================
-  //
-  if (total > MEASURE_TICKS) {
-    console.log("fixing overflow");
-    let overflow = total - MEASURE_TICKS;
+  if (index >= 0 && index === notes.length - 1) {
+    const beforeTicks = notes
+      .slice(0, index)
+      .reduce((s, n) => s + getTicksFromNote(n), 0);
 
-    for (let i = index + 1; i < notes.length && overflow > 0; i++) {
-      const n = notes[i];
-      const ticks = getTicksFromNote(n);
+    const editedTicks = getTicksFromNote(notes[index]);
+    const remainingSpace = MEASURE_TICKS - beforeTicks;
 
-      if (ticks <= overflow) {
-        // Remove whole note/rest
-        overflow -= ticks;
-        notes.splice(i, 1);
-        i--;
-      } else {
-        // Shorten note
-        const remaining = ticks - overflow;
+    if (editedTicks > remainingSpace) {
+      overflowTicks = editedTicks - remainingSpace;
 
-        // Find exact duration match
-        let newDur = null;
-        let newDots = 0;
+      // shorten last note to exactly fill remainingSpace
+      const { duration, dots } = ticksToDuration(remainingSpace);
+      notes[index].duration = duration;
+      notes[index].dots = dots;
+    }
+  } else {
+    // ==========================================================
+    // NORMAL OVERFLOW: shorten/remove notes AFTER edited note
+    // ==========================================================
+    const total = notes.reduce((s, n) => s + getTicksFromNote(n), 0);
 
-        // Try exact match first
-        for (const [dur, baseTicks] of Object.entries(durationToTicks)) {
-          if (baseTicks === remaining) {
-            newDur = dur;
-            newDots = 0;
-            break;
-          }
-        }
+    if (total > MEASURE_TICKS && index >= 0) {
+      let overflow = total - MEASURE_TICKS;
 
-        // Try dotted matches
-        if (!newDur) {
+      for (let i = index + 1; i < notes.length && overflow > 0; i++) {
+        const n = notes[i];
+        const ticks = getTicksFromNote(n);
+
+        if (ticks <= overflow) {
+          overflow -= ticks;
+          notes.splice(i, 1);
+          i--;
+        } else {
+          const remaining = ticks - overflow;
+
+          let newDur = null;
+          let newDots = 0;
+
           for (const [dur, baseTicks] of Object.entries(durationToTicks)) {
-            for (let d = 1; d <= 2; d++) {
-              if (Math.round(baseTicks * dottedMultiplier(d)) === remaining) {
-                newDur = dur;
-                newDots = d;
-                break;
-              }
-            }
-            if (newDur) break;
-          }
-        }
-
-        // Fallback: choose largest duration < remaining
-        if (!newDur) {
-          const sorted = Object.entries(durationToTicks)
-            .sort((a, b) => b[1] - a[1]);
-
-          for (const [dur, baseTicks] of sorted) {
-            if (baseTicks < remaining) {
+            if (baseTicks === remaining) {
               newDur = dur;
               newDots = 0;
               break;
             }
           }
-        }
 
-        // Apply shortened duration
-        if (newDur) {
-          n.duration = newDur;
-          n.dots = newDots;
-        }
+          if (!newDur) {
+            for (const [dur, baseTicks] of Object.entries(durationToTicks)) {
+              for (let d = 1; d <= 2; d++) {
+                if (Math.round(baseTicks * dottedMultiplier(d)) === remaining) {
+                  newDur = dur;
+                  newDots = d;
+                  break;
+                }
+              }
+              if (newDur) break;
+            }
+          }
 
-        overflow = 0;
+          if (!newDur) {
+            const sorted = Object.entries(durationToTicks)
+              .sort((a, b) => b[1] - a[1]);
+            for (const [dur, baseTicks] of sorted) {
+              if (baseTicks < remaining) {
+                newDur = dur;
+                newDots = 0;
+                break;
+              }
+            }
+          }
+
+          if (newDur) {
+            n.duration = newDur;
+            n.dots = newDots;
+          }
+
+          overflow = 0;
+        }
       }
+
+      // any leftover (rare) becomes propagated overflow
+      const fixedTotal = notes.reduce((s, n) => s + getTicksFromNote(n), 0);
+      overflowTicks = Math.max(0, fixedTotal - MEASURE_TICKS);
     }
   }
 
-  //
   // ============================================================
-  // UNDERFLOW HANDLING
+  // UNDERFLOW
   // ============================================================
-  //
-  total = notes.reduce((sum, n) => sum + getTicksFromNote(n), 0);
+  let total = notes.reduce((s, n) => s + getTicksFromNote(n), 0);
+  let underflowTicks = 0;
 
   if (total < MEASURE_TICKS) {
-    console.log("fixing underflow");
     let under = MEASURE_TICKS - total;
-    let insertPos = index + 1;
+    underflowTicks = under;
 
-    // Sort durations by tick length descending
+    let insertPos = index + 1;
     const sortedDurations = Object.entries(durationToTicks)
-      .sort((a, b) => b[1] - a[1]); // [duration, ticks]
+      .sort((a, b) => b[1] - a[1]);
 
     while (under > 0) {
-      // Pick largest duration <= under
       const match = sortedDurations.find(([dur, ticks]) => ticks <= under);
       if (!match) break;
 
       const [dur, ticks] = match;
 
-      const newId = crypto.randomUUID();
-      console.log("adding rest at", insertPos, "id:", newId);
-
       notes.splice(insertPos, 0, {
-        id: newId,
-        pitches: [],     // REST
+        id: crypto.randomUUID(),
+        pitches: [],
         duration: dur,
         dots: 0,
         string: null,
@@ -1541,9 +1572,56 @@ function applyRippleEdit(measure, editedNoteId, newNoteData, opts = {}) {
     }
   }
 
-  console.log("next:", next);
-  return next;
+  return {
+    measure: next,
+    overflowTicks,
+    underflowTicks
+  };
 }
+
+
+
+function applyRippleAcrossMeasures(measures, measureIdx, editedNoteId, newNoteData, opts = {}) {
+  let result = applyRippleEdit(measures[measureIdx], editedNoteId, newNoteData, opts);
+  measures[measureIdx] = result.measure;
+
+  let overflow = result.overflowTicks;
+  let idx = measureIdx;
+
+  while (overflow > 0 && idx + 1 < measures.length) {
+    idx++;
+
+    const { duration, dots } = ticksToDuration(overflow);
+
+    const overflowNote = {
+      id: crypto.randomUUID(),
+      pitches: newNoteData.pitches ? [...newNoteData.pitches] : [],
+      duration,
+      dots,
+      string: newNoteData.string ?? null,
+      fret: newNoteData.fret ?? null
+    };
+
+    const nextMeasure = {
+      ...measures[idx],
+      melody: [overflowNote, ...measures[idx].melody.map(n => ({ ...n }))]
+    };
+
+    result = applyRippleEdit(
+      nextMeasure,
+      overflowNote.id,
+      overflowNote,
+      { insertedIndex: 0 }
+    );
+
+    measures[idx] = result.measure;
+    overflow = result.overflowTicks;
+  }
+
+  return measures;
+}
+
+
 
 
 
@@ -1773,8 +1851,6 @@ function updateDraggedNote(noteId, semitones, durationSteps) {
         setCursorPos={setCursorPos}
         cursorStaveInfo={cursorStaveInfo}
         setCursorStaveInfo={setCursorStaveInfo}
-        caretStaveInfo={caretStaveInfo}
-        setCaretStaveInfo={setCaretStaveInfo}
         vfCacheRef = {vfCacheRef}
 lastMeasureLayoutRef={lastMeasureLayoutRef}
         // onMouseMove={handleMouseMove}
@@ -1805,17 +1881,8 @@ lastMeasureLayoutRef={lastMeasureLayoutRef}
 
  {noteInputMode && (
 <NoteInputCaret
-            lsContainerRef={lsContainerRef}
             caret={caret}
-            caretStaveInfo={caretStaveInfo}
-            // visible={noteInputMode && cursorVisible}
-            // pos={cursorPos}
-            // duration={inputDuration}
-            // pitch={cursorPitch}
-            // topLineY={cursorStaveInfo?.topLineY}
-            // spacing={cursorStaveInfo?.spacing}
             vfCacheRef={vfCacheRef}
-            stave={cursorStaveInfo?.stave}   // ⭐ ADD THIS
             leadSheet={leadSheet}
             lastMeasureLayoutRef={lastMeasureLayoutRef}
             style={{

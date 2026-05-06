@@ -138,8 +138,6 @@ export default function LeadSheetRenderer(props) {
     setCursorPos,
     cursorStaveInfo,
     setCursorStaveInfo,
-    caretStaveInfo,
-    setCaretStaveInfo,
     vfCacheRef,
     lastMeasureLayoutRef,
     ...rest
@@ -354,8 +352,8 @@ export default function LeadSheetRenderer(props) {
     hit.setAttribute("fill", "transparent");
 
     // debugging 
-    hit.setAttribute("fill", "rgba(204, 255, 0, 0.5)");
-hit.setAttribute("stroke", "rgba(221, 255, 0, 0.5)");
+//     hit.setAttribute("fill", "rgba(204, 255, 0, 0.5)");
+// hit.setAttribute("stroke", "rgba(221, 255, 0, 0.5)");
 
 
     hit.style.pointerEvents = "all";
@@ -801,6 +799,40 @@ function getNoteBoundingBoxes(vfNotes) {
 }
 
 
+function moveCaretToNote(vfNote, measureIdx, noteIdx) {
+  if (!vfNote) return;
+
+  // 1. Get the absolute X position of the VexFlow note
+  const absX = vfNote.getAbsoluteX();
+
+  // 2. Get the measure layout info
+  const layout = measureLayoutRef.current[measureIdx];
+  if (!layout) return;
+
+  // 3. Compute caret beat index
+  //    (You already have computeBeatFromX)
+  const beatIndex = computeBeatFromX(absX, layout);
+
+  // 4. Update caret state
+  caretRef.current = {
+    measureIdx,
+    beatIndex,
+    x: absX,
+    y: layout.topLineY
+  };
+
+  // 5. Trigger React to re-render the caret overlay
+  setCaret({
+    measureIdx,
+    beatIndex,
+    // x: absX,
+    // y: layout.topLineY
+  });
+}
+
+
+
+
 function getNoteRectFromX(x, vfNotes) {
   const boxes = vfNotes.map(note => {
     const bb = note.getBoundingBox();
@@ -1185,8 +1217,8 @@ staffHit.setAttribute("height", hitPadding * 2 + 5 * spacing);
 staffHit.setAttribute("fill", "transparent");
 // console.log(x, topLineY, staveWidth, spacing)
 // for debugging - make the hit boxes visible
-staffHit.setAttribute("fill", "rgba(179, 155, 161, 0.13)");
-staffHit.setAttribute("stroke", "rgba(233, 7, 7, 0.34)");
+// staffHit.setAttribute("fill", "rgba(179, 155, 161, 0.13)");
+// staffHit.setAttribute("stroke", "rgba(233, 7, 7, 0.34)");
 
 
 /*
@@ -1214,6 +1246,7 @@ staffHit.addEventListener("mousedown", (e) => {
 
 // console.log("before onNoteInput ", "\n.  svgP.y,: ", svgP.y, "\n.  pitch: ", pitch)
   onNoteInput(pitch, measureIdx, beatIndex);
+
 });
 
 svg.appendChild(staffHit);
@@ -1311,7 +1344,7 @@ voice.tickables.forEach((t, idx) => {
       if (noteInputModeRef.current) {
         // MuseScore behavior: clicking a note moves caret, does NOT insert
         const svgP = clientToSvgPoint(e, svg);
-        moveCaretToNote(n, svgP);
+        // moveCaretToNote(n, svgP);
         return;
       }
       onNoteSelect(n.id);
@@ -1319,37 +1352,9 @@ voice.tickables.forEach((t, idx) => {
 
 
     // CARET
-    // make the caret the width of the note and height of the stave
-  if (caret &&
-    caret.measure === measureIdx &&
-    caret.index === idx) {
-    // console.log({caret})
-      // const noteId = caret.measure.melody.filter((n)=>n.id)
-      // const vfNote = vfCacheRef[noteId]
+ 
 
-  const staveInfo = measureLayout[measureIdx];
-
-  // 1. Compute cursor Y from pitch
-  const cursorY = cursorYFromPitch(caret.midi, staveInfo);
-
-  // 2. Compute ledger lines for cursor
-  const ledgerYs = getCursorLedgerLines(caret.midi, staveInfo);
-
-  // 3. Compute cursor X
-  const noteX = vfNote.getAbsoluteX();
-
-  // 4. Store everything for drawing
-  caretDrawInfo = {
-    x: noteX,
-    yTop: staveInfo.topLineY,
-    yBottom: staveInfo.topLineY + staveInfo.spacing * 4,
-    width: vfNote.width,
-    ledgerYs
-  };
-
-  // console.log("caretDrawInfo", caretDrawInfo)
-
-}
+  
 
 
 
@@ -1376,8 +1381,8 @@ voice.tickables.forEach((t, idx) => {
       rect.setAttribute("fill", "transparent");
 
          // debugging
-      rect.setAttribute("fill", "rgba(186, 39, 164, 0.2)");
-      rect.setAttribute("stroke", "rgba(166, 18, 192, 0.32)");
+      // rect.setAttribute("fill", "rgba(186, 39, 164, 0.2)");
+      // rect.setAttribute("stroke", "rgba(166, 18, 192, 0.32)");
 
 
    
@@ -1403,7 +1408,6 @@ voice.tickables.forEach((t, idx) => {
         e.stopPropagation();
         e.stopImmediatePropagation();
         setCaret({ measure: measureIdx, index: idx });
-         setCaretStaveInfo(staveInfo);
         return;
       }
 
@@ -1528,17 +1532,15 @@ svg.appendChild(staffHit);
       playhead.setAttribute("stroke-width", "2");
 
       // debugging = set layer fill and stroke to greenish
-      playhead.setAttribute("fill", "rgba(94, 255, 0, 0.3)");
-      playhead.setAttribute("stroke", "rgba(3, 43, 33, 0.91)");
+      // playhead.setAttribute("fill", "rgba(94, 255, 0, 0.3)");
+      // playhead.setAttribute("stroke", "rgba(3, 43, 33, 0.91)");
 
 
       svg.appendChild(playhead);
       playheadRef.current = playhead;
 
         
-      if (caretDrawInfo) {
-        drawCaret(svg, caretDrawInfo);
-      }
+  
 
 // Inside LeadSheetRenderer, where you already have lsContainerRef and tieHitLayerRef
 
@@ -1587,7 +1589,7 @@ return () => {
   measureElements.current.clear();
   originalYRef.current = {};
 };
-  }, [measures, selection, caret, dragRef, leadSheet.ties, leadSheet.slurs]); // useLayoutEffect
+  }, [measures, selection, dragRef, leadSheet.ties, leadSheet.slurs]); // useLayoutEffect
 
 
 
