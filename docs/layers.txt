@@ -1,0 +1,11 @@
+
+Lead sheet layers
+
+
+Lead sheet svg
+these are all appended to the lead sheet svg renderer context
+    Note hit boxes - mousedown event listener
+    Ties - curve segments with pointerdown event listeners
+    Slurs - curve segments with pointerdown event listeners
+    Caret - no listeners
+    Staffhit layout - get pitch from Y, pointer events none if not in note input mode
