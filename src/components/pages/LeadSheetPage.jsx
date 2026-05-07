@@ -157,6 +157,8 @@ const dragRef = useRef(null);
 const lsContainerRef = useRef(null);
   const vfCacheRef = useRef(new Map());
  const lastMeasureLayoutRef = useRef(null);
+const cursorPosRef = useRef(null)
+const staveRef = useRef(null)
 
   // 2. All useState SECOND
   const [leadSheet, setLeadSheet] = useState(initialLeadSheet);
@@ -285,6 +287,14 @@ useEffect(() => {
   inputDurationRef.current = inputDuration;
 }, [inputDuration]);
 
+useEffect(() => {
+  cursorPosRef.current = cursorPos;
+}, [cursorPos]);
+
+useEffect(() => {
+  staveRef.current = cursorStaveInfo?.stave;
+}, [cursorStaveInfo]);
+
 
 
 // rest selected is true or false.  If true, then clicking a note 
@@ -307,6 +317,7 @@ const setPendingInsert = (value) => {
 useEffect(() => {
   window.leadSheet = leadSheet;
   window.inputDuration = inputDuration
+  window.cursorPosRef = cursorPosRef
 }, [leadSheet, inputDuration]);
 
 useEffect(() => {
@@ -424,6 +435,7 @@ function insertNote({ pitch, duration, measureIndex, beatIndex }) {
     // ------------------------------------------------------------
     if (existing && newTicks < existingTicks) {
 
+        existing.pitches.push( pitchName)
       // Insert new note at beatIndex
       measure.melody.splice(beatIndex, 0, {
         id: crypto.randomUUID(),
@@ -450,29 +462,27 @@ function insertNote({ pitch, duration, measureIndex, beatIndex }) {
     // ------------------------------------------------------------
     if (existing && newTicks > existingTicks) {
 
-      // Insert new note
-      const newId = crypto.randomUUID();
+      // existing.pitches.push(pitchName)
+      // existing.durations = duration
+      // existing.selDotted = selDotted===true ? 1 : 0 // note: the dots needs to be updated to take into acco
+      // // const newId = crypto.randomUUID();
 
-      measure.melody.splice(beatIndex, 0, {
-        id: newId,
-        pitches: [pitchName],
-        duration,
-        dots: selDotted===true ? 1 : 0, // note: the dots needs to be updated to take into acco
-        string: gf.string,
-        fret: gf.fret
-      });
-
-      // Ripple edit
-      // applyRippleEdit(measure, newId, duration);
+      // make interface like MuseScore - if the duration is different then replace the existing pitches
+      // otherwise add the pith to the existing pitches
+      
+      let newPitches = [pitchName]
+      if( existing.duration === duration && existing.dots == selDotted) {
+        newPitches = [...existing.pitches, pitchName]
+      }
       applyRippleAcrossMeasures(next.measures, 
                           measureIndex, 
-                          newId,
+                          existing.id,
                          {
-                          pitches: [pitchName],
+                          pitches: newPitches,
                           dots: selDotted===true ? 1 : 0,
                           duration: duration,
                          },
-                          {insertedIndex: beatIndex}
+                          // {insertedIndex: beatIndex}
                           );
 
 
@@ -723,7 +733,7 @@ console.log("HANDLE TOGGLE NOTE DOTTED", "   \nnewDotted: ", newDotted)
       for (let measureIndex = 0; measureIndex < next.measures.length; measureIndex++) {
           const measure = next.measures[measureIndex];
           const note = measure.melody.find(n => n.id === selection.id);
-          console.log('measureIndex: ', measureIndex)
+          // console.log('measureIndex: ', measureIndex)
           if (!note) continue;
         
           newDotted === true ? note.dots = 1 : note.dots = 0
@@ -1379,6 +1389,29 @@ const durationToTicks = {
 
 };
 
+const dottedDurationToTicks = {
+  // no dots
+  "w0": 1024,
+  "h0": 512,
+  "q0": 256,
+  "e0": 128,
+  "s0": 64,
+  // one dot - extend duration by 50%
+  "w1": 1536,
+  "h1": 768,
+  "q1": 384,
+  "e1": 192,
+  "s1": 96,
+  // two dots - extend duration by 75%
+  "w2": 1536,
+  "h2": 768,
+  "q2": 384,
+  "e2": 192,
+  "s2": 96,
+};
+
+
+
 function getTicks(token) {
   if (token.endsWith("r")) {
     const dur = token.slice(0, -1); // "qr" → "q"
@@ -1397,7 +1430,6 @@ function setDuration(token, newDur) {
 }
 
 
-const MEASURE_TICKS = 1024;
 
 
 
@@ -1455,6 +1487,7 @@ function ticksToDuration(ticks) {
 
 
 
+const MEASURE_TICKS = 1024;
 
 
 function applyRippleEdit(measure, editedNoteId, newNoteData, opts = {}) {
@@ -1463,7 +1496,7 @@ function applyRippleEdit(measure, editedNoteId, newNoteData, opts = {}) {
     melody: measure.melody.map(n => ({ ...n }))
   };
 
-  const notes = next.melody;
+  let notes = next.melody;
   let index = -1;
 
   // --- APPLY EDITED NOTE ---
@@ -1479,38 +1512,64 @@ function applyRippleEdit(measure, editedNoteId, newNoteData, opts = {}) {
     index = opts.insertedIndex;
   }
 
-  let overflowTicks = 0;
+  // get ticks in the note that has been inserted / amended duration
+  const ticksTarg = getTicksFromNote(notes[index])
+  // calculate ticks from the note that has been inserted / amended duration to the end of the measure
+  
+   let total = notes.reduce((s, n) => s + getTicksFromNote(n), 0);
+  const measureOverflowTicks = total - MEASURE_TICKS > 0 ? total - MEASURE_TICKS: 0
+const targTicks = getTicksFromNote(notes[index])
 
-  // ============================================================
-  // OVERFLOW WHEN EDITED NOTE IS LAST IN MEASURE (Failure mode A)
-  // ============================================================
-  if (index >= 0 && index === notes.length - 1) {
-    const beforeTicks = notes
-      .slice(0, index)
-      .reduce((s, n) => s + getTicksFromNote(n), 0);
+  let ticksTargToEnd = 0
+  for( let i = index; i < notes.length; i++ ){
+      const ticks = getTicksFromNote(notes[i])
+      ticksTargToEnd += ticks
+      }
 
-    const editedTicks = getTicksFromNote(notes[index]);
-    const remainingSpace = MEASURE_TICKS - beforeTicks;
+  let ticksToIncTarg = 0 //. including target
+ for( let i = 0; i <= index; i++ ){
+      const ticks = getTicksFromNote(notes[i])
+      ticksToIncTarg += ticks
+      }
 
-    if (editedTicks > remainingSpace) {
-      overflowTicks = editedTicks - remainingSpace;
 
-      // shorten last note to exactly fill remainingSpace
-      const { duration, dots } = ticksToDuration(remainingSpace);
-      notes[index].duration = duration;
-      notes[index].dots = dots;
-    }
+  
+      // target overflow - does the amended note itself overflow, if so then delete all following note
+  const targOverflowTicks = ticksToIncTarg - MEASURE_TICKS     > 0 ? ticksToIncTarg - MEASURE_TICKS    : 0
 
+  
+  // where there is measure overflow, delete all notes after the target
+  // and set the duration of the target to the ticskTargToend
+
+  let overflowTicks = 0
+
+  if( targOverflowTicks > 0) {
+    notes = notes.slice(0, (index +1) ) // only include all from the start to the index, including the index    
+    next.melody = notes
+    const nTarg = notes[index]
     
-  } else{ 
+    for (const [dottedDur, baseTicks] of Object.entries(dottedDurationToTicks)) {
+            const tickDur =  MEASURE_TICKS - (ticksToIncTarg - targTicks)
+            if (baseTicks === tickDur) {
+              nTarg.duration = dottedDur[0];
+              nTarg.dots = dottedDur[1];
+              break;
+            }
+    }
+  } 
+  
+  else {  overflowTicks = measureOverflowTicks
+  }
+
+  if( overflowTicks > 0) {
+  
     // ==========================================================
     // NORMAL OVERFLOW: shorten/remove notes AFTER edited note
     // ==========================================================
-    const total = notes.reduce((s, n) => s + getTicksFromNote(n), 0);
 
     if (total > MEASURE_TICKS && index >= 0) {
       let overflow = total - MEASURE_TICKS;
-      let targN = null
+
       for (let i = index + 1; i < notes.length && overflow > 0; i++) {
         const n = notes[i];
         const ticks = getTicksFromNote(n);
@@ -1528,38 +1587,15 @@ function applyRippleEdit(measure, editedNoteId, newNoteData, opts = {}) {
           let newDur = null;
           let newDots = 0;
 
-          for (const [dur, baseTicks] of Object.entries(durationToTicks)) {
+          for (const [dottedDur, baseTicks] of Object.entries(dottedDurationToTicks)) {
             if (baseTicks === remaining) {
-              newDur = dur;
-              newDots = 0;
+              newDur = dottedDur[0];
+              newDots = dottedDur[1];
               break;
             }
           }
 
-          if (!newDur) {
-            for (const [dur, baseTicks] of Object.entries(durationToTicks)) {
-              for (let d = 1; d <= 2; d++) {
-                if (Math.round(baseTicks * dottedMultiplier(d)) === remaining) {
-                  newDur = dur;
-                  newDots = d;
-                  break;
-                }
-              }
-              if (newDur) break;
-            }
-          }
-
-          if (!newDur) {
-            const sorted = Object.entries(durationToTicks)
-              .sort((a, b) => b[1] - a[1]);
-            for (const [dur, baseTicks] of sorted) {
-              if (baseTicks < remaining) {
-                newDur = dur;
-                newDots = 0;
-                break;
-              }
-            }
-          }
+       
 
           if (newDur) {
             n.duration = newDur;
@@ -1576,10 +1612,12 @@ function applyRippleEdit(measure, editedNoteId, newNoteData, opts = {}) {
     }
   }
   }
+
+
   // ============================================================
   // UNDERFLOW
   // ============================================================
-   const total = notes.reduce((s, n) => s + getTicksFromNote(n), 0);
+    total = notes.reduce((s, n) => s + getTicksFromNote(n), 0);
   let underflowTicks = 0;
 
   if (total < MEASURE_TICKS) {
@@ -1612,8 +1650,8 @@ function applyRippleEdit(measure, editedNoteId, newNoteData, opts = {}) {
 
   return {
     measure: next,
-    overflowTicks,
-    underflowTicks
+    overflowTicks: targOverflowTicks, // only overflow when the new / amended note stretches across measures
+    underflowTicks: underflowTicks
   };
 }
 
@@ -1886,15 +1924,18 @@ function updateDraggedNote(noteId, semitones, durationSteps) {
         onTieDelete={onTieDelete}
         onSlurDelete={onSlurDelete}
         noteInputModeRef={noteInputModeRef}
+        cursorPos={cursorPos}
+        cursorPosRef={cursorPosRef}
         setCursorPos={setCursorPos}
         cursorStaveInfo={cursorStaveInfo}
         setCursorStaveInfo={setCursorStaveInfo}
+        staveRef={staveRef} 
         vfCacheRef = {vfCacheRef}
-lastMeasureLayoutRef={lastMeasureLayoutRef}
+        lastMeasureLayoutRef={lastMeasureLayoutRef}
         // onMouseMove={handleMouseMove}
           />
 
-          <NoteInputCursor
+       <NoteInputCursor
             lsContainerRef={lsContainerRef}
             visible={noteInputMode && cursorVisible}
             pos={cursorPos}
@@ -1902,7 +1943,7 @@ lastMeasureLayoutRef={lastMeasureLayoutRef}
             pitch={cursorPitch}
             topLineY={cursorStaveInfo?.topLineY}
             spacing={cursorStaveInfo?.spacing}
-            stave={cursorStaveInfo?.stave}   // ⭐ ADD THIS
+            staveRef={staveRef} 
             style={{
         position: "absolute",
         top: 0,

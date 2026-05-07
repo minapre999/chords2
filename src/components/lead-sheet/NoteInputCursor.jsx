@@ -14,7 +14,7 @@ export default function NoteInputCursor({
   duration,
   topLineY,
   spacing,
-  stave,
+  staveRef,
   lsContainerRef
 }) {
 
@@ -32,11 +32,11 @@ export default function NoteInputCursor({
     return SMUFL[dur];
   }
 
-if (!visible || !pos || topLineY == null || !spacing || !stave) {
+if (!visible || !pos || topLineY == null || !spacing || !staveRef?.current) {
   return null;
 }
 
-
+const stave = staveRef.current
 
 /*
 pox.y is 70 when hovering over top line, but 135 when hovering over bottom line.  It should be 120.
@@ -97,7 +97,7 @@ const vfSteps = (y - stave.getYForLine(-0.5)) / half;
 // Ledger lines using VexFlow geometry
 // --------------------------------------
 const lines = [];
-
+// console.log({stave})
 if (stave) {
   const topY = stave.getYForLine(0);
   const bottomY = stave.getYForLine(4);

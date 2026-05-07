@@ -136,10 +136,12 @@ export default function LeadSheetRenderer(props) {
     lsContainerRef,
     onNoteInput,
     setCursorPos,
+    cursorPosRef,
     cursorStaveInfo,
     setCursorStaveInfo,
     vfCacheRef,
     lastMeasureLayoutRef,
+    staveRef,
     ...rest
   } = props;
 
@@ -171,7 +173,8 @@ export default function LeadSheetRenderer(props) {
   useEffect(() => {
     window.vfCacheRef = vfCacheRef;
     window.caret = caret
-  }, [leadSheet]);
+
+  }, [leadSheet, caret]);
  
 
 
@@ -740,16 +743,43 @@ function yFromPitch(midi, staveInfo) {
 
 
 
-function computeBeatFromX(x, staveInfo) {
+
+// dont really want the "beat", rather the index
+function getNoteIndexForX(x, staveInfo) {
   
   const { measureX, measureWidth, beats } = staveInfo;
+// fior now assume it is the melody which is the vfCacheref
+// will need to update the vfCacheRef to include other parts
 
-  const rel = x - measureX;
-  const clamped = Math.max(0, Math.min(rel, measureWidth));
+  const { vfNotes } = vfCacheRef.current.get(staveInfo.measureId);
+  // const stave = cursorStaveInfo?.stave
+  const stave = staveInfo.stave
+  console.log({stave})
+  const topY = stave.getYForLine(0);
+  const bottomY = stave.getYForLine(4);
 
-  // console.log("computeBeatFromX: ", {x, measureX, measureWidth, beats, staveInfo, clamped} )
+  let found = null
+  let foundIndex = null
+  const padding = 6
+  for(let i =0; i < vfNotes.length; i++) {
+    const vfNote = vfNotes[i]
+    const rect = vfNote.getBoundingBox()
+    if(  x > rect.getX() - padding  && x < rect.getX()  + rect.getW()  + padding ){
 
-  return Math.floor((clamped / measureWidth) * beats);
+        found = vfNote
+        foundIndex = i
+        break;
+      }
+  }
+
+
+if( !found) {
+  console.log("couldnt find note correspondign to x click ", {x, vfNotes})
+  return;
+}
+console.log({foundIndex, found})
+return foundIndex
+
 }
 
 
@@ -810,8 +840,8 @@ function moveCaretToNote(vfNote, measureIdx, noteIdx) {
   if (!layout) return;
 
   // 3. Compute caret beat index
-  //    (You already have computeBeatFromX)
-  const beatIndex = computeBeatFromX(absX, layout);
+  //    (You already have getNoteIndexForX)
+  const beatIndex = getNoteIndexForX(absX, layout);
 
   // 4. Update caret state
   caretRef.current = {
@@ -1240,9 +1270,10 @@ staffHit.addEventListener("mousedown", (e) => {
 
   const staveInfo = measureLayout[measureIdx];
 
-  const pitch = pitchFromY(svgP.y, staveInfo);
+  const { x, y } = cursorPosRef.current;
 
-  const beatIndex = computeBeatFromX(svgP.x, staveInfo);
+  const pitch = pitchFromY(y, staveInfo);
+  const beatIndex = getNoteIndexForX(x, staveInfo);
 
 // console.log("before onNoteInput ", "\n.  svgP.y,: ", svgP.y, "\n.  pitch: ", pitch)
   onNoteInput(pitch, measureIdx, beatIndex);

@@ -717,14 +717,14 @@ function yFromPitch(midi, staveInfo) {
 
 
 
-function computeBeatFromX(x, staveInfo) {
+function getNoteIndexForX(x, staveInfo) {
   
   const { measureX, measureWidth, beats } = staveInfo;
 
   const rel = x - measureX;
   const clamped = Math.max(0, Math.min(rel, measureWidth));
 
-  // console.log("computeBeatFromX: ", {x, measureX, measureWidth, beats, staveInfo, clamped} )
+  // console.log("getNoteIndexForX: ", {x, measureX, measureWidth, beats, staveInfo, clamped} )
 
   return Math.floor((clamped / measureWidth) * beats);
 }
@@ -1107,7 +1107,7 @@ console.log("rect", {x,y,measureWidth,  height})
 
       const svgP = clientToSvgPoint(e, svg);
       const pitch = pitchFromY(svgP.y, staveInfo);
-      const beatIndex = computeBeatFromX(svgP.x, staveInfo);
+      const beatIndex = getNoteIndexForX(svgP.x, staveInfo);
 
       onNoteInput(pitch, measureIdx, beatIndex);
     });
@@ -1293,7 +1293,7 @@ measureLayoutRef.current = measureLayout;
 
 //   const pitch = pitchFromY(svgP.y, staveInfo);
 
-//   const beatIndex = computeBeatFromX(svgP.x, staveInfo);
+//   const beatIndex = getNoteIndexForX(svgP.x, staveInfo);
 
 // console.log("before onNoteInput ", "\n.  svgP.y,: ", svgP.y, "\n.  pitch: ", pitch)
 //   onNoteInput(pitch, measureIdx, beatIndex);
