@@ -151,7 +151,6 @@ export default function LeadSheetPage(props) {
     // 1. All useRef FIRST
 const rendererRef = useRef(null);
 const applyRippleEditRef = useRef(null);
-const advanceCaretRef = useRef(null);
 const onMouseUpRef = useRef(() => {});
 const dragRef = useRef(null);
 const lsContainerRef = useRef(null);
@@ -159,6 +158,7 @@ const lsContainerRef = useRef(null);
  const lastMeasureLayoutRef = useRef(null);
 const cursorPosRef = useRef(null)
 const staveRef = useRef(null)
+const caretRef = useRef(null)
 
   // 2. All useState SECOND
   const [leadSheet, setLeadSheet] = useState(initialLeadSheet);
@@ -219,6 +219,7 @@ useEffect(() => {
 
 
 
+
 // useEffect(() => {
 //   let internalValue = noteInputModeRef.current;
 
@@ -240,6 +241,11 @@ const [inputAccidental, setInputAccidental] = useState(null);
 const [caret, setCaret] = useState({ measure: 0, index: 0 });
 const [pendingInsert, _setPendingInsert] = useState(null);
 
+
+  useEffect(() => {
+  caretRef.current = caret;
+}, [caret]);
+
 // cursors for note input mode
 
 const [cursorPitch, setCursorPitch] = useState("C4");
@@ -260,6 +266,8 @@ useEffect(() => {
     // console.log("LEAVE CONTAINER");
     setCursorVisible(false);
   };
+
+
 
   container.addEventListener("mouseenter", onEnter);
   container.addEventListener("mouseleave", onLeave);
@@ -377,7 +385,7 @@ function midiToPitchName(midi) {
 
 
 // function applyRippleEdit(measure, editedNoteId, newNoteData, opts = {}) {
-// console.log("insertNote before splice: ",{beatIndex, pitchName},  measure.melody.map((n)=>n.pitches[0]+" - " +n.duration))
+// console.log("insertNote before splice: ",{noteIndex, pitchName},  measure.melody.map((n)=>n.pitches[0]+" - " +n.duration))
 
 /*
 insertNote logic
@@ -389,7 +397,7 @@ new duration
 
 */
 
-function insertNote({ pitch, duration, measureIndex, beatIndex }) {
+function insertNote({ pitch, duration="q", measureIndex=0, noteIndex=0, dots=0}) {
   setLeadSheet(prev => {
     const next = structuredClone(prev);
     const measure = next.measures[measureIndex];
@@ -401,11 +409,11 @@ function insertNote({ pitch, duration, measureIndex, beatIndex }) {
     const guitarMap = pitchToGuitar();   // your function
     const gf = guitarMap[pitchName] || { string: null, fret: null };
 
-    const existing = measure.melody[beatIndex];
+    const existing = measure.melody[noteIndex];
 
     // Helper: ticks
-    const newTicks = getTicks(duration);
-    const existingTicks = existing ? getTicks(existing.duration) : null;
+    const newTicks = dottedDurationToTicks[`${duration}${dots}`]
+    const existingTicks = existing ? getTicksFromNote(existing) : null;
 
     // ------------------------------------------------------------
     // CASE 1 — Same duration → chord input
@@ -434,14 +442,14 @@ function insertNote({ pitch, duration, measureIndex, beatIndex }) {
     // Insert new note, then shorten existing note
     // ------------------------------------------------------------
     if (existing && newTicks < existingTicks) {
+        
 
-        existing.pitches.push( pitchName)
-      // Insert new note at beatIndex
-      measure.melody.splice(beatIndex, 0, {
+      // Insert new note at noteIndex
+      measure.melody.splice(noteIndex, 0, {
         id: crypto.randomUUID(),
         pitches: [pitchName],
         duration,
-        dots: selDotted === true ? 1 : 0,
+        dots: dots,
         string: gf.string,
         fret: gf.fret
       });
@@ -450,8 +458,8 @@ function insertNote({ pitch, duration, measureIndex, beatIndex }) {
       const remainingTicks = existingTicks - newTicks;
       const newDur = ticksToDuration(remainingTicks);
 
-      existing.duration = newDur;
-      existing.dots = 0;
+      existing.duration = newDur.duration;
+      existing.dots = newDur.dots;
 
       return next;
     }
@@ -471,7 +479,7 @@ function insertNote({ pitch, duration, measureIndex, beatIndex }) {
       // otherwise add the pith to the existing pitches
       
       let newPitches = [pitchName]
-      if( existing.duration === duration && existing.dots == selDotted) {
+      if( existing.duration === duration && existing.dots == dots) {
         newPitches = [...existing.pitches, pitchName]
       }
       applyRippleAcrossMeasures(next.measures, 
@@ -479,10 +487,10 @@ function insertNote({ pitch, duration, measureIndex, beatIndex }) {
                           existing.id,
                          {
                           pitches: newPitches,
-                          dots: selDotted===true ? 1 : 0,
+                          dots: dots,
                           duration: duration,
                          },
-                          // {insertedIndex: beatIndex}
+                          // {insertedIndex: noteIndex}
                           );
 
 
@@ -495,11 +503,11 @@ function insertNote({ pitch, duration, measureIndex, beatIndex }) {
     // ------------------------------------------------------------
     // CASE 4 — No existing note → simple insert
     // ------------------------------------------------------------
-    measure.melody.splice(beatIndex, 0, {
+    measure.melody.splice(noteIndex, 0, {
       id: crypto.randomUUID(),
       pitches: [pitchName],
       duration,
-      dots: selDotted===true ? 1 : 0,
+      dots: dots,
       string: gf.string,
       fret: gf.fret
     });
@@ -514,9 +522,9 @@ function insertNote({ pitch, duration, measureIndex, beatIndex }) {
 
 
 
-const onNoteInput = useCallback((pitch, measureIndex, beatIndex) => {
+const onNoteInput = useCallback((pitch, measureIndex, noteIndex) => {
   // console.log("onNoteInput fired:", { pitch, measureIndex, melodyIndex, noteInputMode });
-   console.log("onNoteInput fired:",  {pitch, measureIndex, beatIndex,inputDurationRef}, "\n.  noteInputModeRef.current: ", noteInputModeRef.current);
+   console.log("onNoteInput fired:",  {pitch, measureIndex, noteIndex,inputDurationRef}, "\n.  noteInputModeRef.current: ", noteInputModeRef.current);
 
   if (!noteInputModeRef.current) {
     // console.log("IGNORED — mode off");
@@ -527,10 +535,14 @@ const onNoteInput = useCallback((pitch, measureIndex, beatIndex) => {
     pitch,
     duration: inputDurationRef.current,
     measureIndex,
-    beatIndex
+    noteIndex,
+    dots: selDotted===true ? 1 : 0,
   });
-console.log("setting caret", {measureIndex, beatIndex})
-setCaret(measureIndex, beatIndex)
+console.log("setting caret", {measureIndex, noteIndex})
+setCaret({
+  measure: measureIndex,
+   index:  noteIndex
+  } )
   moveCaretForward();
 
 
@@ -1068,14 +1080,15 @@ function deleteNote(sel) {
 
 
 useEffect(() => {
-  if (!advanceCaretRef.current) return;
+  if (!caretRef.current) return;
+
   if (!leadSheet || !leadSheet.measures) return;
 
-  const { measureIndex, melodyIndex } = advanceCaretRef.current;
+  const { measureIndex, melodyIndex } = caretRef.current;
 
   advanceCaret(measureIndex, melodyIndex, leadSheet);
 
-  advanceCaretRef.current = null;
+  caretRef.current = null;
 
 }, [leadSheet]);   // ⭐ not pendingInsert
 
@@ -1109,15 +1122,14 @@ useEffect(() => {
 
 function moveCaretForward() {
   setCaret(prev => {
+    // assume the caret forwards with each pitch of the melody
     const next = { ...prev };
-
+    const melody = leadSheet.measures[next.measure].melody
     next.index += 1;
-
-    const beats = 4; // or leadSheet.timeSigNumerator
     const lastMeasure = leadSheet.measures.length - 1;
 
     // Move to next measure if needed
-    if (next.index >= beats) {
+    if (next.index >= melody.length) {
       next.index = 0;
       next.measure += 1;
     }
@@ -1125,7 +1137,7 @@ function moveCaretForward() {
     // Clamp at end of score
     if (next.measure > lastMeasure) {
       next.measure = lastMeasure;
-      next.index = beats - 1;
+      next.index = melody.length - 1;
     }
 console.log("next caret", next)
     return next;
@@ -1136,6 +1148,8 @@ console.log("next caret", next)
 
 
 const advanceCaret = (measureIndex, tokenIndex, leadSheet) => {
+  if( !measureIndex || tokenIndex) return;
+  console.log({leadSheet,measureIndex, tokenIndex })
   const measure = leadSheet.measures[measureIndex];
   const tokenCount = measure.melody.length;
 
@@ -1288,7 +1302,7 @@ onMouseUpRef.current = () => {
 
 
 const handleNoteSelect = (id) => {
-  // console.log("SELECTING NOTE ID:", id);
+  console.log("SELECTING NOTE ID:", id);
 
   if (!noteInputMode) {
     setSelection({ type: "note", id });
@@ -1412,78 +1426,45 @@ const dottedDurationToTicks = {
 
 
 
-function getTicks(token) {
-  if (token.endsWith("r")) {
-    const dur = token.slice(0, -1); // "qr" → "q"
-    return durationToTicks[dur];
-  }
-  const dur = token.slice(-1); // "C4q" → "q"
-  return durationToTicks[dur];
-}
 
-function setDuration(token, newDur) {
-  if (token.endsWith("r")) {
-    return newDur + "r"; // rest
-  }
-  const pitch = token.slice(0, -1);
-  return pitch + newDur; // note
-}
-
-
-
-
-
-// dotted multiplier: 1 dot = 1.5x, 2 dots = 1.75x, etc.
-function dottedMultiplier(dots) {
-  let mult = 1;
-  let add = 0.5;
-  for (let i = 0; i < dots; i++) {
-    mult += add;
-    add *= 0.5;
-  }
-  return mult;
-}
 
 function getTicksFromNote(n) {
-  const base = durationToTicks[n.duration] || 256;
-  return base * dottedMultiplier(n.dots || 0);
+
+  const duration = n.duration
+const dots = n.dots
+let ticks = null
+ for (const [dottedDur, baseTicks] of Object.entries(dottedDurationToTicks)) {
+      if (`${duration}${dots}` === dottedDur) {
+        ticks = baseTicks
+        break;
+      }
+    }
+  
+
+ return ticks
+
 }
-
-
 
 
 
 function ticksToDuration(ticks) {
-  // 1. Exact match (no dots)
-  for (const [dur, base] of Object.entries(durationToTicks)) {
-    if (base === ticks) {
-      return { duration: dur, dots: 0 };
-    }
-  }
 
-  // 2. Dotted matches (1 or 2 dots)
-  for (const [dur, base] of Object.entries(durationToTicks)) {
-    for (let d = 1; d <= 2; d++) {
-      const dottedTicks = Math.round(base * dottedMultiplier(d));
-      if (dottedTicks === ticks) {
-        return { duration: dur, dots: d };
+let duration = "16"
+let dots = 0
+ for (const [dottedDur, baseTicks] of Object.entries(dottedDurationToTicks)) {
+      if (baseTicks === ticks) {
+        duration = dottedDur[0];
+        dots = dottedDur[1];
+        break;
       }
     }
-  }
+  
 
-  // 3. Fallback: choose largest duration < ticks
-  const sorted = Object.entries(durationToTicks)
-    .sort((a, b) => b[1] - a[1]); // descending
-
-  for (const [dur, base] of sorted) {
-    if (base < ticks) {
-      return { duration: dur, dots: 0 };
-    }
-  }
-
-  // 4. Absolute fallback (should never happen)
-  return { duration: "16", dots: 0 };
+ return { duration: duration, dots: dots };
+ 
 }
+
+
 
 
 
@@ -1917,6 +1898,7 @@ function updateDraggedNote(noteId, semitones, durationSteps) {
         onNoteInput={onNoteInput}
         caret={caret}
         setCaret={setCaret}
+        caretRef={caretRef}
         tieStart={tieStart}
         setTieStart={setTieStart}
         selection={selection}
@@ -1961,6 +1943,7 @@ function updateDraggedNote(noteId, semitones, durationSteps) {
  {noteInputMode && (
 <NoteInputCaret
             caret={caret}
+            caretRef={caretRef}
             vfCacheRef={vfCacheRef}
             leadSheet={leadSheet}
             lastMeasureLayoutRef={lastMeasureLayoutRef}

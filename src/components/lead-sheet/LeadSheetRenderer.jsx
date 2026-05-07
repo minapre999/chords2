@@ -125,6 +125,7 @@ export default function LeadSheetRenderer(props) {
     dragRef,
     caret,
     setCaret,
+    caretRef,
     noteInputMode,
     tieStart,
     setTieStart,
@@ -173,7 +174,7 @@ export default function LeadSheetRenderer(props) {
   useEffect(() => {
     window.vfCacheRef = vfCacheRef;
     window.caret = caret
-
+    window.caretRef = caretRef
   }, [leadSheet, caret]);
  
 
@@ -832,31 +833,14 @@ function getNoteBoundingBoxes(vfNotes) {
 function moveCaretToNote(vfNote, measureIdx, noteIdx) {
   if (!vfNote) return;
 
-  // 1. Get the absolute X position of the VexFlow note
-  const absX = vfNote.getAbsoluteX();
 
-  // 2. Get the measure layout info
-  const layout = measureLayoutRef.current[measureIdx];
-  if (!layout) return;
-
-  // 3. Compute caret beat index
-  //    (You already have getNoteIndexForX)
-  const beatIndex = getNoteIndexForX(absX, layout);
-
-  // 4. Update caret state
-  caretRef.current = {
-    measureIdx,
-    beatIndex,
-    x: absX,
-    y: layout.topLineY
-  };
 
   // 5. Trigger React to re-render the caret overlay
+  console.log("setting caret to", {measureIdx, noteIdx})
   setCaret({
-    measureIdx,
-    beatIndex,
-    // x: absX,
-    // y: layout.topLineY
+    measure: measureIdx,
+    index: noteIdx,
+   
   });
 }
 
@@ -1181,7 +1165,7 @@ const durationMap = {
     // -----------------------------
     // Render measures + notes
     // -----------------------------
-   console.log("REDRAWING MEASURE")
+  //  console.log("REDRAWING MEASURE")
 measures.forEach((measure, measureIdx) => {
   const row = Math.floor(measureIdx / colsPerRow);
   const col = measureIdx % colsPerRow;
@@ -1296,8 +1280,6 @@ svg.appendChild(staffHit);
     measure: measure,          // optional
 });
 
-
-
   // -----------------------------
   // 2. ATTACH NOTES TO STAVE
   //    (required BEFORE formatting)
@@ -1308,15 +1290,6 @@ svg.appendChild(staffHit);
   // 3. STRICT VOICE
   // -----------------------------
   const voice = buildStrictVoice(vfNotes);
-
-//   if (voice.ticksUsed !== voice.totalTicks) {
-//   console.warn(
-//     `Measure ${measureIdx} tick mismatch:`,
-//     "total:", voice.totalTicks,
-//     "used:", voice.ticksUsed
-//   );
-// }
-
 
   // -----------------------------
   // 4. FORMAT (now safe)
@@ -1344,18 +1317,6 @@ semitoneStepRef.current = (lineSpacing / 2) * (7 / 12);
 // console.log("totalTicks:", voice.totalTicks);
 // console.log("ticksUsed:", voice.ticksUsed);
 
-voice.tickables.forEach((t, idx) => {
-  // console.log(
-  //   `note ${idx}:`,
-  //   "dur:", measure.melody[idx]?.duration,
-  //   "dots:", measure.melody[idx]?.dots,
-  //   "intrinsicTicks:", t.getIntrinsicTicks()
-  // );
-});
-// console.log("--------------");
-
-
-
   // -----------------------------
   // 5. DRAW NOTES + HITBOXES
   // -----------------------------
@@ -1369,25 +1330,18 @@ voice.tickables.forEach((t, idx) => {
     ctx.closeGroup();
 
     // Ensure clicking a note does NOT insert
-    g.addEventListener("mousedown", (e) => {
-      e.stopPropagation();
+    // g.addEventListener("mousedown", (e) => {
+    //   e.stopPropagation();
 
-      if (noteInputModeRef.current) {
-        // MuseScore behavior: clicking a note moves caret, does NOT insert
-        const svgP = clientToSvgPoint(e, svg);
-        // moveCaretToNote(n, svgP);
-        return;
-      }
-      onNoteSelect(n.id);
-    });  
-
-
-    // CARET
- 
-
-  
-
-
+    //   // if (noteInputModeRef.current) {
+    //     // MuseScore behavior: clicking a note moves caret, does NOT insert
+    //     // caret not visible in non-insert mode, but WILL be in the correct position when mode changes
+    //     console.log("calling moveCaretToNote", {n, measureIdx, idx})
+    //     moveCaretToNote(n, measureIdx, idx); 
+    //     // return;
+    //   // }
+    //   // onNoteSelect(n.id);
+    // });  
 
 
     // ORIGINAL Y
@@ -1465,6 +1419,7 @@ voice.tickables.forEach((t, idx) => {
         window.removeEventListener("mouseup", onUp);
         if (!moved) {
           onNoteSelect?.(id);
+           moveCaretToNote(vfNote, measureIdx, idx); 
         }
       };
 

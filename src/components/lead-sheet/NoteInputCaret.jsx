@@ -23,11 +23,11 @@ if(caret.measure === undefined) {
 
 
 if( leadSheet.measures.length <= caret.measure) return null;
-// console.log("leadSheet.measures", leadSheet.measures, {caret})
+console.log("leadSheet.measures", leadSheet.measures, {caret})
 
  const measure = leadSheet.measures[caret.measure]
  
-// console.log({measure, vfCacheRef})
+console.log({measure, vfCacheRef})
 const measureNotes = vfCacheRef?.current?.get(measure.id)
 const vfNote = measureNotes.vfNotes[caret.index]
 
