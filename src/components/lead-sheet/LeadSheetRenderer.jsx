@@ -2,6 +2,10 @@ import { useEffect, useRef, useState, useCallback, useImperativeHandle, forwardR
 import "/node_modules/vexflow/releases/vexflow-debug.js";
 import RenderData, {RenderNote} from "/src/render-notes.js"
 import Note from "/src/harmony/note.js"
+import { cursorPosRef, rafRef } from "/src/components/lead-sheet/cursor/cursorRefs";
+import { updateCursorOverlay } from "/src/components/lead-sheet/cursor/updateCursorOverlay";
+import { updateCursorLedgerLines } from "/src/components/lead-sheet/cursor/updateCursorLedgerLines";
+import { ensureCursorOverlay } from "/src/components/lead-sheet/cursor/ensureCursorOverlay";
 import "./LeadSheetRenderer.css"
 import { isNumber } from "tone";
 
@@ -119,6 +123,7 @@ export default function LeadSheetRenderer(props) {
   const {
     leadSheet,
     rendererRef,
+    playerRef,
     onNoteSelect,
     onNoteDragStart,
     dragPreview,
@@ -133,24 +138,22 @@ export default function LeadSheetRenderer(props) {
     selection,
     setSelection,
     noteInputModeRef,
-    // onMouseMove,
     lsContainerRef,
     onNoteInput,
-    setCursorPos,
-    cursorPosRef,
-    cursorStaveInfo,
-    setCursorStaveInfo,
     vfCacheRef,
     lastMeasureLayoutRef,
     staveRef,
+    inputDurationRef,
     ...rest
   } = props;
 
 
-console.log("RENDERING LEADSHEET", {
-        noteInputMode, 
-        "noteInputModeRef.current" : noteInputModeRef.current})
-        
+console.log("RENDERING LEADSHEET")
+
+// console.log("RENDERING LEADSHEET", {
+//         noteInputMode, 
+//         "noteInputModeRef.current" : noteInputModeRef.current})
+
 // console.log("onNoteInput: ", onNoteInput)
   const noteElements = useRef(new Map());
   const measureElements = useRef(new Map());
@@ -180,6 +183,17 @@ console.log("RENDERING LEADSHEET", {
     window.caretRef = caretRef
   }, [leadSheet, caret]);
  
+
+
+
+
+  useEffect(() => {
+  if (rendererRef.current) {
+    console.log({"rendererRef.current": rendererRef.current} )
+    updateCursorOverlay(rendererRef.current);
+  }
+}, [rendererRef.current]);
+
 
 
   //
@@ -249,7 +263,7 @@ console.log("RENDERING LEADSHEET", {
   //
   // Imperative API
   //
-  useImperativeHandle(rendererRef, () => ({
+  useImperativeHandle(playerRef, () => ({
     highlightNote(noteId) {
       noteElements.current.forEach(el => el.classList.remove("vf-highlight-note"));
       const el = noteElements.current.get(noteId);
@@ -639,13 +653,21 @@ function findStaveAtXY(x, y, layout) {
 
 
 
-function clientToSvgPoint(e, svg) {
-  const rect = svg.getBoundingClientRect();
-  return {
-    x: e.clientX - rect.left,
-    y: e.clientY - rect.top
-  };
+// function clientToSvgPoint(e, svg) {
+//   const rect = svg.getBoundingClientRect();
+//   return {
+//     x: e.clientX - rect.left,
+//     y: e.clientY - rect.top
+//   };
+// }
+function clientToSvgPoint(e, svgRoot) {
+  const pt = svgRoot.createSVGPoint();
+  pt.x = e.clientX;
+  pt.y = e.clientY;
+  return pt.matrixTransform(svgRoot.getScreenCTM().inverse());
 }
+
+
 
 
 function snapToStaveLine( y, staveInfo){
@@ -759,7 +781,7 @@ function getNoteIndexForX(x, staveInfo) {
 // will need to update the vfCacheRef to include other parts
 
   const { vfNotes } = vfCacheRef.current.get(staveInfo.measureId);
-  // const stave = cursorStaveInfo?.stave
+
   const stave = staveInfo.stave
   console.log({stave})
   const topY = stave.getYForLine(0);
@@ -1097,6 +1119,7 @@ function buildStrictVoice(vfNotes) {
 
   // ⭐ StrictMode‑safe VexFlow render
   useLayoutEffect(() => {
+    console.log("USE LAYOUT")
     // console.log("USE LAYOUT", {leadSheet, 
     //                               "lsContainerRef.current" : lsContainerRef.current, 
     //                               noteInputMode, 
@@ -1132,6 +1155,10 @@ function buildStrictVoice(vfNotes) {
       VF.Renderer.Backends.SVG
     );
     renderer.resize(svgWidth, svgHeight);
+    rendererRef.current = renderer
+    
+    ensureCursorOverlay(rendererRef.current);
+
 
     const ctx = renderer.getContext();
     // const svg = ctx.svg;   // ⭐ THIS is the missing line
@@ -1144,6 +1171,11 @@ if (!svg || svg.parentNode !== lsContainerRef.current) {
   console.error("Lead-sheet SVG not found");
   return;
 }
+
+
+
+svg.id = "lead-sheet-svg";   // ⭐ replaces svg.classList.add(...)
+
 
 
     const noteLookup = new Map();
@@ -1572,6 +1604,47 @@ lastMeasureLayoutRef.current = measureLayout;
 
 
 
+  // ⭐ CREATE CURSOR OVERLAY INSIDE THE VEXFLOW SVG
+
+
+  
+
+  // ctx.svg is the wrapper
+  let svgRoot = ctx.svg;
+  // wrapper SVG created by VexFlow
+  const wrapperSvg = ctx.svg;
+
+  // translated group that VexFlow uses for the system
+  // usually the first <g> inside the wrapper <svg>
+  const systemGroup = wrapperSvg.querySelector("g");
+  if (!systemGroup) {
+    console.warn("No system <g> found for cursor overlay");
+    return;
+  }
+
+  let cursorGroup = systemGroup.querySelector("#note-input-cursor");
+if (!cursorGroup) {
+  cursorGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  cursorGroup.setAttribute("id", "note-input-cursor");
+  cursorGroup.style.pointerEvents = "none";
+  systemGroup.appendChild(cursorGroup);
+
+  const ledgers = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  ledgers.setAttribute("id", "cursor-ledgers");
+  cursorGroup.appendChild(ledgers);
+
+  const glyph = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  glyph.setAttribute("id", "cursor-glyph");
+    glyph.setAttribute("fill", "#00aaff");
+    glyph.setAttribute("stroke", "#00aaff");
+  cursorGroup.appendChild(glyph);
+}
+
+
+
+
+
+
 }
 
 return () => {
@@ -1616,6 +1689,20 @@ return () => {
 
  
 
+
+// function onMouseMove(e) {
+//   const pos = computeCursorPos(e); // your existing logic
+//   cursorPosRef.current = pos;
+
+//   if (!rafRef.current) {
+//     rafRef.current = requestAnimationFrame(() => {
+//       rafRef.current = null;
+//       updateCursorOverlay(staveRef.current, spacing);
+//     });
+//   }
+// }
+
+
 const onMouseMove = (x, y, staveInfo) => {
    if (!staveInfo) return;
 // console.log("ON MOUSE MOVE ", {x, y, staveInfo})
@@ -1623,9 +1710,19 @@ const onMouseMove = (x, y, staveInfo) => {
   // Convert raw Y → pitch → snapped Y
   const midi = pitchFromY(y, staveInfo);
   // const snappedY = cursorYFromPitch(midi, staveInfo);
+
+
+
+
    const snappedY = snapToStaveLine(y, staveInfo)
 let snappedX = x
 
+//   console.log("ON MOVE", {
+//   rawY: y,
+//   snappedY,
+//   staveTopLineY: staveInfo.topLineY,
+//   spacing: staveInfo.spacing,
+// });
 
 // console.log( {staveInfo, vfCacheRef} )
 const { vfNotes } = vfCacheRef.current.get(staveInfo.measureId);
@@ -1636,13 +1733,23 @@ if (rect) {
   // console.log("Rect:", rect.x1, rect.y1, rect.width, rect.height);
   snappedX=rect.x1 + rect.width
 }
-  setCursorPos({ x: snappedX, y: snappedY });
+
+cursorPosRef.current.x = snappedX
+cursorPosRef.current.y = snappedY
+
+// console.log({cursorPosRef})
+  if (!rafRef.current) {
+    rafRef.current = requestAnimationFrame(() => {
+      rafRef.current = null;
+      updateCursorOverlay({cursorPosRef, staveInfo, inputDurationRef, vfCacheRef});
+    });
+  }
 
 
-  // setCursorPos({ x, y: snappedY,  midi });
-
- setCursorStaveInfo(staveInfo);
 };
+
+
+
 
 
 

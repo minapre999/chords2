@@ -3,16 +3,16 @@ import Toolbar from "/src/components/toolbar/toolbar.jsx";
 
 import { TransportBar } from "../lead-sheet/TransportBar";
 import  LeadSheetRenderer, { durationMap}  from "../lead-sheet/LeadSheetRenderer";
-// import { InspectorPanel } from "../lead-sheet/InspectorPanel";
 // import { FretboardPreview } from "../lead-sheet/FretboardPreview";
 import FretboardSVG from "/src/components/fretboard/FretboardSVG.jsx";
 import * as Tone from "tone";
 import { useToneEngine } from "/src/context/ToneEngineContext";
 import { useLeadSheetPlayer } from "/src/hooks/useLeadSheetPlayer";
 import RenderData, {RenderNote} from "/src/render-notes.js"
-import NoteInputCursor  from "/src/components/lead-sheet/NoteInputCursor.jsx"
+// import NoteInputCursor  from "/src/components/lead-sheet/NoteInputCursor.jsx"
+import NoteInputCursorOverlay  from "/src/components/lead-sheet/cursor/NoteInputCursorOverlay.jsx"
 import NoteInputCaret  from "/src/components/lead-sheet/NoteInputCaret.jsx"
-
+import {staveRef} from "/src/components/lead-sheet/cursor/staveRef"
 import FloatingPalette from "/src/components/panels/FloatingPalette.jsx"
 
 import { autumnLeaves } from "/src/data/autumnLeaves";
@@ -156,10 +156,9 @@ const dragRef = useRef(null);
 const lsContainerRef = useRef(null);
   const vfCacheRef = useRef(new Map());
  const lastMeasureLayoutRef = useRef(null);
-const cursorPosRef = useRef(null)
-const staveRef = useRef(null)
-const caretRef = useRef(null)
 
+
+const caretRef = useRef(null)
 
   // 2. All useState SECOND
   const [leadSheet, setLeadSheet] = useState(initialLeadSheet);
@@ -170,7 +169,7 @@ const caretRef = useRef(null)
 //  const [renderDataUI, setRenderDataUI] = useState(null) ;
 const [isPlaying, setIsPlaying] = useState(false);
 const [isPaused, setIsPaused] = useState(false);
-
+const playerRef = useRef(null);
 
 const [tieStart, setTieStart] = useState(null); // where T was pressed
 
@@ -251,9 +250,7 @@ const [pendingInsert, _setPendingInsert] = useState(null);
 // cursors for note input mode
 
 const [cursorPitch, setCursorPitch] = useState("C4");
-const [cursorPos, setCursorPos] = useState({ x: 0, y: 0,  cursorPitch});
 const [cursorVisible, setCursorVisible] = useState(false);
-const [cursorStaveInfo, setCursorStaveInfo] = useState(null);
 
 useEffect(() => {
   const container = lsContainerRef.current;
@@ -297,13 +294,8 @@ useEffect(() => {
   inputDurationRef.current = inputDuration;
 }, [inputDuration]);
 
-useEffect(() => {
-  cursorPosRef.current = cursorPos;
-}, [cursorPos]);
 
-useEffect(() => {
-  staveRef.current = cursorStaveInfo?.stave;
-}, [cursorStaveInfo]);
+
 
 
 
@@ -327,7 +319,6 @@ const setPendingInsert = (value) => {
 useEffect(() => {
   window.leadSheet = leadSheet;
   window.inputDuration = inputDuration
-  window.cursorPosRef = cursorPosRef
 }, [leadSheet, inputDuration]);
 
 useEffect(() => {
@@ -1269,7 +1260,7 @@ const advanceCaret = (measureIndex, tokenIndex, leadSheet) => {
 
 const player = useLeadSheetPlayer({
   leadSheet,
-  rendererRef,
+  playerRef,
   renderDataUI,
   setRenderDataUI,
   isPlaying,
@@ -1301,24 +1292,6 @@ const handleNoteDragStart = (noteId, startX, startY, g) => {
 };
 
 
-
-
-
-
-// const handleMouseMove = (x, y, staveInfo) => {
-//   if (!staveInfo) return;
-
-
-
-//   // Update cursor position
-//   setCursorPos({ x, y });
-
-//   // NEW: pass staff geometry to cursor
-//   setCursorStaveInfo({
-//     topLineY: staveInfo.topLineY,
-//     spacing: staveInfo.spacing
-//   });
-// };
 
 
 
@@ -1861,6 +1834,10 @@ function updateDraggedNote(noteId, semitones, durationSteps) {
 
   return (
 
+    
+<>
+    
+
 
     <div className="page-wrapper"
      style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -1973,6 +1950,7 @@ function updateDraggedNote(noteId, semitones, durationSteps) {
         renderDataUI={renderDataUI}
         setRenderDataUI={setRenderDataUI}
         rendererRef={rendererRef} 
+        playerRef={playerRef}
         onNoteDragStart={handleNoteDragStart}
         measures={leadSheet.measures}
         onNoteSelect={handleNoteSelect}
@@ -1991,23 +1969,26 @@ function updateDraggedNote(noteId, semitones, durationSteps) {
         onTieDelete={onTieDelete}
         onSlurDelete={onSlurDelete}
         noteInputModeRef={noteInputModeRef}
-        cursorPos={cursorPos}
-        cursorPosRef={cursorPosRef}
-        setCursorPos={setCursorPos}
-        cursorStaveInfo={cursorStaveInfo}
-        setCursorStaveInfo={setCursorStaveInfo}
+        inputDurationRef={inputDurationRef}
         staveRef={staveRef} 
         vfCacheRef = {vfCacheRef}
         lastMeasureLayoutRef={lastMeasureLayoutRef}
         // onMouseMove={handleMouseMove}
           />
 
+<NoteInputCursorOverlay
 
- {noteInputMode && (
+  style={{
+        color: "red",
+        fill: "red",
+   stroke:"#00aaff",
+      fill: "#00aaff",
+      }}
+      />
+ {/* {noteInputMode && (
        <NoteInputCursor
             lsContainerRef={lsContainerRef}
             visible={noteInputMode && cursorVisible}
-            pos={cursorPos}
             duration={inputDuration}
             pitch={cursorPitch}
             topLineY={cursorStaveInfo?.topLineY}
@@ -2026,7 +2007,7 @@ function updateDraggedNote(noteId, semitones, durationSteps) {
    
       }}
           />
-  )}
+  )} */}
 
  {noteInputMode && (
 <NoteInputCaret
@@ -2058,5 +2039,7 @@ function updateDraggedNote(noteId, semitones, durationSteps) {
     </div>
     </div>
     </div>
+</>
+
   );
 }

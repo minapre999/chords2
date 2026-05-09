@@ -135,7 +135,7 @@ export default function LeadSheetRenderer(props) {
     // onMouseMove,
     lsContainerRef,
     onNoteInput,
-    setCursorPos,
+  
     cursorStaveInfo,
     setCursorStaveInfo,
     ...rest
@@ -1722,6 +1722,10 @@ let snappedX = x
 
 
 // console.log( {staveInfo, vfCacheRef} )
+
+
+
+
 const { vfNotes } = vfCacheRef.current.get(staveInfo.measureId);
 
 const rect = getNoteRectFromX(x, vfNotes);
