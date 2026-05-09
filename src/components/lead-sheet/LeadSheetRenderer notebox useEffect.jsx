@@ -118,7 +118,6 @@ export const durationMap = {
 export default function LeadSheetRenderer(props) {
   const {
     leadSheet,
-    rendererRef,
     onNoteSelect,
     onNoteDragStart,
     dragPreview,
@@ -147,10 +146,7 @@ export default function LeadSheetRenderer(props) {
   } = props;
 
 
-console.log("RENDERING LEADSHEET", {
-        noteInputMode, 
-        "noteInputModeRef.current" : noteInputModeRef.current})
-        
+
 // console.log("onNoteInput: ", onNoteInput)
   const noteElements = useRef(new Map());
   const measureElements = useRef(new Map());
@@ -169,8 +165,8 @@ console.log("RENDERING LEADSHEET", {
 
   const lastCtxRef = useRef(null);
   const lastNoteLookupRef = useRef(null);
-
-
+ const rendererRef = useRef(null)
+const hitTestMapRef = useRef(null)
 
 
   // for debugging
@@ -221,18 +217,202 @@ console.log("RENDERING LEADSHEET", {
   }, [selection, leadSheet.slurs]);
 
 
-
-  
   useEffect(() => {
-    console.log("updating areas for hit mode",noteInputMode )
   updateHitAreasForMode(noteInputMode);
 }, [noteInputMode]);
 
     function updateHitAreasForMode(isInputMode) {
-      document.querySelectorAll(".staff-hit").forEach(rect => {
-        rect.style.pointerEvents = isInputMode ? "all" : "none";
-      });
+  document.querySelectorAll(".staff-hit").forEach(rect => {
+    rect.style.pointerEvents = isInputMode ? "all" : "none";
+  });
 }
+
+
+
+
+
+/**************************************
+          NOTE HIT BOXES
+**************************************/
+
+useEffect(() => {
+  const renderer = rendererRef.current;
+  if (!renderer) return;
+
+  const svgRoot = renderer.ctx?.svg || renderer.getContext?.().svg || renderer.svg;
+
+  if (!svgRoot) return;
+  console.log("RENDER HIT BOX EFFECT", { rendererRef, "renderer.ctx": renderer.ctx, svgRoot });
+
+  const HIT_GROUP_ID = "vf-hitboxes-group";
+  const old = svgRoot.querySelector(`#${HIT_GROUP_ID}`);
+  if (old) old.remove();
+
+  const hitGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  hitGroup.setAttribute("id", HIT_GROUP_ID);
+  // group default none; rects will enable pointer-events individually
+  hitGroup.style.pointerEvents = "none";
+  svgRoot.appendChild(hitGroup);
+
+  const newHitMap = {};
+  leadSheet.measures.forEach((measure, mIndex) => {
+
+    // const vfNotes = measure.vfNotes || [];
+    const vfNotes = vfCacheRef.current.get(measure.id).vfNotes
+    // console.log({vfNotes})
+    vfNotes.forEach((vfNote, nIndex) => {
+      const id = measure.melody[nIndex]?.id;
+      if (!id) return;
+      const bbox = vfNote.getBoundingBox();
+      if (!bbox) return;
+      // console.log("bounding box for note", { measureIndex: mIndex, noteIndex: nIndex, id });
+
+      const padding = 6;
+      const x = bbox.getX() - padding;
+      const y = bbox.getY() - padding;
+      const w = bbox.getW() + padding * 2;
+      const h = bbox.getH() + padding * 2;
+// console.log({x,y,w,h})
+      const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+      rect.setAttribute("x", x);
+      rect.setAttribute("y", y);
+      rect.setAttribute("width", w);
+      rect.setAttribute("height", h);
+
+      // default transparent for normal operation
+      rect.setAttribute("fill", "transparent");
+
+      // debugging: use rect (not hit)
+      rect.setAttribute("fill", "rgba(217, 30, 30, 0.3)");
+      rect.setAttribute("stroke", "rgba(198, 33, 33, 0.6)");
+      rect.setAttribute("stroke-width", "1");
+
+      rect.setAttribute("pointer-events", "all");
+      rect.dataset.noteId = id;
+      rect.dataset.measureIndex = String(mIndex);
+      rect.dataset.noteIndex = String(nIndex);
+      rect.style.cursor = "pointer";
+
+      hitGroup.appendChild(rect);
+      newHitMap[id] = { measureIndex: mIndex, noteIndex: nIndex, x, y, w, h, rect };
+    });
+  });
+
+  hitTestMapRef.current = newHitMap;
+
+// Delegated pointer handler
+  let activePointer = null;
+  let startX = 0;
+  let startY = 0;
+  let moved = false;
+  let rafId = null;
+
+  const onPointerDown = (ev) => {
+    // find the rect with dataset.noteId
+    let target = ev.target;
+    while (target && target !== hitGroup) {
+      if (target.dataset && target.dataset.noteId) break;
+      target = target.parentNode;
+    }
+    if (!target || target === hitGroup) return;
+
+    ev.preventDefault();
+    // stop other handlers if in note input mode
+    if (noteInputMode) {
+      ev.stopPropagation();
+      ev.stopImmediatePropagation();
+      const measure = Number(target.dataset.measureIndex);
+      const index = Number(target.dataset.noteIndex);
+      setCaret({ measure, index });
+      return;
+    }
+
+    // normal selection / drag flow
+    const id = target.dataset.noteId;
+    const measureIdx = Number(target.dataset.measureIndex);
+    const idx = Number(target.dataset.noteIndex);
+
+    // hide pointer events on VF group so pointer events go to window during drag
+    const g = noteElements.current.get(id);
+    if (g) g.style.pointerEvents = "none";
+    hitGroup.style.pointerEvents = "all";
+
+    activePointer = ev.pointerId;
+    startX = ev.clientX;
+    startY = ev.clientY;
+    moved = false;
+
+    // pointer capture so we continue to receive events even if pointer leaves the rect
+    if (typeof target.setPointerCapture === "function") {
+      try { target.setPointerCapture(activePointer); } catch (e) { /* ignore */ }
+    }
+
+    const onPointerMove = (moveEv) => {
+      if (moveEv.pointerId !== activePointer) return;
+      const dx = moveEv.clientX - startX;
+      const dy = moveEv.clientY - startY;
+
+      if (!moved && Math.hypot(dx, dy) > 3) {
+        moved = true;
+        // call your drag start callback
+        onNoteDragStart?.(id, startX, startY, g);
+      }
+
+      if (moved) {
+        // if you have a drag update handler, call it here (optional)
+        // onNoteDragMove?.(id, moveEv.clientX, moveEv.clientY);
+      }
+    };
+
+    const onPointerUp = (upEv) => {
+      if (upEv.pointerId !== activePointer) return;
+
+      // release pointer capture
+      if (typeof target.releasePointerCapture === "function") {
+        try { target.releasePointerCapture(activePointer); } catch (e) { /* ignore */ }
+      }
+
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", onPointerUp);
+
+      // restore pointer events
+      if (g) g.style.pointerEvents = "none";
+      hitGroup.style.pointerEvents = "all";
+
+      if (!moved) {
+        // click (no drag)
+        onNoteSelect?.(id);
+        // move caret to the clicked note using your helper
+        const vfNote = leadSheet.measures[measureIdx]?.vfNotes?.[idx];
+        if (vfNote) moveCaretToNote?.(vfNote, measureIdx, idx);
+      } else {
+        // drag ended — call drag end handler if you have one
+        // onNoteDragEnd?.(id, upEv.clientX, upEv.clientY);
+      }
+
+      activePointer = null;
+      moved = false;
+      startX = 0;
+      startY = 0;
+      if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+    };
+
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", onPointerUp);
+  };
+
+  // attach delegated pointerdown
+  hitGroup.style.pointerEvents = "auto";
+  hitGroup.addEventListener("pointerdown", onPointerDown);
+
+  return () => {
+    hitGroup.removeEventListener("pointerdown", onPointerDown);
+    hitGroup.remove();
+    if (rafId) cancelAnimationFrame(rafId);
+  };
+
+
+}, [leadSheet, measures, selection, dragRef, leadSheet.ties, leadSheet.slurs]);
 
 
 
@@ -251,6 +431,7 @@ console.log("RENDERING LEADSHEET", {
   //
   useImperativeHandle(rendererRef, () => ({
     highlightNote(noteId) {
+      console.log("highlight note")
       noteElements.current.forEach(el => el.classList.remove("vf-highlight-note"));
       const el = noteElements.current.get(noteId);
       if (!el) return;
@@ -842,7 +1023,7 @@ function moveCaretToNote(vfNote, measureIdx, noteIdx) {
 
 
   // 5. Trigger React to re-render the caret overlay
-  console.log("setting caret to", {measureIdx, noteIdx})
+  // console.log("setting caret to", {measureIdx, noteIdx})
   setCaret({
     measure: measureIdx,
     index: noteIdx,
@@ -1097,10 +1278,7 @@ function buildStrictVoice(vfNotes) {
 
   // ⭐ StrictMode‑safe VexFlow render
   useLayoutEffect(() => {
-    // console.log("USE LAYOUT", {leadSheet, 
-    //                               "lsContainerRef.current" : lsContainerRef.current, 
-    //                               noteInputMode, 
-    //                               "noteInputModeRef.current" : noteInputModeRef.current})
+    
     if (!lsContainerRef.current) return;
     if (dragRef.current) return; // freeze during drag
 
@@ -1116,16 +1294,15 @@ function buildStrictVoice(vfNotes) {
     noteElements.current.clear();
     measureElements.current.clear();
     originalYRef.current = {};
-    const staveTopPadding = 40
-    const staveLefPadding = 20
+
     const VF = window.Vex.Flow;
     const staveWidth = 350;
-    const staveHeight = 140;
+    const staveHeight = 120;
     const colsPerRow = 2;
 
     const rows = Math.ceil(measures.length / colsPerRow);
-    const svgWidth = staveWidth * colsPerRow;
-    const svgHeight = staveTopPadding + rows * staveHeight;
+    const svgWidth = 900;
+    const svgHeight = 40 + rows * staveHeight;
 
     const renderer = new VF.Renderer(
       lsContainerRef.current,
@@ -1134,6 +1311,8 @@ function buildStrictVoice(vfNotes) {
     renderer.resize(svgWidth, svgHeight);
 
     const ctx = renderer.getContext();
+
+    rendererRef.current.ctx = ctx
     // const svg = ctx.svg;   // ⭐ THIS is the missing line
 
     const svgList = lsContainerRef.current.querySelectorAll("svg");
@@ -1175,13 +1354,15 @@ const durationMap = {
     // -----------------------------
     // Render measures + notes
     // -----------------------------
-  //  console.log("REDRAWING MEASURE")
+
+  console.log("draw called", Date.now());
+
 measures.forEach((measure, measureIdx) => {
   const row = Math.floor(measureIdx / colsPerRow);
   const col = measureIdx % colsPerRow;
 
-  const x = staveLefPadding + col * staveWidth;
-const y = staveTopPadding + row * staveHeight;
+  const x = 20 + col * staveWidth;
+const y = 40 + row * staveHeight;
 const stave = new VF.Stave(x, y, staveWidth);
 
 // FIRST MEASURE: CLEF, TIME, KEY
@@ -1241,8 +1422,8 @@ staffHit.setAttribute("height", hitPadding * 2 + 5 * spacing);
 staffHit.setAttribute("fill", "transparent");
 // console.log(x, topLineY, staveWidth, spacing)
 // for debugging - make the hit boxes visible
-staffHit.setAttribute("fill", "rgba(178, 186, 30, 0.06)");
-staffHit.setAttribute("stroke", "rgba(69, 222, 67, 0.34)");
+// staffHit.setAttribute("fill", "rgba(179, 155, 161, 0.13)");
+// staffHit.setAttribute("stroke", "rgba(233, 7, 7, 0.34)");
 
 
 /*
@@ -1251,12 +1432,9 @@ no pointer events ensures:
     Hit areas do NOT block note clicks
     need to change to "all" when in note-input mode
     */
-  if(!noteInputModeRef.current){
+  if(!noteInputMode){
 staffHit.setAttribute("pointer-events", "none");
   }
-
-
-
 // NOTE INPUT EVENT HANDLER
 
 staffHit.addEventListener("mousedown", (e) => {
@@ -1357,93 +1535,25 @@ semitoneStepRef.current = (lineSpacing / 2) * (7 / 12);
     // });  
 
 
+
+
+
     // ORIGINAL Y
     const ys = vfNote.getYs();
     if (ys && ys.length > 0 && id) {
       originalYRef.current[id] = ys[0];
     }
 
-    // NOTE HITBOXES
-    const hitGroup = ctx.openGroup();
-    const bbox = vfNote.getBoundingBox();
-    if (bbox) {
-      const padding = 6;
-      const rect = document.createElementNS(
-        "http://www.w3.org/2000/svg",
-        "rect"
-      );
-      rect.setAttribute("x", bbox.getX() - padding);
-      rect.setAttribute("y", bbox.getY() - padding);
-      rect.setAttribute("width", bbox.getW() + padding * 2);
-      rect.setAttribute("height", bbox.getH() + padding * 2);
-      rect.setAttribute("fill", "transparent");
 
-         // debugging
-      rect.setAttribute("fill", "rgba(223, 27, 27, 0.2)");
-      rect.setAttribute("stroke", "rgba(226, 29, 19, 0.32)");
+    
+    // NOTE HITBOXES  DRAG + CLICK HANDLER MOVED TO USEEFFECT
+  
 
-      rect.setAttribute("pointer-events", "all");
-      hitGroup.appendChild(rect);
-    }
-    ctx.closeGroup();
-
-    // SELECTION
-    if (selection?.type === "note" && selection.id === id) {
-      g.classList.add("selected-note");
-    }
-
-    hitGroup.style.cursor = "pointer";
-
-    // DRAG + CLICK HANDLER
-    hitGroup.addEventListener("mousedown", e => {
-      console.log("NOTE CLICK + DRAG HANDLER", {noteInputMode, noteInputModeRef})
-      e.preventDefault();
-
-      if (noteInputModeRef.current) {
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        setCaret({ measure: measureIdx, index: idx });
-        return;
-      }
-
-      g.style.pointerEvents = "none";
-      hitGroup.style.pointerEvents = "all";
-
-      const startX = e.clientX;
-      const startY = e.clientY;
-      let moved = false;
-
-      const onMove = ev => {
-        const dx = ev.clientX - startX;
-        const dy = ev.clientY - startY;
-
-        if (!moved && Math.hypot(dx, dy) > 3) {
-          moved = true;
-          // onNoteSelect?.(id);
-          onNoteDragStart(id, startX, startY, g);
-        }
-      };
-
-      const onUp = () => {
-        window.removeEventListener("mousemove", onMove);
-        window.removeEventListener("mouseup", onUp);
-        if (!moved) {
-          onNoteSelect?.(id);
-           moveCaretToNote(vfNote, measureIdx, idx); 
-        }
-      };
-
-      window.addEventListener("mousemove", onMove);
-      window.addEventListener("mouseup", onUp);
-    });
-
-    if (id) {
-      noteElements.current.set(id, g);
-    }
-
-    g.style.pointerEvents = "none";
-    hitGroup.style.pointerEvents = "all";
   });
+
+
+
+
 
   // CHORD SYMBOLS
   if (measure.chords?.length) {
@@ -1585,7 +1695,7 @@ return () => {
   measureElements.current.clear();
   originalYRef.current = {};
 };
-  }, [measures, selection, dragRef, leadSheet.ties, leadSheet.slurs, noteInputMode]); // useLayoutEffect
+  }, [measures, selection, dragRef, leadSheet.ties, leadSheet.slurs]); // useLayoutEffect
 
 
 
@@ -1615,6 +1725,12 @@ return () => {
 
 
  
+
+
+  
+
+
+
 
 const onMouseMove = (x, y, staveInfo) => {
    if (!staveInfo) return;

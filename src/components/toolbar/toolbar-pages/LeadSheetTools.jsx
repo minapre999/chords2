@@ -70,6 +70,14 @@ useEffect(() => {
 
 
 const onRest =  () => {
+
+// // ***** debugging block *****
+// console.log("CALLING NOTE TO REST")
+//    noteToRest()
+//    return;
+// // ***** end debug block *****
+
+
 // console.log("CLICKED ON REST" , "\nselRest: ", selRest)
 if(noteInputMode) {
     selRest === true ? setSelRest(false) : setSelRest(true) 
@@ -152,12 +160,11 @@ const dottedCrotchet = "\uECA5 \uE1E7"
 
         <div className="toolbar-group">
               <button
-            onClick={() => {
-              if( noteInputMode) { setNoteInputMode(false) }
-                  else { setNoteInputMode(true) }
-            }
-            }
-
+            onClick={()=>{
+                  setNoteInputMode( (prev) => {
+                  console.log("click input not button", {prev})
+                    return prev === true ? false : true } )
+                  }}
             style={{ background: noteInputMode ? "#88f" : "#eee" }}
           >
             Note Input

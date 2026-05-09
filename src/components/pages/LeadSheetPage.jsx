@@ -160,6 +160,7 @@ const cursorPosRef = useRef(null)
 const staveRef = useRef(null)
 const caretRef = useRef(null)
 
+
   // 2. All useState SECOND
   const [leadSheet, setLeadSheet] = useState(initialLeadSheet);
 
@@ -205,7 +206,6 @@ This immediately eliminates all selection collisions.
 
 const [selection, setSelection] = useState(null);
 
-
 // this is the core of the note input system
 const [noteInputMode, setNoteInputMode] = useState(false);
 const noteInputModeRef = useRef(false);
@@ -243,8 +243,10 @@ const [pendingInsert, _setPendingInsert] = useState(null);
 
 
   useEffect(() => {
+    console.log("setting caretRef", {caret})
   caretRef.current = caret;
-}, [caret]);
+  window.caretRef = caretRef
+}, [leadSheet, caret]);
 
 // cursors for note input mode
 
@@ -397,6 +399,17 @@ new duration
 
 */
 
+
+function insertNoteXXX({ pitch, duration="q", measureIndex=0, noteIndex=0, dots=0}) {
+setLeadSheet(prev => {
+const next = structuredClone(prev);
+return next
+})
+
+}
+
+
+
 function insertNote({ pitch, duration="q", measureIndex=0, noteIndex=0, dots=0}) {
   setLeadSheet(prev => {
     const next = structuredClone(prev);
@@ -544,7 +557,6 @@ setCaret({
    index:  noteIndex
   } )
   moveCaretForward();
-
 
   // console.log("SETTING pendingInsert from onNoteInput");
   // setPendingInsert({ pitch, measureIndex, melodyIndex });
@@ -780,8 +792,14 @@ console.log("HANDLE TOGGLE NOTE DOTTED", "   \nnewDotted: ", newDotted)
 
 const noteToRest = useCallback(() => {
  
+ 
 console.log("HANDLE TOOL BAR REST CHANGE")
   if (noteInputMode) {
+     setLeadSheet(prev => {
+const next = structuredClone(prev);
+return next
+})
+
     // setInputDuration(duration);
 
     // const { measure, index } = caret;
@@ -1007,45 +1025,109 @@ function onSlurDelete(id) {
   setLeadSheet(newLS);
 }
 
+
+
+
 /* KEY HANDLER
 Delete tie, begin tie creation (press T)
 */
 useEffect(() => {
+
+
+
   function onKey(e) {
-    console.log("DELETE KEY DOWN EFFECT", "   \nselected: ", selection)
-    if (e.key !== "Delete" && e.key !== "Backspace") return;
-    if (!selection) return;
 
+      let keys = ["a", "b", "c", "d", "e", "f", "g"]
+      keys = [...keys, ...keys.map(n=>n.toUpperCase())]
+      if( keys.includes(e.key)) {
+          HandleKeyNoteInsert(e.key)
+           e.preventDefault();
+        }
 
-    switch (selection.type) {
-      case "note":
-         console.log("deleting note: ", selection.id)
-        deleteNote(selection);
-        break;
-
-      case "tie":
-        console.log("deleting tie: ", selection.id)
-        deleteTie(selection.id);
-        break;
-
-      case "slur":
-         console.log("deleting slur: ", selection.id)
-        deleteSlur(selection.id);
-        break;
-
-      case "chord":
-        deleteChord(selection);
-        break;
-
-      // future types go here
-    }
-
+       else if( ["Delete","Backspace" ].includes(e.key)) {
+          HandleDelete(e.key)
+        }
+        // else handleKeyDown(e)
+ 
     setSelection(null);
   }
 
   window.addEventListener("keydown", onKey);
   return () => window.removeEventListener("keydown", onKey);
 }, [selection]);
+
+
+function HandleDelete(c){
+ console.log("DELETE KEY DOWN EFFECT", "   \nselected: ", selection)
+        if (c!== "Delete" && c !== "Backspace") return;
+        if (!selection) return;
+
+
+        switch (selection.type) {
+          case "note":
+            console.log("deleting note: ", selection.id)
+            noteToRest()
+            // deleteNote(selection);
+            break;
+
+          case "tie":
+            console.log("deleting tie: ", selection.id)
+            deleteTie(selection.id);
+            break;
+
+          case "slur":
+            console.log("deleting slur: ", selection.id)
+            deleteSlur(selection.id);
+            break;
+
+          case "chord":
+            deleteChord(selection);
+            break;
+
+          // future types go here
+          }
+
+}
+
+
+
+// Map keyboard letters → pitch names
+const KEY_TO_PITCH = {
+  a: "69",
+  b: "71",
+  c: "72",
+  d: "74",
+  e: "76",
+  f: "77",
+  g: "79"
+};
+
+
+// Main key handler
+const HandleKeyNoteInsert = useCallback((c) => {
+  if (!noteInputModeRef.current) return;
+
+  const key = c.toLowerCase();
+  if (!(key in KEY_TO_PITCH)) return;
+
+
+  const pitch = KEY_TO_PITCH[key]
+  const duration = inputDurationRef.current;
+
+  const { measure, index } = caretRef.current;
+console.log("KEY DOWN NOTE INSERT", pitch, inputDurationRef, measure, index, )
+  insertNote({
+    pitch: pitch,
+    duration: inputDurationRef.current,
+    measureIndex: measure,
+    noteIndex: index,
+    dots: selDotted===true ? 1 : 0,
+  });
+
+ 
+  moveCaretForward();
+
+}, []);
 
 
 
@@ -1064,10 +1146,14 @@ function deleteSlur(id) {
   }));
 }
 
+
 function deleteNote(sel) {
   const { measure, index } = sel;
+
+
   setLeadSheet(ls => {
     const measures = [...ls.measures];
+
     measures[measure] = {
       ...measures[measure],
       melody: measures[measure].melody.filter((_, i) => i !== index)
@@ -1088,35 +1174,34 @@ useEffect(() => {
 
   advanceCaret(measureIndex, melodyIndex, leadSheet);
 
-  caretRef.current = null;
 
 }, [leadSheet]);   // ⭐ not pendingInsert
 
 
 
 
-useEffect(() => {
-  const onKey = (e) => {
-    if (!noteInputMode) return;
+// useEffect(() => {
+//   const onKey = (e) => {
+//     if (!noteInputMode) return;
 
-    // A–G pitch entry
-    if ("abcdefg".includes(e.key.toLowerCase())) {
-      const pitch = mapLetterToPitch(e.key);
-      onNoteInput(pitch, caret.measure, caret.index);
-      return;
-    }
+//     // A–G pitch entry
+//     if ("abcdefg".includes(e.key.toLowerCase())) {
+//       const pitch = mapLetterToPitch(e.key);
+//       onNoteInput(pitch, caret.measure, caret.index);
+//       return;
+//     }
 
-    // 1–5 duration shortcuts
-    const map = { "1": "w", "2": "h", "3": "q", "4": "e", "5": "s" };
-    if (map[e.key]) {
-      setInputDuration(map[e.key]);
-      return;
-    }
-  };
+//     // 1–5 duration shortcuts
+//     const map = { "1": "w", "2": "h", "3": "q", "4": "e", "5": "s" };
+//     if (map[e.key]) {
+//       setInputDuration(map[e.key]);
+//       return;
+//     }
+//   };
 
-  window.addEventListener("keydown", onKey);
-  return () => window.removeEventListener("keydown", onKey);
-}, [noteInputMode ]);
+//   window.addEventListener("keydown", onKey);
+//   return () => window.removeEventListener("keydown", onKey);
+// }, [noteInputMode ]);
 
 
 
@@ -1917,6 +2002,8 @@ function updateDraggedNote(noteId, semitones, durationSteps) {
         // onMouseMove={handleMouseMove}
           />
 
+
+ {noteInputMode && (
        <NoteInputCursor
             lsContainerRef={lsContainerRef}
             visible={noteInputMode && cursorVisible}
@@ -1939,6 +2026,7 @@ function updateDraggedNote(noteId, semitones, durationSteps) {
    
       }}
           />
+  )}
 
  {noteInputMode && (
 <NoteInputCaret
