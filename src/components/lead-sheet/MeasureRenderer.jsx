@@ -119,61 +119,61 @@ window.measureElements = measureElements;
 
 
 
-useEffect(() => {
+// useEffect(() => {
 
-  const container = lsContainerRef.current
-  if (!container || !measureRectsRef?.current || !cursorPosRef) return;
+//   const container = lsContainerRef.current
+//   if (!container || !measureRectsRef?.current || !cursorPosRef) return;
   
-  const measureRect = measureRectsRef.current[measure.id]
-  // console.log({measureRect, measureRectsRef})
-  if(!measureRect) return;
+//   const measureRect = measureRectsRef.current[measure.id]
+//   // console.log({measureRect, measureRectsRef})
+//   if(!measureRect) return;
 
-  function onMove(e) {
+//   function onMove(e) {
     
     
-    const x = e.clientX;
-    const y = e.clientY;
+//     const x = e.clientX;
+//     const y = e.clientY;
 
-    console.log("ON MOVE", {x, y, measureRect})
+//     console.log("ON MOVE", {x, y, measureRect})
 
-    // find measure under cursor
-    let found = null;
-    for (const [id, rect] of Object.entries(measureRect)) {
-      console.log({id, rect})
-      if (x >= rect.left && x <= rect.right &&
-          y >= rect.top && y <= rect.bottom) {
-        found = { id, rect };
-        break;
-      }
-    }
+//     // find measure under cursor
+//     let found = null;
+//     for (const [id, rect] of Object.entries(measureRect)) {
+//       console.log({id, rect})
+//       if (x >= rect.left && x <= rect.right &&
+//           y >= rect.top && y <= rect.bottom) {
+//         found = { id, rect };
+//         break;
+//       }
+//     }
 
-    if (!found) {
-      cursorPosRef.current.visible = false
-      cursorPosRef.measure = measure
-    updateCursorOverlay({measure, measureRectsRef, cursorPosRef,  inputDurationRef, vfCacheRef});
-      return;
-    }
+//     if (!found) {
+//       cursorPosRef.current.visible = false
+//       cursorPosRef.measure = measure
+//     updateCursorOverlay({measure, measureRectsRef, cursorPosRef,  inputDurationRef, vfCacheRef});
+//       return;
+//     }
 
-    cursorPosRef.current = {
-      visible: true,
-      x: x - found.rect.left,
-      y: found.rect.staveY,
-      measure: measure,
+//     cursorPosRef.current = {
+//       visible: true,
+//       x: x - found.rect.left,
+//       y: found.rect.staveY,
+//       measure: measure,
 
-    };
-    updateCursorOverlay({cursorPosRef, measureRectsRef, inputDurationRef, vfCacheRef});
-  }
+//     };
+//     updateCursorOverlay({cursorPosRef, measureRectsRef, inputDurationRef, vfCacheRef});
+//   }
 
-  container.addEventListener("mousemove", onMove);
-  container.addEventListener("mouseleave", () => {
-    cursorPosRef.current.visible = false;
-    updateCursorOverlay({cursorPosRef, measureRectsRef, inputDurationRef, vfCacheRef});
-  });
+//   container.addEventListener("mousemove", onMove);
+//   container.addEventListener("mouseleave", () => {
+//     cursorPosRef.current.visible = false;
+//     updateCursorOverlay({cursorPosRef, measureRectsRef, inputDurationRef, vfCacheRef});
+//   });
 
-  return () => {
-    container.removeEventListener("mousemove", onMove);
-  };
-}, []);
+//   return () => {
+//     container.removeEventListener("mousemove", onMove);
+//   };
+// }, []);
 
 
 
@@ -195,13 +195,20 @@ useEffect(() => {
     right: rect.right,
     top: rect.top,
     bottom: rect.bottom,
+    staveY: stave.getYForLine(0),
     spacing: stave.getSpacingBetweenLines(),
-    topLineY: stave.getYForLine(0),
-    measureWidth: staveWidth,
-    stave: stave,
-    beats: 4,
-    measureId: measure.id,
-   svgRef: svgRef,
+
+  //   left: rect.left,
+  //   right: rect.right,
+  //   top: rect.top,
+  //   bottom: rect.bottom,
+  //   spacing: stave.getSpacingBetweenLines(),
+  //   topLineY: stave.getYForLine(0),
+  //   measureWidth: staveWidth,
+  //   stave: stave,
+  //   beats: 4,
+  //   measureId: measure.id,
+  //  svgRef: svgRef,
   };
 }, [staveWidth, measureIndex, rowIndex]);
 
@@ -251,12 +258,12 @@ function moveCaretToNote(vfNote, measureIdx, noteIdx) {
 
 
   // 5. Trigger React to re-render the caret overlay
-  console.log("setting caret to", {measureIdx, noteIdx})
-  setCaret({
-    measure: measureIdx,
-    index: noteIdx,
+  // console.log("setting caret to", {measureIdx, noteIdx})
+  // setCaret({
+  //   measure: measureIdx,
+  //   index: noteIdx,
    
-  });
+  // });
 }
 
 

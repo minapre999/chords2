@@ -1,3 +1,7 @@
+
+
+
+
 export function updateCursorLedgerLines(pos, stave, spacing) {
   if (!stave) return;
 

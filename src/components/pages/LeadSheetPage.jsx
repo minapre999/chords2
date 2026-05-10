@@ -222,6 +222,9 @@ useEffect(() => {
 
 
 
+
+
+
 // useEffect(() => {
 //   let internalValue = noteInputModeRef.current;
 
@@ -1972,18 +1975,6 @@ function updateDraggedNote(noteId, semitones, durationSteps) {
 
           )}
 
-
-   <div
-        id="note-input-cursor"
-        ref={el => (cursorOverlayRef.current = el)}
-        style={{
-          position: "absolute",
-          pointerEvents: "none",
-          opacity: 0,
-          width: "20px",
-          height: "40px",
-        }}>
-      </div>
 
 
         </div>
