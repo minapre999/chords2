@@ -1976,7 +1976,7 @@ function updateDraggedNote(noteId, semitones, durationSteps) {
         // onMouseMove={handleMouseMove}
           />
 
-<NoteInputCursorOverlay
+{/* <NoteInputCursorOverlay
 
   style={{
         color: "red",
@@ -1984,7 +1984,7 @@ function updateDraggedNote(noteId, semitones, durationSteps) {
    stroke:"#00aaff",
       fill: "#00aaff",
       }}
-      />
+      /> */}
  {/* {noteInputMode && (
        <NoteInputCursor
             lsContainerRef={lsContainerRef}

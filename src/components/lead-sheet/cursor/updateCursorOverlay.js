@@ -27,7 +27,7 @@ const glyphChar = durationToGlyph(inputDuration)
 const measureId = staveInfo.measureId
 const  vfNotes  = vfCacheRef?.current?.get(measureId).vfNotes
 
-console.log("UPDATE CURSOR OVERLAY", {cursorPos, stave, spacing, inputDuration, vfNotes, vfCacheRef, glyphChar, measureId})
+// console.log("UPDATE CURSOR OVERLAY", {cursorPos, stave, spacing, inputDuration, vfNotes, vfCacheRef, glyphChar, measureId})
 
 
  let vfNote = null
@@ -82,7 +82,7 @@ const curX = rect.getX()
   const bottomY = topLineY + spacing * 4;
 
     if (cursorPos.y >= topY && cursorPos.y <= bottomY) {
-        console.log("removing ledgers")
+        // console.log("removing ledgers")
           svg.querySelectorAll(".ledger-line").forEach(el => el.remove());
         return;
             }
@@ -120,7 +120,7 @@ const curX = rect.getX()
   
 
       const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-            console.log( {line, ly, cursorPos, topY})
+            // console.log( {line, ly, cursorPos, topY})
 
       line.setAttribute("x1", String(x-24));
       line.setAttribute("x2", String(x+2));
