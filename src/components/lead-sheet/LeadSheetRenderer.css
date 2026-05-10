@@ -44,6 +44,18 @@
   stroke: #00aaff !important;
   fill: #00aaff !important;
 }
+.selected-note text {
+  fill: #00aaff !important;
+  stroke: #00aaff !important;
+  stroke-width: 1 !important;
+}
+
+.selected-note path {
+  stroke: #00aaff !important;
+  fill: #00aaff !important;
+}
+
+
 
 .selected-note *:not(rect) {
   stroke: #00aaff !important;

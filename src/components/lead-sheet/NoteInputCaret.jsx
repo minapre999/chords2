@@ -7,7 +7,7 @@ export default function NoteInputCaret({
   vfCacheRef,
   caret,
   leadSheet,
-  lastMeasureLayoutRef,
+  // lastMeasureLayoutRef,
 }) {
 
 //    if (!visible) return null;
@@ -21,7 +21,7 @@ if(caret.measure === undefined) {
 //   return null;
 // }
 
-
+// caret.mesure is an INDEX
 if( leadSheet.measures.length <= caret.measure) return null;
 // console.log("leadSheet.measures", leadSheet.measures, {caret})
 
@@ -29,6 +29,7 @@ if( leadSheet.measures.length <= caret.measure) return null;
  
 // console.log({measure, vfCacheRef})
 const measureNotes = vfCacheRef?.current?.get(measure.id)
+console.log("measure notes: ", measureNotes)
 const vfNote = measureNotes.vfNotes[caret.index]
 
 // console.log("vfCacheRef?.current", vfCacheRef.current, {vfNote,measure, measureNotes},  )
@@ -38,11 +39,11 @@ const width= bb.getW()
 let height = bb.getH()
 let y= bb.getY()
 
-if(lastMeasureLayoutRef.current.length > caret.measure) {
- const layout = lastMeasureLayoutRef.current[caret.measure]
- y = layout.topLineY
-height =layout.spacing*4
-}
+// if(lastMeasureLayoutRef.current.length > caret.measure) {
+//  const layout = lastMeasureLayoutRef.current[caret.measure]
+//  y = layout.topLineY
+// height =layout.spacing*4
+// }
 
 const caretRect = <rect className="caret-rect" x={x} y={y} width={width} height={height} strokeWidth="1.5"/>
 // console.log({x,  y, width, height, caretRect, measure, lastMeasureLayoutRef})

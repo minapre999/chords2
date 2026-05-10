@@ -24,6 +24,7 @@ except:
 */
 
 
-export const cursorPosRef = { current: { x: 0, y: 0, midi: null, duration: "q" } };
+export const cursorPosRef = { current: { x: 0, y: 0,  duration: "q", measure: null } };
 export const rafRef = { current: null };
-
+export const cursorMeasureRef = { current: null };
+export const cursorOverlayRef = { current: null };

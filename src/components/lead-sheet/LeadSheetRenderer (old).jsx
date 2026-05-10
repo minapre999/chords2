@@ -2,17 +2,21 @@ import { useEffect, useRef, useState, useCallback, useImperativeHandle, forwardR
 import "/node_modules/vexflow/releases/vexflow-debug.js";
 import RenderData, {RenderNote} from "/src/render-notes.js"
 import Note from "/src/harmony/note.js"
+import { cursorPosRef, rafRef } from "/src/components/lead-sheet/cursor/cursorRefs";
+import { updateCursorOverlay } from "/src/components/lead-sheet/cursor/updateCursorOverlay";
+import { updateCursorLedgerLines } from "/src/components/lead-sheet/cursor/updateCursorLedgerLines";
+import { ensureCursorOverlay } from "/src/components/lead-sheet/cursor/ensureCursorOverlay";
 import "./LeadSheetRenderer.css"
 import { isNumber } from "tone";
 
 
 
-function debug(label, value) {
-  console.log(`DEBUG ${label}:`, value);
-  if (value === "4/q" || value === "4q" || value === "r") {
-    console.trace("STACK TRACE FOR BAD VALUE");
-  }
-}
+// function debug(label, value) {
+//   // console.log(`DEBUG ${label}:`, value);
+//   if (value === "4/q" || value === "4q" || value === "r") {
+//     console.trace("STACK TRACE FOR BAD VALUE");
+//   }
+// }
 
 
 
@@ -119,12 +123,14 @@ export default function LeadSheetRenderer(props) {
   const {
     leadSheet,
     rendererRef,
+    playerRef,
     onNoteSelect,
     onNoteDragStart,
     dragPreview,
     dragRef,
     caret,
     setCaret,
+    caretRef,
     noteInputMode,
     tieStart,
     setTieStart,
@@ -132,16 +138,21 @@ export default function LeadSheetRenderer(props) {
     selection,
     setSelection,
     noteInputModeRef,
-    // onMouseMove,
     lsContainerRef,
     onNoteInput,
-  
-    cursorStaveInfo,
-    setCursorStaveInfo,
+    vfCacheRef,
+    lastMeasureLayoutRef,
+    staveRef,
+    inputDurationRef,
     ...rest
   } = props;
 
 
+console.log("RENDERING LEADSHEET")
+
+// console.log("RENDERING LEADSHEET", {
+//         noteInputMode, 
+//         "noteInputModeRef.current" : noteInputModeRef.current})
 
 // console.log("onNoteInput: ", onNoteInput)
   const noteElements = useRef(new Map());
@@ -161,13 +172,7 @@ export default function LeadSheetRenderer(props) {
 
   const lastCtxRef = useRef(null);
   const lastNoteLookupRef = useRef(null);
-  const lastMeasureLayoutRef = useRef(null);
-const measureLayoutRef = useRef([]);
 
-
-
-  const vfCacheRef = useRef(new Map());
-  const svgRef = useRef<SVGSVGElement | null>(null);
 
 
 
@@ -175,8 +180,20 @@ const measureLayoutRef = useRef([]);
   useEffect(() => {
     window.vfCacheRef = vfCacheRef;
     window.caret = caret
-  }, [leadSheet]);
+    window.caretRef = caretRef
+  }, [leadSheet, caret]);
  
+
+
+
+
+  useEffect(() => {
+  if (rendererRef.current) {
+    console.log({"rendererRef.current": rendererRef.current} )
+    updateCursorOverlay(rendererRef.current);
+  }
+}, [rendererRef.current]);
+
 
 
   //
@@ -218,14 +235,17 @@ const measureLayoutRef = useRef([]);
   }, [selection, leadSheet.slurs]);
 
 
+
+  
   useEffect(() => {
+    console.log("updating areas for hit mode",noteInputMode )
   updateHitAreasForMode(noteInputMode);
 }, [noteInputMode]);
 
     function updateHitAreasForMode(isInputMode) {
-  document.querySelectorAll(".staff-hit").forEach(rect => {
-    rect.style.pointerEvents = isInputMode ? "all" : "none";
-  });
+      document.querySelectorAll(".staff-hit").forEach(rect => {
+        rect.style.pointerEvents = isInputMode ? "all" : "none";
+      });
 }
 
 
@@ -234,7 +254,7 @@ const measureLayoutRef = useRef([]);
 
 // window.addEventListener("mousedown", e => {
 //   const el = document.elementFromPoint(e.clientX, e.clientY);
-//   console.log("TOP ELEMENT:", el);
+//   // console.log("TOP ELEMENT:", el);
 // });
 
 
@@ -243,7 +263,7 @@ const measureLayoutRef = useRef([]);
   //
   // Imperative API
   //
-  useImperativeHandle(rendererRef, () => ({
+  useImperativeHandle(playerRef, () => ({
     highlightNote(noteId) {
       noteElements.current.forEach(el => el.classList.remove("vf-highlight-note"));
       const el = noteElements.current.get(noteId);
@@ -267,11 +287,38 @@ const measureLayoutRef = useRef([]);
     }
   }));
 
+
+  
+// DRAW CARET IN USE EFFECT - vfCacheNotes should have been defined
+    
+
   //
   // Draw caret
   //
   const drawCaret = (svg, drawInfo) => {
-   
+            //setCaret({ measure: measureIdx, index: idx });
+  //   const measure = leadSheet.measures[caret.measure]
+  // if(vfCacheRef?.current) {
+  //     const { vfNotes } = vfCacheRef?.current?.get(measure.id).vfNotes
+  //     const vfNote = vfNotes[caret.index]
+  //     console.log("lastMeasureLayoutRef", lastMeasureLayoutRef?.current)
+
+  //       }
+
+// const vfNote = vfNotes.get[]
+//   // 3. Compute cursor X
+//   const noteX = vfNote.getAbsoluteX();
+
+//   // 4. Store everything for drawing
+//   caretDrawInfo = {
+//     x: noteX,
+//     yTop: staveInfo.topLineY,
+//     yBottom: staveInfo.topLineY + staveInfo.spacing * 4,
+//     width: vfNote.width,
+//     ledgerYs
+//   };
+
+
     const {x,yTop, yBottom, width} = drawInfo
     console.log("drawCaret", {svg, x, yTop, yBottom})
     const caretLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
@@ -329,8 +376,8 @@ const measureLayoutRef = useRef([]);
     hit.setAttribute("fill", "transparent");
 
     // debugging 
-    hit.setAttribute("fill", "rgba(204, 255, 0, 0.5)");
-hit.setAttribute("stroke", "rgba(221, 255, 0, 0.5)");
+//     hit.setAttribute("fill", "rgba(204, 255, 0, 0.5)");
+// hit.setAttribute("stroke", "rgba(221, 255, 0, 0.5)");
 
 
     hit.style.pointerEvents = "all";
@@ -606,13 +653,21 @@ function findStaveAtXY(x, y, layout) {
 
 
 
-function clientToSvgPoint(e, svg) {
-  const rect = svg.getBoundingClientRect();
-  return {
-    x: e.clientX - rect.left,
-    y: e.clientY - rect.top
-  };
+// function clientToSvgPoint(e, svg) {
+//   const rect = svg.getBoundingClientRect();
+//   return {
+//     x: e.clientX - rect.left,
+//     y: e.clientY - rect.top
+//   };
+// }
+function clientToSvgPoint(e, svgRoot) {
+  const pt = svgRoot.createSVGPoint();
+  pt.x = e.clientX;
+  pt.y = e.clientY;
+  return pt.matrixTransform(svgRoot.getScreenCTM().inverse());
 }
+
+
 
 
 function snapToStaveLine( y, staveInfo){
@@ -717,16 +772,43 @@ function yFromPitch(midi, staveInfo) {
 
 
 
+
+// dont really want the "beat", rather the index
 function getNoteIndexForX(x, staveInfo) {
   
   const { measureX, measureWidth, beats } = staveInfo;
+// fior now assume it is the melody which is the vfCacheref
+// will need to update the vfCacheRef to include other parts
 
-  const rel = x - measureX;
-  const clamped = Math.max(0, Math.min(rel, measureWidth));
+  const { vfNotes } = vfCacheRef.current.get(staveInfo.measureId);
 
-  // console.log("getNoteIndexForX: ", {x, measureX, measureWidth, beats, staveInfo, clamped} )
+  const stave = staveInfo.stave
+  console.log({stave})
+  const topY = stave.getYForLine(0);
+  const bottomY = stave.getYForLine(4);
 
-  return Math.floor((clamped / measureWidth) * beats);
+  let found = null
+  let foundIndex = null
+  const padding = 6
+  for(let i =0; i < vfNotes.length; i++) {
+    const vfNote = vfNotes[i]
+    const rect = vfNote.getBoundingBox()
+    if(  x > rect.getX() - padding  && x < rect.getX()  + rect.getW()  + padding ){
+
+        found = vfNote
+        foundIndex = i
+        break;
+      }
+  }
+
+
+if( !found) {
+  console.log("couldnt find note correspondign to x click ", {x, vfNotes})
+  return;
+}
+console.log({foundIndex, found})
+return foundIndex
+
 }
 
 
@@ -774,6 +856,23 @@ function getNoteBoundingBoxes(vfNotes) {
     };
   });
 }
+
+
+function moveCaretToNote(vfNote, measureIdx, noteIdx) {
+  if (!vfNote) return;
+
+
+
+  // 5. Trigger React to re-render the caret overlay
+  console.log("setting caret to", {measureIdx, noteIdx})
+  setCaret({
+    measure: measureIdx,
+    index: noteIdx,
+   
+  });
+}
+
+
 
 
 function getNoteRectFromX(x, vfNotes) {
@@ -1016,115 +1115,15 @@ function buildStrictVoice(vfNotes) {
 
 
 
-useEffect(() => {
-  const container = lsContainerRef.current;
-  if (!container) return;
-
-  const svg = container.querySelector("svg");
-  if (!svg) return;
-
-  const hits = svg.querySelectorAll(".staff-hit");
-
-  hits.forEach(hit => {
-    hit.setAttribute(
-      "pointer-events",
-      noteInputMode ? "all" : "none"
-    );
-  });
-}, [noteInputMode]);
-
-
-
-
-// BUILD NOTE INPUT HIT BOXES
-
-useLayoutEffect(() => {
-  // console.log("NOTE INPUT LAYER LAYOUT EFFECT")
-  const container = lsContainerRef.current;
-  if (!container) return;
-
-  const svg = container.querySelector("svg");
-  if (!svg) return;
-
-  const measureLayout = measureLayoutRef.current;
-  if (!measureLayout || measureLayout.length === 0) return;
-
-  buildHitBoxes(svg, measureLayout, noteInputModeRef, onNoteInput);
-
-});
-
-
-
-function buildHitBoxes(svg, measureLayout, noteInputModeRef, onNoteInput) {
-  const ns = "http://www.w3.org/2000/svg";
-
-  // Remove any old hit-layer
-  const oldLayer = svg.querySelector("#staff-hit-layer");
-  if (oldLayer) oldLayer.remove();
-
-  // Create a fresh layer for staff hitboxes
-  const layer = document.createElementNS(ns, "g");
-  layer.setAttribute("id", "staff-hit-layer");
-  svg.appendChild(layer);
-
-  // Loop through all measures in your layout
-  measureLayout.forEach((staveInfo, measureIdx) => {
-    const {
-      stave,
-      measureX: x,
-      measureWidth,
-      topLineY,
-      spacing
-    } = staveInfo;
-
-    // console.log(staveInfo)
-    // Compute vertical padding (same as your existing code)
-    const hitPadding = 12 * (spacing / 2); // 12 diatonic steps above/below
-
-    // Create the transparent staff hit area
-    const staffHit = document.createElementNS(ns, "rect");
-    staffHit.classList.add("staff-hit");
-
-    const height =  hitPadding * 2 + 5 * spacing
-    const y = topLineY - hitPadding
-    staffHit.setAttribute("x", x);
-    staffHit.setAttribute("y", y);
-    staffHit.setAttribute("width", measureWidth);
-    staffHit.setAttribute("height", height);
-    if(measureIdx == 0){
-console.log("rect", {x,y,measureWidth,  height})
-    }
-    // Your debugging fill/stroke
-    staffHit.setAttribute("fill", "rgba(25, 17, 183, 0.2)");
-    staffHit.setAttribute("stroke", "rgba(42, 93, 147, 0.37)");
-
-    // Default: do NOT block note clicks
-    staffHit.setAttribute("pointer-events", "none");
-
-    // NOTE INPUT HANDLER
-    staffHit.addEventListener("mousedown", (e) => {
-      if (!noteInputModeRef.current) return;
-
-      const svgP = clientToSvgPoint(e, svg);
-      const pitch = pitchFromY(svgP.y, staveInfo);
-      const beatIndex = getNoteIndexForX(svgP.x, staveInfo);
-
-      onNoteInput(pitch, measureIdx, beatIndex);
-    });
-
-    layer.appendChild(staffHit);
-  });
-}
-
-
-
-
-
 
 
   // ⭐ StrictMode‑safe VexFlow render
   useLayoutEffect(() => {
-    
+    console.log("USE LAYOUT")
+    // console.log("USE LAYOUT", {leadSheet, 
+    //                               "lsContainerRef.current" : lsContainerRef.current, 
+    //                               noteInputMode, 
+    //                               "noteInputModeRef.current" : noteInputModeRef.current})
     if (!lsContainerRef.current) return;
     if (dragRef.current) return; // freeze during drag
 
@@ -1140,21 +1139,26 @@ console.log("rect", {x,y,measureWidth,  height})
     noteElements.current.clear();
     measureElements.current.clear();
     originalYRef.current = {};
-
+    const staveTopPadding = 40
+    const staveLefPadding = 20
     const VF = window.Vex.Flow;
     const staveWidth = 350;
-    const staveHeight = 120;
+    const staveHeight = 140;
     const colsPerRow = 2;
 
     const rows = Math.ceil(measures.length / colsPerRow);
-    const svgWidth = 900;
-    const svgHeight = 40 + rows * staveHeight;
+    const svgWidth = staveWidth * colsPerRow;
+    const svgHeight = staveTopPadding + rows * staveHeight;
 
     const renderer = new VF.Renderer(
       lsContainerRef.current,
       VF.Renderer.Backends.SVG
     );
     renderer.resize(svgWidth, svgHeight);
+    rendererRef.current = renderer
+    
+    ensureCursorOverlay(rendererRef.current);
+
 
     const ctx = renderer.getContext();
     // const svg = ctx.svg;   // ⭐ THIS is the missing line
@@ -1170,6 +1174,12 @@ if (!svg || svg.parentNode !== lsContainerRef.current) {
 
 
 
+svg.id = "lead-sheet-svg";   // ⭐ replaces svg.classList.add(...)
+
+
+
+    const noteLookup = new Map();
+    const measureLayout = []
 
 
 const durationMap = {
@@ -1192,21 +1202,18 @@ const durationMap = {
 //   return `${pitchClasses[pc]}/${octave}`;
 // }
 
- 
+
+
     // -----------------------------
     // Render measures + notes
     // -----------------------------
-
-    
-      const noteLookup = new Map();
-    const measureLayout = []
-
+  //  console.log("REDRAWING MEASURE")
 measures.forEach((measure, measureIdx) => {
   const row = Math.floor(measureIdx / colsPerRow);
   const col = measureIdx % colsPerRow;
 
-  const x = 20 + col * staveWidth;
-const y = 40 + row * staveHeight;
+  const x = staveLefPadding + col * staveWidth;
+const y = staveTopPadding + row * staveHeight;
 const stave = new VF.Stave(x, y, staveWidth);
 
 // FIRST MEASURE: CLEF, TIME, KEY
@@ -1246,61 +1253,63 @@ measureLayout[measureIdx] = {
   measureId: measure.id
 };
 
-
-measureLayoutRef.current = measureLayout;
-
 // console.log("MEASURE LAYOUT ENTRY", measureLayout[measureIdx]);
 
 
 // Transparent staff hit area for note input
-// const staffHit = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+const staffHit = document.createElementNS("http://www.w3.org/2000/svg", "rect");
 
-// const topLineY = stave.getYForLine(0);
-// const spacing = stave.getSpacingBetweenLines();
+const topLineY = stave.getYForLine(0);
+const spacing = stave.getSpacingBetweenLines();
 
-// // Enough vertical range for full guitar pitch range
-// const hitPadding = 12 * (spacing / 2); // 12 diatonic steps above/below
+// Enough vertical range for full guitar pitch range
+const hitPadding = 12 * (spacing / 2); // 12 diatonic steps above/below
 
-// staffHit.classList.add("staff-hit");
-// staffHit.setAttribute("x", x);
-// staffHit.setAttribute("y", topLineY - hitPadding);
-// staffHit.setAttribute("width", staveWidth);
-// staffHit.setAttribute("height", hitPadding * 2 + 5 * spacing);
-// staffHit.setAttribute("fill", "transparent");
+staffHit.classList.add("staff-hit");
+staffHit.setAttribute("x", x);
+staffHit.setAttribute("y", topLineY - hitPadding);
+staffHit.setAttribute("width", staveWidth);
+staffHit.setAttribute("height", hitPadding * 2 + 5 * spacing);
+staffHit.setAttribute("fill", "transparent");
+// console.log(x, topLineY, staveWidth, spacing)
+// for debugging - make the hit boxes visible
+staffHit.setAttribute("fill", "rgba(178, 186, 30, 0.06)");
+staffHit.setAttribute("stroke", "rgba(69, 222, 67, 0.34)");
 
-// // for debugging - make the hit boxes visible
-// staffHit.setAttribute("fill", "rgba(179, 155, 161, 0.13)");
-// staffHit.setAttribute("stroke", "rgba(233, 7, 7, 0.34)");
+
+/*
+no pointer events ensures:
+    In normal mode → clicking a note selects it
+    Hit areas do NOT block note clicks
+    need to change to "all" when in note-input mode
+    */
+  if(!noteInputModeRef.current){
+staffHit.setAttribute("pointer-events", "none");
+  }
 
 
-// /*
-// no pointer events ensures:
-//     In normal mode → clicking a note selects it
-//     Hit areas do NOT block note clicks
-//     need to change to "all" when in note-input mode
-//     */
-// staffHit.setAttribute("pointer-events", "none");
 
-// // NOTE INPUT EVENT HANDLER
+// NOTE INPUT EVENT HANDLER
 
-// staffHit.addEventListener("mousedown", (e) => {
-//   console.log("ENTERING INPUT EVENT")
-//   if (!noteInputModeRef.current) return;
+staffHit.addEventListener("mousedown", (e) => {
+  // console.log("ENTERING INPUT EVENT")
+  if (!noteInputModeRef.current) return;
 
-//   const svgP = clientToSvgPoint(e, svg);
+  const svgP = clientToSvgPoint(e, svg);
 
-//   const staveInfo = measureLayout[measureIdx];
+  const staveInfo = measureLayout[measureIdx];
 
-//   const pitch = pitchFromY(svgP.y, staveInfo);
+  const { x, y } = cursorPosRef.current;
 
-//   const beatIndex = getNoteIndexForX(svgP.x, staveInfo);
+  const pitch = pitchFromY(y, staveInfo);
+  const beatIndex = getNoteIndexForX(x, staveInfo);
 
 // console.log("before onNoteInput ", "\n.  svgP.y,: ", svgP.y, "\n.  pitch: ", pitch)
-//   onNoteInput(pitch, measureIdx, beatIndex);
-  
-// });
+  onNoteInput(pitch, measureIdx, beatIndex);
 
-// svg.appendChild(staffHit);
+});
+
+svg.appendChild(staffHit);
 
 
 
@@ -1316,8 +1325,6 @@ measureLayoutRef.current = measureLayout;
     measure: measure,          // optional
 });
 
-
-
   // -----------------------------
   // 2. ATTACH NOTES TO STAVE
   //    (required BEFORE formatting)
@@ -1328,15 +1335,6 @@ measureLayoutRef.current = measureLayout;
   // 3. STRICT VOICE
   // -----------------------------
   const voice = buildStrictVoice(vfNotes);
-
-//   if (voice.ticksUsed !== voice.totalTicks) {
-//   console.warn(
-//     `Measure ${measureIdx} tick mismatch:`,
-//     "total:", voice.totalTicks,
-//     "used:", voice.ticksUsed
-//   );
-// }
-
 
   // -----------------------------
   // 4. FORMAT (now safe)
@@ -1364,18 +1362,6 @@ semitoneStepRef.current = (lineSpacing / 2) * (7 / 12);
 // console.log("totalTicks:", voice.totalTicks);
 // console.log("ticksUsed:", voice.ticksUsed);
 
-voice.tickables.forEach((t, idx) => {
-  // console.log(
-  //   `note ${idx}:`,
-  //   "dur:", measure.melody[idx]?.duration,
-  //   "dots:", measure.melody[idx]?.dots,
-  //   "intrinsicTicks:", t.getIntrinsicTicks()
-  // );
-});
-// console.log("--------------");
-
-
-
   // -----------------------------
   // 5. DRAW NOTES + HITBOXES
   // -----------------------------
@@ -1388,63 +1374,19 @@ voice.tickables.forEach((t, idx) => {
     vfNote.setContext(ctx).draw();
     ctx.closeGroup();
 
+    // Ensure clicking a note does NOT insert
+    // g.addEventListener("mousedown", (e) => {
+    //   e.stopPropagation();
 
-
-
-
-
-
-
-// Ensure clicking a note does NOT insert
-g.addEventListener("mousedown", (e) => {
-  e.stopPropagation();
-
-  if (noteInputModeRef.current) {
-    // MuseScore behavior: clicking a note moves caret, does NOT insert
-    const svgP = clientToSvgPoint(e, svg);
-    moveCaretToNote(n, svgP);
-    return;
-  }
-
-  onNoteSelect(n.id);
-});  
-
-
-
-    // CARET
-    // make the caret the width of the note and height of the stave
-  if (caret &&
-    caret.measure === measureIdx &&
-    caret.index === idx) {
-    console.log({caret})
-      // const noteId = caret.measure.melody.filter((n)=>n.id)
-      // const vfNote = vfCacheRef[noteId]
-
-  const staveInfo = measureLayout[measureIdx];
-
-  // 1. Compute cursor Y from pitch
-  const cursorY = cursorYFromPitch(caret.midi, staveInfo);
-
-  // 2. Compute ledger lines for cursor
-  const ledgerYs = getCursorLedgerLines(caret.midi, staveInfo);
-
-  // 3. Compute cursor X
-  const noteX = vfNote.getAbsoluteX();
-
-  // 4. Store everything for drawing
-  caretDrawInfo = {
-    x: noteX,
-    yTop: staveInfo.topLineY,
-    yBottom: staveInfo.topLineY + staveInfo.spacing * 4,
-    width: vfNote.width,
-    ledgerYs
-  };
-
-  console.log("caretDrawInfo", caretDrawInfo)
-
-}
-
-
+    //   // if (noteInputModeRef.current) {
+    //     // MuseScore behavior: clicking a note moves caret, does NOT insert
+    //     // caret not visible in non-insert mode, but WILL be in the correct position when mode changes
+    //     console.log("calling moveCaretToNote", {n, measureIdx, idx})
+    //     moveCaretToNote(n, measureIdx, idx); 
+    //     // return;
+    //   // }
+    //   // onNoteSelect(n.id);
+    // });  
 
 
     // ORIGINAL Y
@@ -1469,12 +1411,8 @@ g.addEventListener("mousedown", (e) => {
       rect.setAttribute("fill", "transparent");
 
          // debugging
-      rect.setAttribute("fill", "rgba(0, 187, 255, 0.07)");
-      rect.setAttribute("stroke", "rgba(0, 200, 255, 0.32)");
-
-
-   
-
+      rect.setAttribute("fill", "rgba(223, 27, 27, 0.2)");
+      rect.setAttribute("stroke", "rgba(226, 29, 19, 0.32)");
 
       rect.setAttribute("pointer-events", "all");
       hitGroup.appendChild(rect);
@@ -1490,9 +1428,10 @@ g.addEventListener("mousedown", (e) => {
 
     // DRAG + CLICK HANDLER
     hitGroup.addEventListener("mousedown", e => {
+      console.log("NOTE CLICK + DRAG HANDLER", {noteInputMode, noteInputModeRef})
       e.preventDefault();
 
-      if (noteInputMode) {
+      if (noteInputModeRef.current) {
         e.stopPropagation();
         e.stopImmediatePropagation();
         setCaret({ measure: measureIdx, index: idx });
@@ -1522,6 +1461,7 @@ g.addEventListener("mousedown", (e) => {
         window.removeEventListener("mouseup", onUp);
         if (!moved) {
           onNoteSelect?.(id);
+           moveCaretToNote(vfNote, measureIdx, idx); 
         }
       };
 
@@ -1536,6 +1476,9 @@ g.addEventListener("mousedown", (e) => {
     g.style.pointerEvents = "none";
     hitGroup.style.pointerEvents = "all";
   });
+
+
+
 
   // CHORD SYMBOLS
   if (measure.chords?.length) {
@@ -1553,14 +1496,14 @@ g.addEventListener("mousedown", (e) => {
   }
 
 
-// svg.appendChild(staffHit);
+svg.appendChild(staffHit);
 
 });  // END RENDERING - FINISH DRAWING LOOP
 
 
 
 
-console.log("measureLayout: ÷", measureLayout)
+// console.log("measureLayout: ÷", measureLayout)
 
 
 
@@ -1620,17 +1563,15 @@ console.log("measureLayout: ÷", measureLayout)
       playhead.setAttribute("stroke-width", "2");
 
       // debugging = set layer fill and stroke to greenish
-      playhead.setAttribute("fill", "rgba(94, 255, 0, 0.3)");
-      playhead.setAttribute("stroke", "rgba(3, 43, 33, 0.91)");
+      // playhead.setAttribute("fill", "rgba(94, 255, 0, 0.3)");
+      // playhead.setAttribute("stroke", "rgba(3, 43, 33, 0.91)");
 
 
       svg.appendChild(playhead);
       playheadRef.current = playhead;
 
         
-      if (caretDrawInfo) {
-        drawCaret(svg, caretDrawInfo);
-      }
+  
 
 // Inside LeadSheetRenderer, where you already have lsContainerRef and tieHitLayerRef
 
@@ -1666,6 +1607,47 @@ lastMeasureLayoutRef.current = measureLayout;
 
 
 
+  // ⭐ CREATE CURSOR OVERLAY INSIDE THE VEXFLOW SVG
+
+
+  
+
+  // ctx.svg is the wrapper
+  let svgRoot = ctx.svg;
+  // wrapper SVG created by VexFlow
+  const wrapperSvg = ctx.svg;
+
+  // translated group that VexFlow uses for the system
+  // usually the first <g> inside the wrapper <svg>
+  const systemGroup = wrapperSvg.querySelector("g");
+  if (!systemGroup) {
+    console.warn("No system <g> found for cursor overlay");
+    return;
+  }
+
+  let cursorGroup = systemGroup.querySelector("#note-input-cursor");
+if (!cursorGroup) {
+  cursorGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  cursorGroup.setAttribute("id", "note-input-cursor");
+  cursorGroup.style.pointerEvents = "none";
+  systemGroup.appendChild(cursorGroup);
+
+  const ledgers = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  ledgers.setAttribute("id", "cursor-ledgers");
+  cursorGroup.appendChild(ledgers);
+
+  const glyph = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  glyph.setAttribute("id", "cursor-glyph");
+    glyph.setAttribute("fill", "#00aaff");
+    glyph.setAttribute("stroke", "#00aaff");
+  cursorGroup.appendChild(glyph);
+}
+
+
+
+
+
+
 }
 
 return () => {
@@ -1679,7 +1661,7 @@ return () => {
   measureElements.current.clear();
   originalYRef.current = {};
 };
-  }, [measures, selection, caret, dragRef, leadSheet.ties]); // useLayoutEffect
+  }, [measures, selection, dragRef, leadSheet.ties, leadSheet.slurs, noteInputMode]); // useLayoutEffect
 
 
 
@@ -1710,6 +1692,20 @@ return () => {
 
  
 
+
+// function onMouseMove(e) {
+//   const pos = computeCursorPos(e); // your existing logic
+//   cursorPosRef.current = pos;
+
+//   if (!rafRef.current) {
+//     rafRef.current = requestAnimationFrame(() => {
+//       rafRef.current = null;
+//       updateCursorOverlay(staveRef.current, spacing);
+//     });
+//   }
+// }
+
+
 const onMouseMove = (x, y, staveInfo) => {
    if (!staveInfo) return;
 // console.log("ON MOUSE MOVE ", {x, y, staveInfo})
@@ -1717,15 +1713,21 @@ const onMouseMove = (x, y, staveInfo) => {
   // Convert raw Y → pitch → snapped Y
   const midi = pitchFromY(y, staveInfo);
   // const snappedY = cursorYFromPitch(midi, staveInfo);
+
+
+
+
    const snappedY = snapToStaveLine(y, staveInfo)
 let snappedX = x
 
+//   console.log("ON MOVE", {
+//   rawY: y,
+//   snappedY,
+//   staveTopLineY: staveInfo.topLineY,
+//   spacing: staveInfo.spacing,
+// });
 
 // console.log( {staveInfo, vfCacheRef} )
-
-
-
-
 const { vfNotes } = vfCacheRef.current.get(staveInfo.measureId);
 
 const rect = getNoteRectFromX(x, vfNotes);
@@ -1734,13 +1736,23 @@ if (rect) {
   // console.log("Rect:", rect.x1, rect.y1, rect.width, rect.height);
   snappedX=rect.x1 + rect.width
 }
-  setCursorPos({ x: snappedX, y: snappedY });
+
+cursorPosRef.current.x = snappedX
+cursorPosRef.current.y = snappedY
+
+// console.log({cursorPosRef})
+  if (!rafRef.current) {
+    rafRef.current = requestAnimationFrame(() => {
+      rafRef.current = null;
+      updateCursorOverlay({cursorPosRef, staveInfo, inputDurationRef, vfCacheRef});
+    });
+  }
 
 
-  // setCursorPos({ x, y: snappedY,  midi });
-
- setCursorStaveInfo(staveInfo);
 };
+
+
+
 
 
 
@@ -1749,7 +1761,7 @@ if (rect) {
 
   useEffect(() => {
 
-  const container = lsContainerRef.current;
+  const container = .current;
   if (!container) return;
 
   const svgList = container.querySelectorAll("svg");
@@ -1816,4 +1828,4 @@ if (rect) {
       />
     </div>
   );
-} //LeadSheetRenderer
+}

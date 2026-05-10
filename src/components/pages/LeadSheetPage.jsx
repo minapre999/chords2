@@ -2,7 +2,9 @@ import React, { useState, useCallback, useEffect, useRef } from "react";
 import Toolbar from "/src/components/toolbar/toolbar.jsx";
 
 import { TransportBar } from "../lead-sheet/TransportBar";
-import  LeadSheetRenderer, { durationMap}  from "../lead-sheet/LeadSheetRenderer";
+import  LeadSheetRenderer  from "../lead-sheet/LeadSheetRenderer";
+import  LeadSheetAutoFlow from "../lead-sheet/LeadSheetAutoFlow";
+
 // import { FretboardPreview } from "../lead-sheet/FretboardPreview";
 import FretboardSVG from "/src/components/fretboard/FretboardSVG.jsx";
 import * as Tone from "tone";
@@ -10,12 +12,12 @@ import { useToneEngine } from "/src/context/ToneEngineContext";
 import { useLeadSheetPlayer } from "/src/hooks/useLeadSheetPlayer";
 import RenderData, {RenderNote} from "/src/render-notes.js"
 // import NoteInputCursor  from "/src/components/lead-sheet/NoteInputCursor.jsx"
-import NoteInputCursorOverlay  from "/src/components/lead-sheet/cursor/NoteInputCursorOverlay.jsx"
 import NoteInputCaret  from "/src/components/lead-sheet/NoteInputCaret.jsx"
 import {staveRef} from "/src/components/lead-sheet/cursor/staveRef"
 import FloatingPalette from "/src/components/panels/FloatingPalette.jsx"
 
 import { autumnLeaves } from "/src/data/autumnLeaves";
+import { cursorOverlayRef } from "/src/components/lead-sheet/cursor/cursorRefs";
 
 
 const initialLeadSheet = autumnLeaves 
@@ -153,7 +155,7 @@ const rendererRef = useRef(null);
 const applyRippleEditRef = useRef(null);
 const onMouseUpRef = useRef(() => {});
 const dragRef = useRef(null);
-const lsContainerRef = useRef(null);
+
   const vfCacheRef = useRef(new Map());
  const lastMeasureLayoutRef = useRef(null);
 
@@ -208,7 +210,8 @@ const [selection, setSelection] = useState(null);
 // this is the core of the note input system
 const [noteInputMode, setNoteInputMode] = useState(false);
 const noteInputModeRef = useRef(false);
-
+    const noteElements = useRef(new Map());
+  const measureElements = useRef(new Map());
 
 
 
@@ -245,37 +248,15 @@ const [pendingInsert, _setPendingInsert] = useState(null);
     console.log("setting caretRef", {caret})
   caretRef.current = caret;
   window.caretRef = caretRef
-}, [leadSheet, caret]);
+  window.vfCacheRef = vfCacheRef
+}, [leadSheet, caret, ]);
 
 // cursors for note input mode
 
 const [cursorPitch, setCursorPitch] = useState("C4");
 const [cursorVisible, setCursorVisible] = useState(false);
 
-useEffect(() => {
-  const container = lsContainerRef.current;
-  if (!container) return;
 
-  const onEnter = () => {
-    // console.log("ENTER CONTAINER");
-    setCursorVisible(true);
-  };
-
-  const onLeave = () => {
-    // console.log("LEAVE CONTAINER");
-    setCursorVisible(false);
-  };
-
-
-
-  container.addEventListener("mouseenter", onEnter);
-  container.addEventListener("mouseleave", onLeave);
-
-  return () => {
-    container.removeEventListener("mouseenter", onEnter);
-    container.removeEventListener("mouseleave", onLeave);
-  };
-}, []);
 
 
 
@@ -1300,6 +1281,7 @@ const handleNoteDragStart = (noteId, startX, startY, g) => {
 
 // mousemove → update preview (still in screen coords)
 const handleMove = (e) => {
+  // console.log("HANDLE MOVE")
   const drag = dragRef.current;
   if (!drag) return;
 
@@ -1309,7 +1291,7 @@ const handleMove = (e) => {
   // ✅ 5px per semitone (lines AND spaces), not 10
   const semitones = Math.round(-dy / 5);
   const durationSteps = Math.round(dx / 30);
-
+console.log({"drag.noteId": drag.noteId, semitones, durationSteps})
   setDragPreview({
     noteId: drag.noteId,
     semitones,
@@ -1360,7 +1342,7 @@ onMouseUpRef.current = () => {
 
 
 const handleNoteSelect = (id) => {
-  console.log("SELECTING NOTE ID:", id);
+  console.log("SELECTING NOTE ID:", {id,noteInputMode});
 
   if (!noteInputMode) {
     setSelection({ type: "note", id });
@@ -1379,6 +1361,7 @@ const handleNoteSelect = (id) => {
 
     if (!selected) return;
 
+    
     // New-format fields
     const pitches = selected.pitches || [];
     const duration = selected.duration || "q";
@@ -1838,60 +1821,51 @@ function updateDraggedNote(noteId, semitones, durationSteps) {
 <>
     
 
+<div className="page-wrapper"
+  style={{ display: "flex", flexDirection: "column", gap: 20 }}>
 
-    <div className="page-wrapper"
-     style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-            
-        <Toolbar
-          {...props}
-          page="lead-sheet"
-          zoom={zoom}
-          setZoom={setZoom}
-          isPlaying={isPlaying} 
-          setIsPlaying={setIsPlaying}
-          isPaused={isPaused} 
-          setIsPaused={setIsPaused}
-          
-          showPalette={showPalette} 
-          setShowPalette={setShowPalette}
-          pos={lsPalettePos} 
-          setPos={setLsPalettePos}
-          noteInputMode={noteInputMode}
-          setNoteInputMode={setNoteInputMode}
-          noteInputModeRef={noteInputModeRef}
-          handleToolbarDurationChange={handleToolbarDurationChange}
-          noteToRest={noteToRest}
-          handleAccidentalClick={handleAccidentalClick}
-          onToolbarTieClick={onToolbarTieClick}
-          onToolbarSlurClick={onToolbarSlurClick}
-          inputDuration={inputDuration}
-          setInputDuration={setInputDuration}
-          selection={selection}
-          selRest={selRest}
-          setSelRest={setSelRest}
-          selDotted={selDotted}
-          setSelDotted={setSelDotted}
-          noteToDotted={noteToDotted}
-          
-        />
-    
-    
-      <div className="page-content">
-      
+  <Toolbar
+    {...props}
+    page="lead-sheet"
+    zoom={zoom}
+    setZoom={setZoom}
+    isPlaying={isPlaying}
+    setIsPlaying={setIsPlaying}
+    isPaused={isPaused}
+    setIsPaused={setIsPaused}
+    showPalette={showPalette}
+    setShowPalette={setShowPalette}
+    pos={lsPalettePos}
+    setPos={setLsPalettePos}
+    noteInputMode={noteInputMode}
+    setNoteInputMode={setNoteInputMode}
+    noteInputModeRef={noteInputModeRef}
+    handleToolbarDurationChange={handleToolbarDurationChange}
+    noteToRest={noteToRest}
+    handleAccidentalClick={handleAccidentalClick}
+    onToolbarTieClick={onToolbarTieClick}
+    onToolbarSlurClick={onToolbarSlurClick}
+    inputDuration={inputDuration}
+    setInputDuration={setInputDuration}
+    selection={selection}
+    selRest={selRest}
+    setSelRest={setSelRest}
+    selDotted={selDotted}
+    setSelDotted={setSelDotted}
+    noteToDotted={noteToDotted}
+  />
 
-      {showPalette && (
-        <FloatingPalette
-             pos={lsPalettePos} 
-            setPos={setLsPalettePos} 
-             onClose={() => setShowPalette(false)}
-               >
-         this is a palette
-        </FloatingPalette>
-      )}
+  <div className="page-content">
 
-
-
- 
+    {showPalette && (
+      <FloatingPalette
+        pos={lsPalettePos}
+        setPos={setLsPalettePos}
+        onClose={() => setShowPalette(false)}
+      >
+        this is a palette
+      </FloatingPalette>
+    )}
 
     <div
       className="lead-sheet-page"
@@ -1899,26 +1873,19 @@ function updateDraggedNote(noteId, semitones, durationSteps) {
         display: "flex",
         flexDirection: "column",
         gap: 12,
-        // height: "100vh",   // full viewport
-        minHeight: 0,
-        // pointerEvents: "none"     // ← ADD THIS
+        minHeight: 0
       }}
     >
 
-        <FretboardSVG
-          {...props}
-          renderDataUI={renderDataUI}
-          setRenderDataUI={setRenderDataUI}
-          width={1800}                    height={220}
-          zoom={zoom}                     setZoom={setZoom}
-    
-          // showNoteNamesUI={showNoteNamesUI}
-          // showAllNotesUI={showAllNotesUI}
-          // noteMode={noteMode}
-          />
-          
-          
-      {/* <TransportBar leadSheet={leadSheet} /> */}
+      <FretboardSVG
+        {...props}
+        renderDataUI={renderDataUI}
+        setRenderDataUI={setRenderDataUI}
+        width={1800}
+        height={220}
+        zoom={zoom}
+        setZoom={setZoom}
+      />
 
       <div
         style={{
@@ -1929,116 +1896,103 @@ function updateDraggedNote(noteId, semitones, durationSteps) {
           minHeight: 0
         }}
       >
+
         {/* LEFT: scrollable lead sheet */}
         <div
-        className = "lsScrollContainer"
-         style={{
-      flex: 2,
-      minHeight: 0,
-      overflowY: "auto",   // this MUST scroll
-      border: "1px solid #ddd",
-      borderRadius: 4,
-      // padding: 8,    // ⭐ important: don't use padding as this causes the VexFlow svg coordinates to be out by the padding
-      boxSizing: "border-box",
-      position: "relative"   // ⭐ REQUIRED FOR CURSOR ALIGNMENT
-    }}
+          className="lsScrollContainer"
+          style={{
+            flex: 2,
+            minHeight: 0,
+            overflowY: "auto",
+            border: "1px solid #ddd",
+            borderRadius: 4,
+            boxSizing: "border-box",
+            position: "relative"
+          }}
         >
+
+          {/* ⭐ NEW AUTO-FLOW MEASURE SYSTEM */}
           <LeadSheetRenderer
-            {...props}
-        leadSheet={leadSheet}
-        lsContainerRef={lsContainerRef}
-        renderDataUI={renderDataUI}
-        setRenderDataUI={setRenderDataUI}
-        rendererRef={rendererRef} 
-        playerRef={playerRef}
-        onNoteDragStart={handleNoteDragStart}
-        measures={leadSheet.measures}
-        onNoteSelect={handleNoteSelect}
-        dragPreview={dragPreview} 
-        setDragPreview={setDragPreview}
-        dragRef={dragRef}
-        noteInputMode={noteInputMode}
-        onNoteInput={onNoteInput}
-        caret={caret}
-        setCaret={setCaret}
-        caretRef={caretRef}
-        tieStart={tieStart}
-        setTieStart={setTieStart}
-        selection={selection}
-        setSelection={setSelection}
-        onTieDelete={onTieDelete}
-        onSlurDelete={onSlurDelete}
-        noteInputModeRef={noteInputModeRef}
-        inputDurationRef={inputDurationRef}
-        staveRef={staveRef} 
-        vfCacheRef = {vfCacheRef}
-        lastMeasureLayoutRef={lastMeasureLayoutRef}
-        // onMouseMove={handleMouseMove}
-          />
-
-{/* <NoteInputCursorOverlay
-
-  style={{
-        color: "red",
-        fill: "red",
-   stroke:"#00aaff",
-      fill: "#00aaff",
-      }}
-      /> */}
- {/* {noteInputMode && (
-       <NoteInputCursor
-            lsContainerRef={lsContainerRef}
-            visible={noteInputMode && cursorVisible}
-            duration={inputDuration}
-            pitch={cursorPitch}
-            topLineY={cursorStaveInfo?.topLineY}
-            spacing={cursorStaveInfo?.spacing}
-            staveRef={staveRef} 
-            style={{
-        position: "absolute",
-        top: 0,
-        left: 0,
-        width: "100%",
-        height: "100%",
-        pointerEvents: "none",
-        overflow: "visible",
-        zIndex: 9999,
-
-   
-      }}
-          />
-  )} */}
-
- {noteInputMode && (
-<NoteInputCaret
-            caret={caret}
-            caretRef={caretRef}
-            vfCacheRef={vfCacheRef}
+            measures={leadSheet.measures}
             leadSheet={leadSheet}
+            caret={caret}
+            setCaret={setCaret}
+            caretRef={caretRef}
+            cursorVisible={cursorVisible}
+            setCursorVisible={setCursorVisible}
+            vfCacheRef={vfCacheRef}
             lastMeasureLayoutRef={lastMeasureLayoutRef}
-            style={{
-        position: "absolute",
-        top: 0,
-        left: 0,
-        width: "100%",
-        height: "100%",
-        pointerEvents: "none",
-        overflow: "visible",
-        zIndex: 9999,
-
-   
-      }}
+            noteInputMode={noteInputMode}
+            onNoteInput={onNoteInput}
+            onNoteSelect={handleNoteSelect}
+            onNoteDragStart={handleNoteDragStart}
+            noteElements={noteElements}
+            measureElements={measureElements}
+            selection={selection}
+            setSelection={setSelection}
+            tieStart={tieStart}
+            setTieStart={setTieStart}
+            onTieDelete={onTieDelete}
+            onSlurDelete={onSlurDelete}
+            noteInputModeRef={noteInputModeRef}
+            inputDurationRef={inputDurationRef}
+            staveRef={staveRef}
+            dragPreview={dragPreview}
+            setDragPreview={setDragPreview}
+            dragRef={dragRef}
+            playerRef={playerRef}
+            rendererRef={rendererRef}
+       
           />
-    )}
+
+          {/* CARET OVERLAY (unchanged) */}
+          {noteInputMode && (
+            <NoteInputCaret
+              caret={caret}
+              caretRef={caretRef}
+              vfCacheRef={vfCacheRef}
+              leadSheet={leadSheet}
+              lastMeasureLayoutRef={lastMeasureLayoutRef}
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "100%",
+                height: "100%",
+                pointerEvents: "none",
+                overflow: "visible",
+                zIndex: 9999
+              }}
+            />
+
+         
+
+
+
+
+          )}
+
+
+   <div
+        id="note-input-cursor"
+        ref={el => (cursorOverlayRef.current = el)}
+        style={{
+          position: "absolute",
+          pointerEvents: "none",
+          opacity: 0,
+          width: "20px",
+          height: "40px",
+        }}>
+      </div>
 
 
         </div>
 
-     
       </div>
     </div>
-    </div>
-    </div>
+  </div>
+</div>
+
 </>
 
   );

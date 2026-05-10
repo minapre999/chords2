@@ -1,13 +1,36 @@
 
 import {durationToGlyph} from "/src/components/lead-sheet/cursor/durationToGlyph"
-
+import { cursorOverlayRef, cursorPosRef } from "./cursorRefs";
 
 
 export function updateCursorOverlay(args) {
 
-    const {cursorPosRef, staveInfo, inputDurationRef, vfCacheRef} = args
+      const el = cursorOverlayRef.current;
+  if (!el) return;
 
-      if (!cursorPosRef || !inputDurationRef || !vfCacheRef || !staveInfo) return;
+
+/*
+  measureRectsRef.current[measure.id] = {
+    left: rect.left,
+    right: rect.right,
+    top: rect.top,
+    bottom: rect.bottom,
+    spacing: stave.getSpacingBetweenLines(),
+    topLineY: stave.getYForLine(0),
+    measureWidth: staveWidth,
+    stave: stave,
+    beats: 4,
+    measureId: 
+    svgRef:
+  };
+  */
+
+    const {svgRef, measureId, measureRectsRef, cursorPosRef,  inputDurationRef, vfCacheRef} = args
+
+      if (!svgRef?.current || !measureId || !measureRectsRef || !cursorPosRef || !inputDurationRef || !vfCacheRef ) return;
+
+      console.log("UPDATE CURSOR OVERLAY", {measureId, measureRectsRef,  cursorPosRef, inputDurationRef, vfCacheRef})
+
 
     const cursorPos = cursorPosRef.current
     const inputDuration = inputDurationRef.current
@@ -16,15 +39,14 @@ export function updateCursorOverlay(args) {
   const ledgers = document.getElementById("cursor-ledgers");
   const glyph = document.getElementById("cursor-glyph");
 
+console.log({cursor, ledgers, glyph})
+const measureRect =  measureRectsRef.current[measureId]
+const{ spacing, topLineY, stave} = measureRect
 
-
-const{stave, spacing, topLineY} = staveInfo
   const {x, y} = cursorPos
-  //
-
+  
 
 const glyphChar = durationToGlyph(inputDuration)
-const measureId = staveInfo.measureId
 const  vfNotes  = vfCacheRef?.current?.get(measureId).vfNotes
 
 // console.log("UPDATE CURSOR OVERLAY", {cursorPos, stave, spacing, inputDuration, vfNotes, vfCacheRef, glyphChar, measureId})
@@ -50,6 +72,7 @@ const curX = rect.getX()
 
   cursor.setAttribute("transform", `translate(${curX+6}, ${cursorPos.y})`);
 
+  console.log("updateCursorOverlay", {curX, glyphChar, cursorPos, rect, measureId})
   //
   // 2. Draw glyph
   //
@@ -72,8 +95,8 @@ const curX = rect.getX()
   //
 
 
- const svg = document.getElementById("lead-sheet-svg");
-
+//  const svg = document.getElementById("lead-sheet-svg");
+const svg = svgRef.current
 
   ledgers.innerHTML = "";
   ledgers.setAttribute("stroke", "#00aaff");
