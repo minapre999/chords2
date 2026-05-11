@@ -28,3 +28,4 @@ export const cursorPosRef = { current: { x: 0, y: 0,  duration: "q", measure: nu
 export const rafRef = { current: null };
 export const cursorMeasureRef = { current: null };
 export const cursorOverlayRef = { current: null };
+export const cursorLedgersRef = { current: null };

@@ -5,7 +5,7 @@
   grid-auto-flow: column;
   grid-auto-columns: max-content;
   grid-template-rows: repeat(auto-fill, auto);
-  column-gap: 24px;
+  column-gap: 0px;
   row-gap: 32px;
   width: 100%;
 }

@@ -40,8 +40,8 @@ if(!leadSheet) return;
 
   // set in the props and here?
     // const staveWidth = width
-    const staveHeight = 180
-    const staveTopPadding = 40
+    const staveHeight = 160
+    const staveTopPadding = 60
 //  console.log("MR", measureIndex, {
 //     naturalWidth: measure.naturalWidth,
 //     finalWidth: measure.finalWidth,
@@ -58,6 +58,7 @@ if(!leadSheet) return;
   useEffect(() => {
     window.noteElements = noteElements;
 window.measureElements = measureElements;
+
   }, [leadSheet]);
  
 
@@ -182,13 +183,14 @@ window.measureElements = measureElements;
 // measure rects for note input cursor, etc.
 
   useLayoutEffect(() => {
-   
+   console.log("rendering measure")
 // console.log("useLayoutEffect for measures rect", {svgRef, staveRef})
   if (!svgRef.current || !staveRef?.current) return;
 
  
   const rect = svgRef.current.getBoundingClientRect();
   const stave = staveRef.current;
+  window.staveRef = staveRef // debugging
   // console.log("adding to measureRectsRef")
   measureRectsRef.current[measure.id] = {
     left: rect.left,
@@ -197,6 +199,8 @@ window.measureElements = measureElements;
     bottom: rect.bottom,
     staveY: stave.getYForLine(0),
     spacing: stave.getSpacingBetweenLines(),
+    noteStartX: stave.getNoteStartX(),
+    stave: stave,
 
   //   left: rect.left,
   //   right: rect.right,
@@ -284,7 +288,9 @@ function moveCaretToNote(vfNote, measureIdx, noteIdx) {
 
   rendererRef.current = renderer
 
-  const stave = new VF.Stave(0, 0, staveWidth);
+  const staveY = 25
+  const staveX = 0
+  const stave = new VF.Stave(staveX, staveY, staveWidth);
 
   if (measureIndex === 0 && rowIndex === 0) {
     stave.addClef("treble");
@@ -365,7 +371,7 @@ hitGroup.classList.add("vf-hitboxes-group");
 hitGroup.style.pointerEvents = "none"; // group ignores events
 svg.appendChild(hitGroup);
 
-const hitMap = {};
+
 
 
 
@@ -477,7 +483,8 @@ if (selection?.type === "note" && selection.id === id) {
 
 
 // Save hitMap for this measure
-measure.hitMap = hitMap;
+
+
 
 
 
@@ -514,22 +521,22 @@ measure.hitMap = hitMap;
 
   
     // ⭐ Insert cursor overlay AFTER VexFlow draws
-    let overlay = svg.querySelector(".cursor-overlay");
-    if (!overlay) {
-      overlay = document.createElementNS("http://www.w3.org/2000/svg", "g");
-      overlay.classList.add("cursor-overlay");
-      overlay.style.pointerEvents = "none";
+    // let overlay = svg.querySelector(".cursor-overlay");
+    // if (!overlay) {
+    //   overlay = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    //   overlay.classList.add("cursor-overlay");
+    //   overlay.style.pointerEvents = "none";
 
-      const glyph = document.createElementNS("http://www.w3.org/2000/svg", "g");
-      glyph.id = "cursor-glyph";
+    //   const glyph = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    //   glyph.id = "cursor-glyph";
 
-      const ledgers = document.createElementNS("http://www.w3.org/2000/svg", "g");
-      ledgers.id = "cursor-ledgers";
+    //   const ledgers = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    //   ledgers.id = "cursor-ledgers";
 
-      overlay.appendChild(glyph);
-      overlay.appendChild(ledgers);
-      svg.appendChild(overlay);
-    }
+    //   overlay.appendChild(glyph);
+    //   overlay.appendChild(ledgers);
+    //   svg.appendChild(overlay);
+    // }
 
     /*
 staveWidth, rowIndex, measureIndex are critical here for correct measure rendering

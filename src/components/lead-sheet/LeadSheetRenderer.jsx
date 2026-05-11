@@ -1,13 +1,12 @@
 import { useEffect, useRef, useState, useCallback, useImperativeHandle, forwardRef,   useLayoutEffect, } from "react";
 import LeadSheetAutoFlow from "./LeadSheetAutoFlow";
 import "./LeadSheetRenderer.css"
-import {cursorPosRef, cursorOverlayRef} from "/src/components/lead-sheet/cursor/cursorRefs";
+import {cursorPosRef, cursorOverlayRef, cursorLedgersRef} from "/src/components/lead-sheet/cursor/cursorRefs";
 import { updateCursorOverlay, updateCursorShape } from "/src/components/lead-sheet/cursor/updateCursorOverlay";
 
 
 
 export const measureRectsRef = { current: {} };
-
 
 
 
@@ -27,7 +26,7 @@ const lsContainerRef = useRef(null);
 
 
 useEffect(() => {
-  console.log("cursorOverlayRef:", cursorOverlayRef.current);
+  // console.log("cursorOverlayRef:", cursorOverlayRef.current);
 }, []);
 
 
@@ -61,36 +60,44 @@ useEffect(() => {
 
     if (!found ) {
       cursorPosRef.current.visible = false;
-      // updateCursorOverlay({found});
+      // updateCursorOverlay({layout});
       return;
     }
 
-  const  {vfNotes} = vfCacheRef.current.get(found.id)
-  console.log({vfNotes})
+  const layout = found.rect
+  const noteId = found.id
+  const  {vfNotes} = vfCacheRef.current.get(noteId)
+
 if(!vfNotes) return;
 
+// console.log("layout measure rect: ", layout)
 
 const globalX = e.clientX;
 const globalY = e.clientY;
 
-const localX = globalX - found.rect.left;
-const localY = globalY - found.rect.top;
+const localX = globalX - layout.left;
+const localY = globalY - layout.top;
+
 
 // Snap X
 let snappedLocalX = localX;
-const noteRect = getNoteRectFromX(localX, vfNotes);
+
+const noteRect = getNoteRectFromX(localX, layout.noteStartX, vfNotes);
+
+
+
 if (noteRect) {
   snappedLocalX = noteRect.x1 + noteRect.width;
 }
 
 // Snap Y (use staveY, not note rect)
-const snappedLocalY = snapToStaveLine(localY, found.rect.staveY);
-const snappedGlobalX = found.rect.left + snappedLocalX
-const snappedGlobalY = found.rect.top  + snappedLocalY
+const snappedLocalY = snapToStaveLine(localY, layout.staveY);
+const snappedGlobalX = layout.left + snappedLocalX
+const snappedGlobalY = layout.top  + snappedLocalY
 // Convert back to global
 
-  const CURSOR_Y_OFFSET = -24; // or +2, +3, etc.
-   const CURSOR_X_OFFSET = -32; // or +2, +3, etc.
+  const CURSOR_Y_OFFSET = 0; // or +2, +3, etc.
+   const CURSOR_X_OFFSET = 0; // or +2, +3, etc.
 
 cursorPosRef.current = {
   visible: true,
@@ -99,28 +106,29 @@ cursorPosRef.current = {
 };
 
 
-console.log({
-  clientY: e.clientY,
-  pageY: e.pageY,
-  scrollY: window.scrollY,
-  containerScrollTop: lsContainerRef.current?.scrollTop,
-  measureRectTop: found.rect.top,
-});
+// console.log({
+//   clientY: e.clientY,
+//   pageY: e.pageY,
+//   scrollY: window.scrollY,
+//   containerScrollTop: lsContainerRef.current?.scrollTop,
+//   measureRectTop: layout.top,
+// });
 
 
 
-console.log({
-  globalTop: found.rect.top,
-  localX,
-  globalX,
-  snappedLocalX,
-  snappedGlobalX,
-  localY,
-  globalY,
-  snappedLocalY,
-  snappedGlobalY,
-
-});
+// console.log({
+//   globalTop: layout.top,
+//   localX,
+//   globalX,
+//   snappedLocalX,
+//   snappedGlobalX,
+//   localY,
+//   globalY,
+//   snappedLocalY,
+//   snappedGlobalY,
+//  layout,
+//  noteRect
+// });
 
 
 
@@ -128,10 +136,13 @@ console.log({
 updateCursorShape({
   notehead: "\uECA5",
   ledgerCount: 2,
+  snappedX: snappedLocalX,
+  snappedY: snappedLocalY,
+  layoutInfo: layout,
 });
 
 // Then move overlay
-updateCursorOverlay(found);
+updateCursorOverlay({id: noteId, snappedGlobalY, layoutInfo: layout});
 
 
 } // onMove
@@ -139,7 +150,7 @@ updateCursorOverlay(found);
   container.addEventListener("mousemove", onMove);
   container.addEventListener("mouseleave", () => {
     cursorPosRef.current.visible = false;
-    // updateCursorOverlay(found);
+    // updateCursorOverlay(layout);
   });
 
   return () => container.removeEventListener("mousemove", onMove);
@@ -164,23 +175,26 @@ return snapY
   }
 
 
+// notStartX is the offset where the note drawing starts in the stave
+// so takes into account treble clef, etc.
 
-function getNoteRectFromX(x, vfNotes) {
+function getNoteRectFromX(x, noteStartX, vfNotes) {
   const boxes = vfNotes.map(note => {
     const bb = note.getBoundingBox();
     return {
       note,
-      x1: bb.getX(),
-      x2: bb.getX() + bb.getW(),
+      x1: /*noteStartX + */bb.getX(),
+      x2: /*noteStartX + */bb.getX() + bb.getW(),
       y1: bb.getY(),
       y2: bb.getY() + bb.getH(),
       width: bb.getW(),
       height: bb.getH(),
     };
   });
-// console.log({x, boxes})
+// console.log("boxes", x, boxes)
   // strict containment
   const hit = boxes.find(b => x >= b.x1 && x <= b.x2);
+  // console.log("layout note rect: ", {hit, boxes, x, noteStartX, vfNotes, })
   if (hit) return hit;
 
   // fallback: closest note
@@ -282,9 +296,6 @@ useLayoutEffect(() => {
 
 
 
-
-
-
   
   return (
    <>
@@ -300,11 +311,27 @@ useLayoutEffect(() => {
           left: 0,
           margin: 0,
           padding: 0,
+          width: "40px",
+          height: "40px",
+        }}>
+      </div>
+
+
+ <div
+        id="ledger-lines"
+        ref={el => (cursorLedgersRef.current = el)}
+        style={{
+          position: "fixed",
+          pointerEvents: "none",
+          opacity: 0,
+          top: 0,
+          left: 0,
+          margin: 0,
+          padding: 0,
           width: "0px",
           height: "0px",
         }}>
       </div>
-
 
 
     <div style={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
@@ -312,6 +339,7 @@ useLayoutEffect(() => {
       {...props}
       rowWidth={rowWidth}
         className="ls-container"
+     
         ref={lsContainerRef}
         style={{ width: "100%", minHeight: "600px" }}
       
