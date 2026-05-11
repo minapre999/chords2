@@ -25,11 +25,6 @@ const lsContainerRef = useRef(null);
 
 
 
-useEffect(() => {
-  // console.log("cursorOverlayRef:", cursorOverlayRef.current);
-}, []);
-
-
 
 
 // mouse move for note input cursor
@@ -139,6 +134,8 @@ updateCursorShape({
   snappedX: snappedLocalX,
   snappedY: snappedLocalY,
   layoutInfo: layout,
+  vfNotes,
+  noteRect,
 });
 
 // Then move overlay
@@ -311,8 +308,8 @@ useLayoutEffect(() => {
           left: 0,
           margin: 0,
           padding: 0,
-          width: "40px",
-          height: "40px",
+          width: "0px",
+          height: "0px",
         }}>
       </div>
 

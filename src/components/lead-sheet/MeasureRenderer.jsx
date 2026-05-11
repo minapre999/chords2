@@ -545,7 +545,7 @@ but VexFlow was still drawing the old width.
 
 */
 
-  }, [measure, staveWidth, rowIndex, measureIndex, selection, leadSheet.slurs, leadSheet.ties, dragRef, noteInputMode]);  // useLayoutEffect
+  }, [measure, staveWidth, rowIndex, selection, leadSheet.slurs, leadSheet.ties, dragRef, noteInputMode]);  // useLayoutEffect
 
 
 

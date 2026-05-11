@@ -18,8 +18,13 @@ export function updateCursorOverlay({id, layoutInfo}) {
   if (!el) return;
 
   let { x, y, visible } = cursorPosRef.current;
-  x -= 28
-  y -= 35
+
+  // for some reason the translate does not map the global to the
+  // exactly to the note
+  const X_TRANSLATE_FIX = 0
+  const Y_TRANLATE_FIX = 0 
+  x -= X_TRANSLATE_FIX
+  y -= Y_TRANLATE_FIX
 // console.log("updateCursorOverlay", {el, id, layoutInfo, x, y, visible})
 
   el.style.opacity = visible ? "1" : "0";
@@ -46,7 +51,8 @@ el.style.stroke = "#00aaff";
 
 // console.log("layoutInfo: ", layoutInfo)
 
-   transX = x
+  //  transX = x
+  transX = layoutInfo.left 
    transY = layoutInfo.top
  el.style.transform = `translate(${transX}px, ${transY}px)`;
 
@@ -54,15 +60,18 @@ el.style.stroke = "#00aaff";
 }
 
 
+
+
+
 // note the top and bottom ledger lines are currently hard coded in
 // these need to be set to bottom and upper range
-
-export function updateCursorShape({ notehead, snappedY, layoutInfo }) {
+// snappedX and snappedY are local
+export function updateCursorShape({ notehead, snappedY, snappedX, layoutInfo, vfNotes, noteRect }) {
  
  
    const {stave, staveY, spacing} = layoutInfo // staveY is the top line
 
-
+console.log("CURSOR SHAPE: ", {notehead, snappedY, layoutInfo, noteRect, vfNotes}, )
     let el = cursorOverlayRef.current;
   
   if (!el || !stave) return;
@@ -74,14 +83,20 @@ export function updateCursorShape({ notehead, snappedY, layoutInfo }) {
   // Create SVG container
   let svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svg.setAttribute("width", "40");
-  svg.setAttribute("height", "80");
+  svg.setAttribute("height", "40");
   svg.style.overflow = "visible";
 
   // --- NOTEHEAD ---
   // const noteY = stave.getYForLine(lineIndex);
+ 
+  // NOTE: the x coordinate for the notehead is different to that 
+  // of the ledger lines because the notehead coordinated system has been transformed
+  // to the (snapped) cursor coordinates i.e. zero is at the cursor
+  // whereas the ledger linese coordinates has been transformed to the stave coordinates
+  // i.e. zero is  the left of the stave
   const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-  text.setAttribute("x", "20");
-  text.setAttribute("y", "30");
+  text.setAttribute("x", String(-1*noteRect.width/2));
+  text.setAttribute("y", "0");
   text.setAttribute("font-family", "Bravura");
   text.setAttribute("font-size", "32");
   text.setAttribute("text-anchor", "middle");
@@ -106,18 +121,58 @@ svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svg.setAttribute("height", "40");
   svg.style.overflow = "visible";
 
+//TESTING 
+// 1. stave rectangle
+// this test works as expected - a rectangle covers the entire stave 
+// const testH = layoutInfo.bottom - layoutInfo.top
+// const testW = layoutInfo.right - layoutInfo.left
+//   const line = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+//       line.setAttribute("x", "0");
+//       line.setAttribute("y", "0");
+//       line.setAttribute("width",  String(testW));
+//       line.setAttribute("height", String(testH)) ;
+//       line.setAttribute("stroke-width", "4");
+//       svg.appendChild(line);
+  
+  // 2. note rectangle
+// this is to draw a rect around the note of the stave
+// this works perfectly as well
+// vfNotes.forEach((note)=>{
+//     const bb = note.getBoundingBox();
+//   const x = bb.getX()
+//   const y = bb.getY()
+// const testH = bb.getH()
+// const testW = bb.getW()
+// const line = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+//       line.setAttribute("x", String(x));
+//       line.setAttribute("y", String(y));
+//       line.setAttribute("width",  String(testW));
+//       line.setAttribute("height", String(testH)) ;
+//       line.setAttribute("stroke-width", "4");
+//       svg.appendChild(line);
+
+//   })
+  
+  
+
+
+
 //   // Above the staff
 
 
   let ly = staveY -spacing ;
 let numLines = 1
-  console.log({ly, staveY, snappedY})
+const ledgerWidth = 20
+  // console.log({ly, staveY, snappedY})
+  // noteRect.x seems to align to the right of the note box
+  // so the left side is noteRect.x - noteRect.width
+ x = Math.floor(noteRect.x1)
 
   while( ly >= snappedY & numLines <=5 ) {
 
  const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-      line.setAttribute("x1", "15");
-      line.setAttribute("x2", "35");
+      line.setAttribute("x1", String(x))
+      line.setAttribute("x2", String(x + ledgerWidth))
       line.setAttribute("y1", String(ly));
       line.setAttribute("y2", String(ly));
       line.setAttribute("stroke-width", "1.5");
@@ -137,8 +192,8 @@ let numLines = 1
     while (ly < snappedY & numLines <=3 ) {
 
       const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-      line.setAttribute("x1", "15");
-      line.setAttribute("x2", "35");
+    line.setAttribute("x1", String(x));
+      line.setAttribute("x2", String(x + ledgerWidth))
       line.setAttribute("y1", String(ly));
       line.setAttribute("y2", String(ly));
       line.setAttribute("stroke-width", "1.5");

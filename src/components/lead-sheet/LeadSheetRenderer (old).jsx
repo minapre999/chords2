@@ -4,7 +4,6 @@ import RenderData, {RenderNote} from "/src/render-notes.js"
 import Note from "/src/harmony/note.js"
 import { cursorPosRef, rafRef } from "/src/components/lead-sheet/cursor/cursorRefs";
 import { updateCursorOverlay } from "/src/components/lead-sheet/cursor/updateCursorOverlay";
-import { updateCursorLedgerLines } from "/src/components/lead-sheet/cursor/updateCursorLedgerLines";
 import { ensureCursorOverlay } from "/src/components/lead-sheet/cursor/ensureCursorOverlay";
 import "./LeadSheetRenderer.css"
 import { isNumber } from "tone";
