@@ -15,6 +15,12 @@ export default function LeadSheetRenderer(props) {
   cursorVisible, setCursorVisible, 
   dragPreview,
   dragRef,
+   inputDuration,  setInputDuration,
+  noteInputMode,
+  noteInputModeRef,
+  selDotted, setSelDotted,
+  selrest, setSelRest,
+  selection, setSelection,
   vfCacheRef,
           } = props
 
@@ -27,11 +33,19 @@ const lsContainerRef = useRef(null);
 
 
 
-// mouse move for note input cursor
+// NOTE INPUT CURSOR mouse move 
 
 useEffect(() => {
 
+  console.log("note input mode is: ", noteInputMode)
 
+ if(!noteInputMode) {
+      let el = cursorOverlayRef.current;
+      el.innerHTML = ""
+      el = cursorLedgersRef.current;
+       el.innerHTML = ""
+  return;
+ }
 
   const container = lsContainerRef.current;
   if (!container) return;
@@ -61,7 +75,8 @@ useEffect(() => {
 
   const layout = found.rect
   const noteId = found.id
-  const  {vfNotes} = vfCacheRef.current.get(noteId)
+  // const  {vfNotes} = vfCacheRef.current.get("m1").vfNotes
+
 
 if(!vfNotes) return;
 
@@ -151,7 +166,7 @@ updateCursorOverlay({id: noteId, snappedGlobalY, layoutInfo: layout});
   });
 
   return () => container.removeEventListener("mousemove", onMove);
-}, []);
+}, [noteInputMode]);
 
 
 
@@ -293,6 +308,79 @@ useLayoutEffect(() => {
 
 
 
+
+
+const handleNoteSelect = (id) => {
+  console.log("SELECTING NOTE ID:", {id,noteInputMode});
+
+  if (!noteInputMode) {
+    setSelection({ type: "note", id });
+
+    // Find the selected note
+    let selected = null;
+    for (const m of leadSheet.measures) {
+      for (const n of m.melody) {
+        if (n.id === id) {
+          selected = n;
+          break;
+        }
+      }
+      if (selected) break;
+    }
+
+    if (!selected) return;
+
+    
+    // New-format fields
+    const pitches = selected.pitches || [];
+    const duration = selected.duration || "q";
+    const dots = selected.dots || 0;
+
+    // REST?
+    const isRest = pitches.length === 0;
+    setSelRest(isRest);
+
+    // dotted note
+    selected.dots > 0 ?  setSelDotted(true) : setSelDotted( false)
+    // Update toolbar duration
+    // console.log("SETTING SELECTED DURATION:", duration);
+    setInputDuration(duration);
+
+    selectVexflowNote(id)
+    // If you want to update dots in the UI, do it here:
+    // setInputDots(dots);
+
+    // set the selected-note to the note <g>
+
+  }
+};
+
+
+function selectVexflowNote( noteId) {
+  const container = lsContainerRef.current;
+  if (!container) return;
+
+  // 1. Remove selected-note from ALL stavenotes
+  const allNotes = container.querySelectorAll('g.vf-stavenote');
+
+    console.log("select vex flow note", {noteId, allNotes})
+
+
+  allNotes.forEach(g => g.classList.remove('selected-note'));
+
+  // 2. Add selected-note to the one with matching id
+  const target = container.querySelector(`g.vf-stavenote#${CSS.escape(noteId)}`);
+  if (target) {
+    console.log({target})
+    target.classList.add('selected-note');
+  }
+}
+
+
+
+
+
+
   
   return (
    <>
@@ -334,6 +422,8 @@ useLayoutEffect(() => {
     <div style={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
       <LeadSheetAutoFlow
       {...props}
+      onNoteSelect={handleNoteSelect}
+
       rowWidth={rowWidth}
         className="ls-container"
      

@@ -71,7 +71,7 @@ export function updateCursorShape({ notehead, snappedY, snappedX, layoutInfo, vf
  
    const {stave, staveY, spacing} = layoutInfo // staveY is the top line
 
-console.log("CURSOR SHAPE: ", {notehead, snappedY, layoutInfo, noteRect, vfNotes}, )
+// console.log("CURSOR SHAPE: ", {notehead, snappedY, layoutInfo, noteRect, vfNotes}, )
     let el = cursorOverlayRef.current;
   
   if (!el || !stave) return;
@@ -166,7 +166,7 @@ const ledgerWidth = 20
   // console.log({ly, staveY, snappedY})
   // noteRect.x seems to align to the right of the note box
   // so the left side is noteRect.x - noteRect.width
- x = Math.floor(noteRect.x1)
+ const x = Math.floor(noteRect.x1)
 
   while( ly >= snappedY & numLines <=5 ) {
 

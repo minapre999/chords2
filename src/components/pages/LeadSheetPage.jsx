@@ -12,7 +12,7 @@ import { useToneEngine } from "/src/context/ToneEngineContext";
 import { useLeadSheetPlayer } from "/src/hooks/useLeadSheetPlayer";
 import RenderData, {RenderNote} from "/src/render-notes.js"
 // import NoteInputCursor  from "/src/components/lead-sheet/NoteInputCursor.jsx"
-import NoteInputCaret  from "/src/components/lead-sheet/NoteInputCaret.jsx"
+import NoteInputCaret  from "/src/components/lead-sheet/caret/NoteInputCaret.jsx"
 import {staveRef} from "/src/components/lead-sheet/cursor/staveRef"
 import FloatingPalette from "/src/components/panels/FloatingPalette.jsx"
 
@@ -1344,48 +1344,6 @@ onMouseUpRef.current = () => {
 
 
 
-const handleNoteSelect = (id) => {
-  console.log("SELECTING NOTE ID:", {id,noteInputMode});
-
-  if (!noteInputMode) {
-    setSelection({ type: "note", id });
-
-    // Find the selected note
-    let selected = null;
-    for (const m of leadSheet.measures) {
-      for (const n of m.melody) {
-        if (n.id === id) {
-          selected = n;
-          break;
-        }
-      }
-      if (selected) break;
-    }
-
-    if (!selected) return;
-
-    
-    // New-format fields
-    const pitches = selected.pitches || [];
-    const duration = selected.duration || "q";
-    const dots = selected.dots || 0;
-
-    // REST?
-    const isRest = pitches.length === 0;
-    setSelRest(isRest);
-
-    // dotted note
-    selected.dots > 0 ?  setSelDotted(true) : setSelDotted( false)
-    // Update toolbar duration
-    // console.log("SETTING SELECTED DURATION:", duration);
-    setInputDuration(duration);
-
-    // If you want to update dots in the UI, do it here:
-    // setInputDots(dots);
-  }
-};
-
-
 
 
 
@@ -1922,17 +1880,22 @@ function updateDraggedNote(noteId, semitones, durationSteps) {
             setCaret={setCaret}
             caretRef={caretRef}
             cursorVisible={cursorVisible}
+             inputDuration={inputDuration}
+           setInputDuration={setInputDuration}
+            selDotted={selDotted}
+            setSelDotted={setSelDotted}
             setCursorVisible={setCursorVisible}
             vfCacheRef={vfCacheRef}
             lastMeasureLayoutRef={lastMeasureLayoutRef}
             noteInputMode={noteInputMode}
             onNoteInput={onNoteInput}
-            onNoteSelect={handleNoteSelect}
             onNoteDragStart={handleNoteDragStart}
             noteElements={noteElements}
             measureElements={measureElements}
             selection={selection}
             setSelection={setSelection}
+               selRest={selRest}
+              setSelRest={setSelRest}
             tieStart={tieStart}
             setTieStart={setTieStart}
             onTieDelete={onTieDelete}

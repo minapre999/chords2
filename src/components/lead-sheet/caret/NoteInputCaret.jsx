@@ -29,7 +29,7 @@ if( leadSheet.measures.length <= caret.measure) return null;
  
 // console.log({measure, vfCacheRef})
 const measureNotes = vfCacheRef?.current?.get(measure.id)
-console.log("measure notes: ", measureNotes)
+// console.log("measure notes: ", measureNotes)
 const vfNote = measureNotes.vfNotes[caret.index]
 
 // console.log("vfCacheRef?.current", vfCacheRef.current, {vfNote,measure, measureNotes},  )

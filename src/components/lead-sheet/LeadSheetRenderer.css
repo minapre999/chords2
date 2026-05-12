@@ -36,9 +36,27 @@
   stroke-width: 3px !important;
 }
 
+
+
+
+svg .voice-note path,
+svg .voice-note text
+ {
+
+  /* color: red ; */
+  stroke: darkslategrey ;
+  fill: darkslategrey ;
+}
+
+
 /* .selected-note {
   filter: drop-shadow(0 0 4px #00f);
 } */
+
+.selected-note  {
+  stroke: #00aaff !important;
+  fill: #00aaff !important;
+}
 
 .selected-note * {
   stroke: #00aaff !important;
@@ -69,7 +87,4 @@
 .fretboard-scroll svg {
   pointer-events: auto;
 }
-
-
-
 

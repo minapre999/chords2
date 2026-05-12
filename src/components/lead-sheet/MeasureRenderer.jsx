@@ -276,15 +276,19 @@ function moveCaretToNote(vfNote, measureIdx, noteIdx) {
 
 
   useLayoutEffect(() => {
-    // console.log("LEAD SHEET RENDER LAYOUT")
-   const svg = svgRef.current;
-  if (!svg) return;
+    console.log("LEAD SHEET RENDER LAYOUT")
+   const container = svgRef.current;
+  if (!container) return;
 
-  while (svg.firstChild) svg.removeChild(svg.firstChild);
+  while (container.firstChild) container.removeChild(container.firstChild);
 
   const VF = window.Vex.Flow;
-  const renderer = new VF.Renderer(svg, VF.Renderer.Backends.SVG);
+  const renderer = new VF.Renderer(container, VF.Renderer.Backends.SVG);
   const ctx = renderer.getContext();
+
+
+
+
 
   rendererRef.current = renderer
 
@@ -331,64 +335,39 @@ function moveCaretToNote(vfNote, measureIdx, noteIdx) {
   formatter.format([voice], drawableWidth);
   voice.draw(ctx, stave);
 
-//   svg.setAttribute("width", staveWidth);
+  // Now all notes have been rendered into the SVG
+  // add classes to the notes
+
+  notes.forEach((n, index) => {
+    // when vexflow draws a note, each note is inside a <g> element
+    // the classname should be attached to this element
+    const g = n.attrs?.el;   // ← the SVG <g> for this note
+    if (g) {
+        //You can style VexFlow notes via CSS — but only if you attach your class 
+        // after the note is drawn and only if you remove VexFlow’s inline fill/stroke attributes,
+        //  because inline SVG attributes override CSS every time.
+        // Therefore remove inline attributes so CSS can win
+        // g.querySelectorAll("path, ellipse, circle, text").forEach(el => {
+        //   el.removeAttribute("fill");
+        //   el.removeAttribute("stroke");
+        // });
+ // Remove inline fill/stroke from ALL children
+  g.querySelectorAll("*").forEach(el => {
+    el.removeAttribute("fill");
+    el.removeAttribute("stroke");
+    el.removeAttribute("color");
+  });
 
 
-// // 1. Create voice
-// const voice = new VF.Voice({
-//   num_beats: 4,
-//   beat_value: 4,
-//   resolution: VF.RESOLUTION
-// });
-// voice.setStrict(false);
-// voice.addTickables(notes);
+   // 2. Toggle class to force repaint
+  g.classList.remove("voice-note");
+  void g.offsetWidth; // force reflow
+  g.classList.add("voice-note");
 
-// // 2. Format using the FINAL measure width
-// const formatter = new VF.Formatter();
-// formatter.joinVoices([voice]);
-// formatter.format([voice], staveWidth - 20);   // ⭐ THIS IS THE FIX
-
-// // 3. Draw
-// voice.draw(ctx, stave);
-
-
-  // NOTE HITBOXES
-    
-  // ======================================================
-// ⭐ NOTE HITBOXES + EVENT HANDLERS (per measure)
-// ======================================================
-
-
-
-
-// Remove old hitboxes
-const old = svg.querySelector(".vf-hitboxes-group");
-if (old) old.remove();
-
-// Create new group
-const hitGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
-hitGroup.classList.add("vf-hitboxes-group");
-hitGroup.style.pointerEvents = "none"; // group ignores events
-svg.appendChild(hitGroup);
-
-
-
-
-
-// console.log("staveWidth", staveWidth);
-// console.log("notes.length", notes.length);
-
-notes.forEach((vfNote, idx) => {
-  const id = measure.melody[idx]?.id;
-  if (!id) return;
-
-  // --- 1. Create VexFlow note group ---
-  // Create VexFlow note group
-const g = ctx.openGroup();
-vfNote.setContext(ctx).draw();
-ctx.closeGroup();
-
-
+      // g.classList.add("voice-note");
+      // console.log("finding id.", measure, index, measure.melody[index], measure.melody[index].id)
+      const id = measure.melody[index].id
+      g.id=id
 
 // Apply selection class
 if (selection?.type === "note" && selection.id === id) {
@@ -398,37 +377,76 @@ if (selection?.type === "note" && selection.id === id) {
 }
 
 
-  // Save reference for selection highlighting
+      // g.dataset.noteId = id; // optional but very useful
+    }
+  });
+
+  // NOTE HITBOXES
+    // ======================================================
+// ⭐ NOTE HITBOXES + EVENT HANDLERS (per measure)
+// ======================================================
+
+// 1. Get the REAL VexFlow SVG
+const svg = container.querySelector("svg");
+if (!svg) return;
+
+// 2. Remove old hitboxes
+const old = svg.querySelector(".vf-hitboxes-group");
+if (old) old.remove();
+
+// 3. Create hitbox group (must NOT block events)
+const hitGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+hitGroup.classList.add("vf-hitboxes-group");
+hitGroup.style.pointerEvents = "none"; // group ignores events
+svg.appendChild(hitGroup);
+
+// 4. Move hitGroup to TOP so it receives clicks
+svg.removeChild(hitGroup);
+svg.appendChild(hitGroup);
+
+// 5. Build hitboxes
+notes.forEach((vfNote, idx) => {
+  const id = measure.melody[idx]?.id;
+  if (!id) return;
+
+  // --- REAL VexFlow <g> for this note ---
+  const g = vfNote.attrs?.el;
+  if (!g) return;
+
+  // Save for selection/highlighting
   noteElements.current.set(id, g);
 
-
-
-  // --- 3. Capture original Y for dragging ---
+  // --- Capture original Y for dragging ---
   const ys = vfNote.getYs();
   if (ys && ys.length > 0) {
     originalYRef.current[id] = ys[0];
   }
 
-  // --- 4. Build hitbox ---
-  const bbox = vfNote.getBoundingBox();
+  // --- Build hitbox from REAL <g> bbox ---
+  const bbox = g.getBBox();
   if (!bbox) return;
 
   const padding = 6;
-  const x = bbox.getX() - padding;
-  const y = bbox.getY() - padding;
-  const w = bbox.getW() + padding * 2;
-  const h = bbox.getH() + padding * 2;
+  const x = bbox.x - padding;
+  const y = bbox.y - padding;
+  const w = bbox.width + padding * 2;
+  const h = bbox.height + padding * 2;
 
   const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
   rect.setAttribute("x", x);
   rect.setAttribute("y", y);
   rect.setAttribute("width", w);
   rect.setAttribute("height", h);
+
+  // Debug visibility — remove stroke later if you want
   rect.setAttribute("fill", "transparent");
   rect.setAttribute("stroke", "transparent");
-    rect.setAttribute("stroke", "red");
-  rect.style.cursor = "pointer";
+
+ rect.setAttribute("stroke", "red");
+
+  // ⭐ IMPORTANT: rect must receive events
   rect.style.pointerEvents = "all";
+  rect.style.cursor = "pointer";
 
   rect.dataset.noteId = id;
   rect.dataset.measureIndex = measureIndex;
@@ -436,17 +454,17 @@ if (selection?.type === "note" && selection.id === id) {
 
   hitGroup.appendChild(rect);
 
-  // --- 5. Click + drag handler ---
+  // --- CLICK + DRAG LOGIC (your original code) ---
   rect.addEventListener("mousedown", (e) => {
     e.preventDefault();
-    console.log("clicked...")
+
     const noteId = rect.dataset.noteId;
     const measureIdx = Number(rect.dataset.measureIndex);
     const noteIdx = Number(rect.dataset.noteIndex);
 
+    // NOTE INPUT MODE
     if (noteInputModeRef.current) {
       e.stopPropagation();
-      e.stopImmediatePropagation();
       setCaret({ measure: measureIdx, index: noteIdx });
       return;
     }
@@ -456,7 +474,6 @@ if (selection?.type === "note" && selection.id === id) {
     let moved = false;
 
     const onMove = (ev) => {
-      console.log("moved...")
       const dx = ev.clientX - startX;
       const dy = ev.clientY - startY;
 
@@ -482,39 +499,6 @@ if (selection?.type === "note" && selection.id === id) {
 });
 
 
-// Save hitMap for this measure
-
-
-
-
-
-
-
-
-
-  
-
-    // CHORD SYMBOLS
-
-  if (measure.chords?.length) {
-  const left = stave.getNoteStartX();
-  const right = stave.getX() + stave.getWidth() - 20;
-  const beatSpacing = (right - left) / 4;
-
-  // ⭐ Correct Y position ABOVE the stave
-  const chordY = stave.getYForTopText();
-
-  measure.chords.forEach((symbol, b) => {
-    const xPos = left + beatSpacing * b;
-
-    ctx.save();
-    ctx.setFont("Arial", 14, "");
-    ctx.fillText(symbol, xPos, chordY);
-    ctx.restore();
-
-    // console.log({ symbol, xPos, chordY });
-  });
-}
 
 
 
@@ -545,7 +529,7 @@ but VexFlow was still drawing the old width.
 
 */
 
-  }, [measure, staveWidth, rowIndex, selection, leadSheet.slurs, leadSheet.ties, dragRef, noteInputMode]);  // useLayoutEffect
+  }, [measure, staveWidth, leadSheet.slurs, leadSheet.ties, dragRef, noteInputMode]);  // useLayoutEffect
 
 
 
