@@ -216,6 +216,7 @@ const noteInputModeRef = useRef(false);
 
 
 useEffect(() => {
+  console.log("setting note input mode to ", noteInputModeRef.current )
   noteInputModeRef.current = noteInputMode;
 }, [noteInputMode]);
 
@@ -396,7 +397,7 @@ function insertNote({ pitch, duration="q", measureIndex=0, noteIndex=0, dots=0})
     // 2. Build guitar mapping once per insert
     const guitarMap = pitchToGuitar();   // your function
     const gf = guitarMap[pitchName] || { string: null, fret: null };
-
+    console.log("insertNote: ", {measureIndex, noteIndex, dots, duration, measure, pitch, pitchName, gf, next})
     const existing = measure.melody[noteIndex];
 
     // Helper: ticks
@@ -1227,6 +1228,8 @@ const advanceCaret = (measureIndex, tokenIndex, leadSheet) => {
     newMeasure = leadSheet.measures.length - 1;
     newIndex = leadSheet.measures[newMeasure].melody.length - 1;
   }
+
+  
 
   setCaret({
     measure: newMeasure,

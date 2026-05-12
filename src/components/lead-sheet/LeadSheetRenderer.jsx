@@ -37,7 +37,7 @@ const lsContainerRef = useRef(null);
 
 useEffect(() => {
 
-  console.log("note input mode is: ", noteInputMode)
+  // console.log("note input mode is: ", noteInputMode)
 
  if(!noteInputMode) {
       let el = cursorOverlayRef.current;
@@ -53,7 +53,7 @@ useEffect(() => {
 
 
   function onMove(e) {
-
+// console.log("onMove")
     const x = e.clientX;
     const y = e.clientY;
 
@@ -67,6 +67,7 @@ useEffect(() => {
       }
     }
 
+    // console.log({found})
     if (!found ) {
       cursorPosRef.current.visible = false;
       // updateCursorOverlay({layout});
@@ -75,12 +76,13 @@ useEffect(() => {
 
   const layout = found.rect
   const noteId = found.id
-  // const  {vfNotes} = vfCacheRef.current.get("m1").vfNotes
+  // console.log({layout, noteId})
+  const  vfNotes = vfCacheRef.current.get(noteId).vfNotes
 
-
+// console.log("layout measure rect: ", {layout, vfNotes})
 if(!vfNotes) return;
 
-// console.log("layout measure rect: ", layout)
+
 
 const globalX = e.clientX;
 const globalY = e.clientY;
@@ -375,11 +377,6 @@ function selectVexflowNote( noteId) {
     target.classList.add('selected-note');
   }
 }
-
-
-
-
-
 
   
   return (

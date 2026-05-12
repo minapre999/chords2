@@ -23,6 +23,7 @@ const {     caret, setCaret,
             noteInputModeRef,
             onNoteDragStart,
             noteInputMode,
+            onNoteInput,
             onNoteSelect,
             playerRef,
             selection, setSelection,
@@ -58,7 +59,7 @@ if(!leadSheet) return;
   useEffect(() => {
     window.noteElements = noteElements;
 window.measureElements = measureElements;
-
+window.measureRectsRef = measureRectsRef
   }, [leadSheet]);
  
 
@@ -183,7 +184,7 @@ window.measureElements = measureElements;
 // measure rects for note input cursor, etc.
 
   useLayoutEffect(() => {
-   console.log("rendering measure")
+  //  console.log("rendering measure")
 // console.log("useLayoutEffect for measures rect", {svgRef, staveRef})
   if (!svgRef.current || !staveRef?.current) return;
 
@@ -270,13 +271,124 @@ function moveCaretToNote(vfNote, measureIdx, noteIdx) {
   // });
 }
 
+  function clientToSvgPoint(e, svgRoot) {
+  const pt = svgRoot.createSVGPoint();
+  pt.x = e.clientX;
+  pt.y = e.clientY;
+  return pt.matrixTransform(svgRoot.getScreenCTM().inverse());
+}
+
+
+// assume y passed in local coords
+function pitchFromY(localY, staveInfo) {
+  const { staveY, spacing } = staveInfo;
+  // console.log("pitchFromY CALLED", { y, staveInfo });
+  // ⭐ FIX: your Y is consistently one staff-step too high
+  // so we shift it DOWN by halfSpacing to correct it
+  const halfSpacing = spacing / 2;
+  // const correctedY = y + halfSpacing;
+  const correctedY = localY;
+
+  // Each staff step (line/space) = spacing / 2
+  const diatonicSteps = Math.round((correctedY - staveY) / halfSpacing);
+
+  // Treble clef reference: top line = F5 = MIDI 77
+  const baseMidi = 77;      // F5
+  const baseDegree = 3;     // 0=C,1=D,2=E,3=F,4=G,5=A,6=B
+
+  // Major scale semitone pattern relative to C
+  const semis = [0, 2, 4, 5, 7, 9, 11];
+
+  // Moving DOWN the staff lowers the diatonic degree
+  const totalDegree = baseDegree - diatonicSteps;
+
+  // Octave offset in diatonic space
+  const octaveOffset = Math.floor(totalDegree / 7);
+
+  // Degree within octave (0–6), wrapped for negatives
+  const degree = ((totalDegree % 7) + 7) % 7;
+
+  // Semitone offset from F within the octave
+  const semitoneOffset = semis[degree] - semis[baseDegree];
+
+  // Final MIDI
+  return baseMidi + octaveOffset * 12 + semitoneOffset;
+}
 
 
 
 
 
-  useLayoutEffect(() => {
-    console.log("LEAD SHEET RENDER LAYOUT")
+ // assume hitX has already been converted to local coordinates
+
+function getNoteIndexForX(localX) {
+   if(!vfCacheRef?.current) return;
+
+
+
+// fior now assume it is the melody which is the vfCacheref
+// will need to update the vfCacheRef to include other parts
+// console.log({hitX, vfCacheRef})
+
+  const { vfNotes } = vfCacheRef.current.get(measure.id);
+  
+  
+let index =  0
+let found = false
+for(const note of vfNotes) {
+  const bb = note.getBoundingBox();
+  const x = bb.getX()
+  const width = bb.getW()
+  console.log({localX, index, x, width})
+  if( localX >= x && localX <= x+width) {
+    found = true
+    break;
+  }
+  index++
+}
+
+
+if( !found) {
+  console.log("couldnt find note correspondign to x click ", {gHitX, vfNotes})
+  return;
+}
+
+console.log("found X index: ", index)
+
+
+return index
+  
+
+
+
+
+}
+
+
+
+
+// add this ABOVE the drawing useLayoutEffect so it updates teh noteInputModeRef first
+// otherwise the noteInputModeRef used in the event handlers will be stale
+// it needs to be in a useLayoutEffect as React
+// -  applies DOM updates
+// - THEN runs layout effects (useLayoutEffect)
+// - THEN runs passive effects (useEffect)
+
+useLayoutEffect(() => {
+  noteInputModeRef.current = noteInputMode;
+}, [noteInputMode]);
+
+
+
+useLayoutEffect(() => {
+ 
+
+      if(measure.id==="m1"){
+    console.log("LEAD SHEET RENDER MEASURE LAYOUT", {"noteInputModeRef.current" : noteInputModeRef.current})
+  
+        }
+
+
    const container = svgRef.current;
   if (!container) return;
 
@@ -335,6 +447,75 @@ function moveCaretToNote(vfNote, measureIdx, noteIdx) {
   formatter.format([voice], drawableWidth);
   voice.draw(ctx, stave);
 
+
+// 1. Get the REAL VexFlow SVG
+const svg = container.querySelector("svg");
+if (!svg) return;
+
+// Transparent staff hit area for note input
+const staffHit = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+
+const topLineY = stave.getYForLine(0);
+const spacing = stave.getSpacingBetweenLines();
+
+// Enough vertical range for full guitar pitch range
+const hitPadding = 12 * (spacing / 2); // 12 diatonic steps above/below
+
+staffHit.classList.add("staff-hit");
+staffHit.setAttribute("x", staveX);
+staffHit.setAttribute("y", topLineY - hitPadding);
+staffHit.setAttribute("width", staveWidth);
+staffHit.setAttribute("height", hitPadding * 2 + 5 * spacing);
+staffHit.setAttribute("fill", "transparent");
+staffHit.setAttribute("pointer-events", "all");
+
+// console.log(x, topLineY, staveWidth, spacing)
+// for debugging - make the hit boxes visible
+// staffHit.setAttribute("fill", "rgba(178, 186, 30, 0.06)");
+// staffHit.setAttribute("stroke", "rgba(69, 222, 67, 0.34)");
+staffHit.setAttribute("pointer-events", "all");
+
+/*
+no pointer events ensures:
+    In normal mode → clicking a note selects it
+    Hit areas do NOT block note clicks
+    need to change to "all" when in note-input mode
+    */
+  //  console.log("noteInputModeRef.current", noteInputModeRef.current)
+  if(!noteInputModeRef.current){
+    console.log("removing pointer events from staffHit")
+staffHit.setAttribute("pointer-events", "none");
+  }
+
+
+
+// NOTE INPUT EVENT HANDLER
+// console.log("adding mousedown listener", {staffHit})
+staffHit.addEventListener("mousedown", (e) => {
+ console.log("staffHit event. noteInputModeRef is  ", noteInputModeRef.current)
+  if (!noteInputModeRef.current) return;
+
+  const svgP = clientToSvgPoint(e, svg);
+
+  const staveInfo =  measureRectsRef.current[measure.id]
+
+  const { x, y } = cursorPosRef.current;
+
+   const localY = y - staveInfo.top;
+  const pitch = pitchFromY(localY, staveInfo);
+  
+  const localX = x - staveInfo.left;
+  const noteIndex = getNoteIndexForX(localX, staveInfo);
+
+console.log("before onNoteInput ", "\n.  svgP.y,: ", svgP.y, "\n.  pitch: ", pitch)
+  onNoteInput(pitch, measureIndex, noteIndex);
+
+});
+
+svg.appendChild(staffHit);
+
+
+
   // Now all notes have been rendered into the SVG
   // add classes to the notes
 
@@ -386,9 +567,7 @@ if (selection?.type === "note" && selection.id === id) {
 // ⭐ NOTE HITBOXES + EVENT HANDLERS (per measure)
 // ======================================================
 
-// 1. Get the REAL VexFlow SVG
-const svg = container.querySelector("svg");
-if (!svg) return;
+
 
 // 2. Remove old hitboxes
 const old = svg.querySelector(".vf-hitboxes-group");
@@ -445,8 +624,11 @@ notes.forEach((vfNote, idx) => {
  rect.setAttribute("stroke", "red");
 
   // ⭐ IMPORTANT: rect must receive events
+  rect.style.pointerEvents = "none";
+  if(!noteInputModeRef.current) {
   rect.style.pointerEvents = "all";
   rect.style.cursor = "pointer";
+  }
 
   rect.dataset.noteId = id;
   rect.dataset.measureIndex = measureIndex;
@@ -499,28 +681,6 @@ notes.forEach((vfNote, idx) => {
 });
 
 
-
-
-
-
-  
-    // ⭐ Insert cursor overlay AFTER VexFlow draws
-    // let overlay = svg.querySelector(".cursor-overlay");
-    // if (!overlay) {
-    //   overlay = document.createElementNS("http://www.w3.org/2000/svg", "g");
-    //   overlay.classList.add("cursor-overlay");
-    //   overlay.style.pointerEvents = "none";
-
-    //   const glyph = document.createElementNS("http://www.w3.org/2000/svg", "g");
-    //   glyph.id = "cursor-glyph";
-
-    //   const ledgers = document.createElementNS("http://www.w3.org/2000/svg", "g");
-    //   ledgers.id = "cursor-ledgers";
-
-    //   overlay.appendChild(glyph);
-    //   overlay.appendChild(ledgers);
-    //   svg.appendChild(overlay);
-    // }
 
     /*
 staveWidth, rowIndex, measureIndex are critical here for correct measure rendering

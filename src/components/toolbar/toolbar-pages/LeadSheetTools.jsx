@@ -162,8 +162,8 @@ const dottedCrotchet = "\uECA5 \uE1E7"
               <button
             onClick={()=>{
                   setNoteInputMode( (prev) => {
-                  console.log(" /click input not button", {prev})
-                    return prev === true ? false : true } )
+                  console.log("click input note button", {prev})
+                    return !prev } )
                   }}
             style={{ background: noteInputMode ? "#88f" : "#eee" }}
           >
