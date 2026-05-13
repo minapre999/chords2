@@ -700,6 +700,25 @@ caretHitRect = rect
 
 
 
+
+// CHORD SYMBOLS
+  if (measure.chords?.length) {
+    const left = stave.getNoteStartX();
+    const right = stave.getX() + stave.getWidth() - 20;
+    const beatSpacing = (right - left) / 4;
+    const y = stave.getYForLine(-5)
+    measure.chords.forEach((symbol, b) => {
+      const xPos = left + beatSpacing * b;
+      ctx.save();
+      ctx.setFont("Arial", 14, "");
+      ctx.fillText(symbol, xPos, y );
+      ctx.restore();
+    });
+  }
+
+
+
+
   // CARET
     // make the caret the width of the note and height of the stave
   let caretDrawInfo = null
