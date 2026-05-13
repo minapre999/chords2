@@ -5,7 +5,6 @@ import {cursorPosRef, cursorOverlayRef, cursorLedgersRef} from "/src/components/
 import { updateCursorOverlay, updateCursorShape } from "/src/components/lead-sheet/cursor/updateCursorOverlay";
 
 
-
 export const measureRectsRef = { current: {} };
 
 
@@ -290,6 +289,16 @@ useEffect(() => {
 
 
 
+useEffect(() => {
+ if( noteInputMode ){
+unselectVexflowNotes()
+ }
+  
+}, [noteInputMode]);
+
+
+
+
 useLayoutEffect(() => {
   function updateWidth() {
     if (!lsContainerRef.current) return;
@@ -315,6 +324,8 @@ useLayoutEffect(() => {
 const handleNoteSelect = (id) => {
   console.log("SELECTING NOTE ID:", {id,noteInputMode});
 
+  if( noteInputMode){ unselectVexflowNotes}
+  
   if (!noteInputMode) {
     setSelection({ type: "note", id });
 
@@ -358,7 +369,9 @@ const handleNoteSelect = (id) => {
 };
 
 
-function selectVexflowNote( noteId) {
+
+
+ function selectVexflowNote( noteId) {
   const container = lsContainerRef.current;
   if (!container) return;
 
@@ -378,7 +391,18 @@ function selectVexflowNote( noteId) {
   }
 }
 
-  
+ function unselectVexflowNotes( ){
+  const container = lsContainerRef.current;
+  if (!container) return;
+
+  // 1. Remove selected-note from ALL stavenotes
+  const allNotes = container.querySelectorAll('g.vf-stavenote');
+  allNotes.forEach(g => g.classList.remove('selected-note'));
+}
+
+
+
+
   return (
    <>
 

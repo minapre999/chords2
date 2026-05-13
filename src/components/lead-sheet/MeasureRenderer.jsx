@@ -14,7 +14,7 @@ const {     caret, setCaret,
             caretRef,
             dragRef,
             inputDurationRef,
-            measureIndex, 
+            measureRowIndex, 
             leadSheet,
             lsContainerRef,
             measure, 
@@ -34,7 +34,7 @@ const {     caret, setCaret,
              vfCacheRef, } = props
 
 
-if(!leadSheet) return;
+if(!leadSheet || !measure) return;
 
   const svgRef = useRef(null);
   const staveRef = useRef(null);
@@ -43,11 +43,8 @@ if(!leadSheet) return;
     // const staveWidth = width
     const staveHeight = 160
     const staveTopPadding = 60
-//  console.log("MR", measureIndex, {
-//     naturalWidth: measure.naturalWidth,
-//     finalWidth: measure.finalWidth,
-//     propWidth: width,
-//   });
+    const measureIndex = leadSheet.measures.findIndex(m=>m.id===measure.id)
+
 
   const staveWidth = width ;
 //   console.log("staveWidth used", staveWidth);
@@ -203,20 +200,8 @@ window.measureRectsRef = measureRectsRef
     noteStartX: stave.getNoteStartX(),
     stave: stave,
 
-  //   left: rect.left,
-  //   right: rect.right,
-  //   top: rect.top,
-  //   bottom: rect.bottom,
-  //   spacing: stave.getSpacingBetweenLines(),
-  //   topLineY: stave.getYForLine(0),
-  //   measureWidth: staveWidth,
-  //   stave: stave,
-  //   beats: 4,
-  //   measureId: measure.id,
-  //  svgRef: svgRef,
   };
-}, [staveWidth, measureIndex, rowIndex]);
-
+}, [staveWidth, measureRowIndex, rowIndex]);
 
 
 
@@ -260,16 +245,16 @@ window.measureRectsRef = measureRectsRef
 function moveCaretToNote(vfNote, measureIdx, noteIdx) {
   if (!vfNote) return;
 
-
-
-  // 5. Trigger React to re-render the caret overlay
   // console.log("setting caret to", {measureIdx, noteIdx})
-  // setCaret({
-  //   measure: measureIdx,
-  //   index: noteIdx,
+  setCaret({
+    measure: measureIdx,
+    index: noteIdx,
    
-  // });
+  });
 }
+
+
+
 
   function clientToSvgPoint(e, svgRoot) {
   const pt = svgRoot.createSVGPoint();
@@ -324,14 +309,11 @@ function pitchFromY(localY, staveInfo) {
 function getNoteIndexForX(localX) {
    if(!vfCacheRef?.current) return;
 
-
-
 // fior now assume it is the melody which is the vfCacheref
 // will need to update the vfCacheRef to include other parts
 // console.log({hitX, vfCacheRef})
 
-  const { vfNotes } = vfCacheRef.current.get(measure.id);
-  
+const { vfNotes } = vfCacheRef.current.get(measure.id);
   
 let index =  0
 let found = false
@@ -349,7 +331,7 @@ for(const note of vfNotes) {
 
 
 if( !found) {
-  console.log("couldnt find note correspondign to x click ", {gHitX, vfNotes})
+  console.log("couldnt find note correspondign to x click ", {localX, vfNotes})
   return;
 }
 
@@ -360,9 +342,31 @@ return index
   
 
 
-
-
 }
+
+
+
+
+// DRAW CARET IN USE EFFECT - vfCacheNotes should have been defined
+  // the drawInfo matches the note hit boxes
+
+
+  const drawCaret = (svg, drawInfo) => {  
+if(noteInputModeRef.current) {
+    const {x,yTop, yBottom, width} = drawInfo
+    console.log("drawCaret", {svg, x, yTop, yBottom, width})
+    const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    rect.setAttribute("x", x);
+    rect.setAttribute("y", yTop );
+    rect.setAttribute("width", width);
+    rect.setAttribute("height", yBottom - yTop );
+    rect.setAttribute("fill", "#4a7aff");
+    rect.setAttribute("stroke", "#4a7aff");
+    rect.setAttribute("opacity", "0.3");
+    rect.setAttribute("pointer-events", "none");
+    svg.appendChild(rect);
+    }
+  }; // drawCaret
 
 
 
@@ -408,7 +412,7 @@ useLayoutEffect(() => {
   const staveX = 0
   const stave = new VF.Stave(staveX, staveY, staveWidth);
 
-  if (measureIndex === 0 && rowIndex === 0) {
+  if (measureIndex === 0 ) {
     stave.addClef("treble");
     stave.addTimeSignature("4/4");
     stave.addKeySignature("G");
@@ -483,7 +487,7 @@ no pointer events ensures:
     */
   //  console.log("noteInputModeRef.current", noteInputModeRef.current)
   if(!noteInputModeRef.current){
-    console.log("removing pointer events from staffHit")
+    // console.log("removing pointer events from staffHit")
 staffHit.setAttribute("pointer-events", "none");
   }
 
@@ -562,6 +566,12 @@ if (selection?.type === "note" && selection.id === id) {
     }
   });
 
+
+
+
+
+
+
   // NOTE HITBOXES
     // ======================================================
 // ⭐ NOTE HITBOXES + EVENT HANDLERS (per measure)
@@ -583,6 +593,7 @@ svg.appendChild(hitGroup);
 svg.removeChild(hitGroup);
 svg.appendChild(hitGroup);
 
+let caretHitRect = null
 // 5. Build hitboxes
 notes.forEach((vfNote, idx) => {
   const id = measure.melody[idx]?.id;
@@ -605,7 +616,7 @@ notes.forEach((vfNote, idx) => {
   const bbox = g.getBBox();
   if (!bbox) return;
 
-  const padding = 6;
+  const padding = 2;
   const x = bbox.x - padding;
   const y = bbox.y - padding;
   const w = bbox.width + padding * 2;
@@ -636,6 +647,10 @@ notes.forEach((vfNote, idx) => {
 
   hitGroup.appendChild(rect);
 
+ if( caret.measure === measureIndex && caret.index === idx) {
+caretHitRect = rect
+ }
+  
   // --- CLICK + DRAG LOGIC (your original code) ---
   rect.addEventListener("mousedown", (e) => {
     e.preventDefault();
@@ -682,8 +697,64 @@ notes.forEach((vfNote, idx) => {
 
 
 
+
+
+
+  // CARET
+    // make the caret the width of the note and height of the stave
+  let caretDrawInfo = null
+  if (caret &&
+    caret.measure === measureIndex ) {
+    console.log({caret})
+      // const noteId = caret.measure.melody.filter((n)=>n.id)
+      // const vfNote = vfCacheRef[noteId]
+
+  const staveInfo = measureRectsRef.current[measure.id];
+
+  const { vfNotes } = vfCacheRef.current.get(measure.id)
+  if(staveInfo && vfNotes) {
+    const note = vfNotes[caret.index]
+    if(note){
+    const bb = note.getBoundingBox();
+
+   
+        let x = bb.getX()
+         if( caretHitRect){ x=   caretHitRect.getAttribute("x")}
+
+        let width = bb.getW()
+         if( caretHitRect){ width=   caretHitRect.getAttribute("width")}
+
+         console.log("bb.x", bb.getX(), "caretHitRect.x", caretHitRect.getAttribute("x"),
+        "bb.getW", bb.getW(), "caretHitRect.width",caretHitRect.getAttribute("width"),
+      {x, width})
+        // console.log("care draw info: ", {caret, measureRowIndex, measureRectsRef, staveInfo, x, width})
+        // 4. Store everything for drawing
+      caretDrawInfo = {
+        x: x,
+        yTop: staveInfo.staveY,
+        yBottom: staveInfo.staveY + staveInfo.spacing * 4,
+        width: width
+        };
+        console.log("caretDrawInfo", caretDrawInfo)
+        }
+    }
+  // console.log("caretDrawInfo", caretDrawInfo)
+
+}
+
+
+
+
+
+   if (caretDrawInfo && noteInputModeRef) {
+        drawCaret(svg, caretDrawInfo);
+      }
+
+
+
+
     /*
-staveWidth, rowIndex, measureIndex are critical here for correct measure rendering
+staveWidth, rowIndex, measureRowIndex are critical here for correct measure rendering
 Without these React was happily resizing the container,
 but VexFlow was still drawing the old width.
 

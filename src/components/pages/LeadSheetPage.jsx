@@ -12,7 +12,6 @@ import { useToneEngine } from "/src/context/ToneEngineContext";
 import { useLeadSheetPlayer } from "/src/hooks/useLeadSheetPlayer";
 import RenderData, {RenderNote} from "/src/render-notes.js"
 // import NoteInputCursor  from "/src/components/lead-sheet/NoteInputCursor.jsx"
-import NoteInputCaret  from "/src/components/lead-sheet/caret/NoteInputCaret.jsx"
 import {staveRef} from "/src/components/lead-sheet/cursor/staveRef"
 import FloatingPalette from "/src/components/panels/FloatingPalette.jsx"
 
@@ -1914,32 +1913,7 @@ function updateDraggedNote(noteId, semitones, durationSteps) {
        
           />
 
-          {/* CARET OVERLAY (unchanged) */}
-          {noteInputMode && (
-            <NoteInputCaret
-              caret={caret}
-              caretRef={caretRef}
-              vfCacheRef={vfCacheRef}
-              leadSheet={leadSheet}
-              lastMeasureLayoutRef={lastMeasureLayoutRef}
-              style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                width: "100%",
-                height: "100%",
-                pointerEvents: "none",
-                overflow: "visible",
-                zIndex: 9999
-              }}
-            />
-
-         
-
-
-
-
-          )}
+       
 
 
 

@@ -12,7 +12,7 @@ const LeadSheetAutoFlow = forwardRef((props, ref) => {
     measures,
     rowWidth,
     vfCacheRef,
-   
+   measureIndex,
     ...rest
   } = props;
 
@@ -169,7 +169,7 @@ return (
           {...props}
             key={m.id}
             measure={m}
-            measureIndex={i}
+            measureRowIndex={i}
             rowIndex={rowIndex}
             lsContainerRef={ref}
             width={m.finalWidth}   // ⭐ now defined
