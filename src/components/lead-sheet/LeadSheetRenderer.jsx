@@ -5,7 +5,8 @@ import {cursorPosRef, cursorOverlayRef, cursorLedgersRef} from "/src/components/
 import { updateCursorOverlay, updateCursorShape } from "/src/components/lead-sheet/cursor/updateCursorOverlay";
 import {drawSlurs} from "./slur/drawSlurs"
 import "/node_modules/vexflow/releases/vexflow-debug.js";
-
+import {selectVexflowTie, unselectVexflowTies} from "./tie/tie-select"
+import {selectVexflowNote, unselectVexflowNotes} from "./note/note-select"
 
 export const measureRectsRef = { current: {} };
 
@@ -33,7 +34,7 @@ const slurLayerRef = useRef(null);
 const tieLayerRef = useRef(null);
 
 
-console.log("rendering lead sheet")
+// console.log("rendering lead sheet")
 
 
 
@@ -297,7 +298,7 @@ useEffect(() => {
 
 useEffect(() => {
  if( noteInputMode ){
-unselectVexflowNotes()
+unselectVexflowNotes(lsContainerRef.current)
  }
   
 }, [noteInputMode]);
@@ -351,13 +352,27 @@ useLayoutEffect(() => {
 
 
 
+ const handleTieSelect = (id) => {
+// console.log("handle tie select", {id})
+
+if( noteInputMode){ 
+unselectVexflowTies( lsContainerRef.container)
+  return
+}
+setSelection({ type: "tie", id });
+unselectVexflowTies( lsContainerRef.container)
+selectVexflowTie( {tieId: id, 
+  container: lsContainerRef.current})
+
+}
+
 
 
 const handleNoteSelect = (id) => {
-  console.log("SELECTING NOTE ID:", {id,noteInputMode});
+  // console.log("SELECTING NOTE ID:", {id,noteInputMode});
 
   if( noteInputMode){ 
-    unselectVexflowNotes()
+    unselectVexflowNotes(lsContainerRef.current)
     return
   }
   
@@ -393,91 +408,14 @@ const handleNoteSelect = (id) => {
     // console.log("SETTING SELECTED DURATION:", duration);
     setInputDuration(duration);
 
-    selectVexflowNote(id)
+    selectVexflowNote({container: lsContainerRef.current, noteId: id})
     // If you want to update dots in the UI, do it here:
     // setInputDots(dots);
 
 };
 
 
-const handleTieSelect = (id) => {
-console.log("handle tie select", {id})
 
-if( noteInputMode){ 
-  unselectVexflowTies()
-  return
-}
-
-
-setSelection({ type: "tie", id });
-
-unselectVexflowTies()
-selectVexflowTie(id)
-
-}
-
-
-
-
-function selectVexflowTie(tieId) {
-  const container = lsContainerRef.current;
-  if (!container) return;
-
-  // 1. Remove selected-tie from ALL ties
-  const allTies = container.querySelectorAll('g.vf-tie-group');
-  allTies.forEach(g => g.classList.remove('selected-tie'));
-
-  // 2. Add selected-tie to the one with matching tieId
-  const target = container.querySelector(`g.vf-tie-group.${CSS.escape(tieId)}`);
-  console.log("target tie for selection: ", target, tieId)
-  if (target) {
-    target.classList.add('selected-tie');
-  }
-}
-
-
-
-function unselectVexflowTies() {
-  const container = lsContainerRef.current;
-  if (!container) return;
-
-  // Remove selected-tie from ALL ties
-  const allTies = container.querySelectorAll('g.vf-tie-group');
-  allTies.forEach(g => g.classList.remove('selected-tie'));
-}
-
-
-
-
-
- function selectVexflowNote( noteId) {
-  const container = lsContainerRef.current;
-  if (!container) return;
-
-  // 1. Remove selected-note from ALL stavenotes
-  const allNotes = container.querySelectorAll('g.vf-stavenote');
-
-    console.log("select vex flow note", {noteId, allNotes})
-
-
-  allNotes.forEach(g => g.classList.remove('selected-note'));
-
-  // 2. Add selected-note to the one with matching id
-  const target = container.querySelector(`g.vf-stavenote#${CSS.escape(noteId)}`);
-  if (target) {
-    console.log({target})
-    target.classList.add('selected-note');
-  }
-}
-
- function unselectVexflowNotes( ){
-  const container = lsContainerRef.current;
-  if (!container) return;
-
-  // 1. Remove selected-note from ALL stavenotes
-  const allNotes = container.querySelectorAll('g.vf-stavenote');
-  allNotes.forEach(g => g.classList.remove('selected-note'));
-}
 
 
 
