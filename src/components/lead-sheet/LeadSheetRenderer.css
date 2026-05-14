@@ -53,12 +53,17 @@ svg .voice-note text
   filter: drop-shadow(0 0 4px #00f);
 } */
 
-.selected-note  {
+.selected-note,
+.selected-tie,
+.selected-slur  {
   stroke: #00aaff !important;
   fill: #00aaff !important;
 }
 
-.selected-note * {
+.selected-note *,
+.selected-tie *,
+.selected-slur *
+ {
   stroke: #00aaff !important;
   fill: #00aaff !important;
 }

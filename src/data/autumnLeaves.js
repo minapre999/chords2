@@ -10,11 +10,14 @@ export const autumnLeaves = {
     { id: "tie1", startMeasure: 1, startIndex: 0, endMeasure: 2, endIndex: 0 },
     { id: "tie2", startMeasure: 3, startIndex: 1, endMeasure: 4, endIndex: 0 },
     { id: "tie3", startMeasure: 5, startIndex: 0, endMeasure: 6, endIndex: 0 },
-    { id: "tie4", startMeasure: 12, startIndex: 2, endMeasure: 13, endIndex: 0 },
-    { id: "tie5", startMeasure: 14, startIndex: 0, endMeasure: 15, endIndex: 0 },
-    { id: "tie6", startMeasure: 16, startIndex: 0, endMeasure: 17, endIndex: 0 },
-    { id: "tie7", startMeasure: 18, startIndex: 0, endMeasure: 19, endIndex: 0 },
-    { id: "tie8", startMeasure: 22, startIndex: 1, endMeasure: 23, endIndex: 0 }
+    { id: "tie4", startMeasure: 9, startIndex: 0, endMeasure: 10, endIndex: 0 },
+    { id: "tie5", startMeasure: 11, startIndex: 1, endMeasure: 12, endIndex: 0 },
+    { id: "tie6", startMeasure: 13, startIndex: 0, endMeasure: 14, endIndex: 0 },
+    { id: "tie7", startMeasure: 15, startIndex: 0, endMeasure: 16, endIndex: 0 },
+    { id: "tie8", startMeasure: 19, startIndex: 0, endMeasure: 20, endIndex: 0 },
+    { id: "tie9", startMeasure: 21, startIndex: 0, endMeasure: 22, endIndex: 0 },
+    { id: "tie10", startMeasure: 27, startIndex: 1, endMeasure: 28, endIndex: 0 },
+
   ],
 
   slurs: [

@@ -3,6 +3,8 @@ import LeadSheetAutoFlow from "./LeadSheetAutoFlow";
 import "./LeadSheetRenderer.css"
 import {cursorPosRef, cursorOverlayRef, cursorLedgersRef} from "/src/components/lead-sheet/cursor/cursorRefs";
 import { updateCursorOverlay, updateCursorShape } from "/src/components/lead-sheet/cursor/updateCursorOverlay";
+import {drawSlurs} from "./slur/drawSlurs"
+import "/node_modules/vexflow/releases/vexflow-debug.js";
 
 
 export const measureRectsRef = { current: {} };
@@ -15,6 +17,7 @@ export default function LeadSheetRenderer(props) {
   dragPreview,
   dragRef,
    inputDuration,  setInputDuration,
+   leadSheet,
   noteInputMode,
   noteInputModeRef,
   selDotted, setSelDotted,
@@ -26,8 +29,11 @@ export default function LeadSheetRenderer(props) {
  
 const [rowWidth, setRowWidth] = useState(800); // default
 const lsContainerRef = useRef(null);
+const slurLayerRef = useRef(null);
+const tieLayerRef = useRef(null);
 
 
+console.log("rendering lead sheet")
 
 
 
@@ -319,15 +325,43 @@ useLayoutEffect(() => {
 
 
 
+// experimenting with tie drawing
+useLayoutEffect(() => {
+
+// const VF = Vex.Flow;
+//   leadSheet.ties.forEach((tie)=>{
+//     const m1 = leadSheet.measures[tie.startMeasure]
+//     const m2 = leadSheet.measures[tie.endMeasure]
+//     const m1Notes = vfCacheRef.current.get(m1.id).vfNotes
+//     const m2Notes = vfCacheRef.current.get(m2.id).vfNotes
+
+//         // console.log("stave tie: ", {tie, m1, m2, m1Notes, m2Notes, vf1: m1Notes[tie.startIndex], vf2:m2Notes[tie.endIndex]})
+//     const vfTie = new VF.StaveTie({
+//     first_note: m1Notes[tie.startIndex],
+//     last_note: m2Notes[tie.endIndex],
+//     first_indices: [0],
+//     last_indices: [0],
+//     } )
+    
+     
+
+  // })
+  
+}, [leadSheet.melody, leadSheet.ties]);
+
+
+
 
 
 const handleNoteSelect = (id) => {
   console.log("SELECTING NOTE ID:", {id,noteInputMode});
 
-  if( noteInputMode){ unselectVexflowNotes}
+  if( noteInputMode){ 
+    unselectVexflowNotes()
+    return
+  }
   
-  if (!noteInputMode) {
-    setSelection({ type: "note", id });
+  setSelection({ type: "note", id });
 
     // Find the selected note
     let selected = null;
@@ -363,10 +397,55 @@ const handleNoteSelect = (id) => {
     // If you want to update dots in the UI, do it here:
     // setInputDots(dots);
 
-    // set the selected-note to the note <g>
-
-  }
 };
+
+
+const handleTieSelect = (id) => {
+console.log("handle tie select", {id})
+
+if( noteInputMode){ 
+  unselectVexflowTies()
+  return
+}
+
+
+setSelection({ type: "tie", id });
+
+unselectVexflowTies()
+selectVexflowTie(id)
+
+}
+
+
+
+
+function selectVexflowTie(tieId) {
+  const container = lsContainerRef.current;
+  if (!container) return;
+
+  // 1. Remove selected-tie from ALL ties
+  const allTies = container.querySelectorAll('g.vf-tie-group');
+  allTies.forEach(g => g.classList.remove('selected-tie'));
+
+  // 2. Add selected-tie to the one with matching tieId
+  const target = container.querySelector(`g.vf-tie-group.${CSS.escape(tieId)}`);
+  console.log("target tie for selection: ", target, tieId)
+  if (target) {
+    target.classList.add('selected-tie');
+  }
+}
+
+
+
+function unselectVexflowTies() {
+  const container = lsContainerRef.current;
+  if (!container) return;
+
+  // Remove selected-tie from ALL ties
+  const allTies = container.querySelectorAll('g.vf-tie-group');
+  allTies.forEach(g => g.classList.remove('selected-tie'));
+}
+
 
 
 
@@ -444,6 +523,9 @@ const handleNoteSelect = (id) => {
       <LeadSheetAutoFlow
       {...props}
       onNoteSelect={handleNoteSelect}
+      onTieSelect={handleTieSelect}
+      tieLayerRef={tieLayerRef}
+      slurLayerRef={slurLayerRef}
 
       rowWidth={rowWidth}
         className="ls-container"

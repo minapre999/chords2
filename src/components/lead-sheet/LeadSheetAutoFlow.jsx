@@ -169,7 +169,7 @@ return (
           {...props}
             key={m.id}
             measure={m}
-            measureRowIndex={i}
+            measureOfRowIndex={i}
             rowIndex={rowIndex}
             lsContainerRef={ref}
             width={m.finalWidth}   // ⭐ now defined

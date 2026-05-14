@@ -14,7 +14,7 @@ const {     caret, setCaret,
             caretRef,
             dragRef,
             inputDurationRef,
-            measureRowIndex, 
+            measureOfRowIndex, 
             leadSheet,
             lsContainerRef,
             measure, 
@@ -25,11 +25,14 @@ const {     caret, setCaret,
             noteInputMode,
             onNoteInput,
             onNoteSelect,
+            onTieSelect,
             playerRef,
             selection, setSelection,
             rowIndex,
             rendererRef,
-
+            slurLayerRef,
+            tieLayerRef,
+            tieElements,
             width,
              vfCacheRef, } = props
 
@@ -57,6 +60,8 @@ if(!leadSheet || !measure) return;
     window.noteElements = noteElements;
 window.measureElements = measureElements;
 window.measureRectsRef = measureRectsRef
+window.tieLayerRef = tieLayerRef
+window.slurLayerRef = slurLayerRef
   }, [leadSheet]);
  
 
@@ -201,7 +206,7 @@ window.measureRectsRef = measureRectsRef
     stave: stave,
 
   };
-}, [staveWidth, measureRowIndex, rowIndex]);
+}, [staveWidth, measureOfRowIndex, rowIndex]);
 
 
 
@@ -370,6 +375,174 @@ if(noteInputModeRef.current) {
 
 
 
+function drawTies({
+  stave,
+  vfNotes,
+  melody,
+  measureIndex,
+  measureLayout,
+  leadSheet,
+  selection,
+  setSelection,
+  svg,
+  tieLayerRef
+}) {
+  if (!vfNotes || !melody || !svg || !stave) return;
+
+  let oldLayer = svg.querySelector(".tie-layer");
+  if (oldLayer) oldLayer.remove();
+
+  const tieLayer = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  tieLayer.classList.add("tie-layer");
+  svg.appendChild(tieLayer);
+  tieLayerRef.current = tieLayer;
+
+  // Sub-layers inside tieLayer
+  const curveLayer = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  curveLayer.setAttribute("id", "tie-curve-layer");
+  tieLayer.appendChild(curveLayer);
+
+  const hitLayer = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  hitLayer.setAttribute("id", "tie-hit-layer");
+  hitLayer.style.pointerEvents = "none";
+  tieLayer.appendChild(hitLayer);
+
+  // ⭐ your code uses measure.id, so we keep it exactly as-is
+  const layout = measureLayout[measure.id];
+  const systemY = layout?.systemY ?? 0;
+
+  leadSheet.ties.forEach(tie => {
+    if (
+      tie.startMeasure !== measureIndex &&
+      tie.endMeasure !== measureIndex
+    ) return;
+
+    const isStart = tie.startMeasure === measureIndex;
+    const isEnd   = tie.endMeasure === measureIndex;
+
+    const idx = isStart ? tie.startIndex : tie.endIndex;
+    const entry = melody[idx];
+    const vf = vfNotes[idx];
+
+    if (!entry || !vf) return;
+
+    const isSelected =
+      selection?.type === "tie" && selection.id === tie.id;
+
+    // --- SAME SYSTEM ---
+    if (tie.startMeasure === measureIndex && tie.endMeasure === measureIndex) {
+      const startVF = vfNotes[tie.startIndex];
+      const endVF   = vfNotes[tie.endIndex];
+
+      drawTieSegment({
+        x1: startVF.getAbsoluteX(),
+        y1: startVF.getYs()[0] + systemY,   // ⭐ FIXED
+        x2: endVF.getAbsoluteX(),
+        y2: endVF.getYs()[0] + systemY,     // ⭐ FIXED
+        isSelected,
+        curveLayer,
+        hitLayer,
+        tie,
+        setSelection
+      });
+      return;
+    }
+
+    // --- CROSS-SYSTEM: LEFT SEGMENT ---
+    if (isStart) {
+      const rightX = stave.getTieEndX();
+      const y = vf.getYs()[0] + systemY;     
+      
+console.log("drawing start tie: ", {measure, x1: vf.getAbsoluteX(),y1: y,
+        x2: rightX,
+        y2: y,
+        isSelected,
+        curveLayer,
+        hitLayer,
+        tie,
+        setSelection})
+
+      drawTieSegment({
+        x1: vf.getAbsoluteX(),
+        y1: y,
+        x2: rightX,
+        y2: y,
+        isSelected,
+        curveLayer,
+        hitLayer,
+        tie,
+        setSelection
+      });
+    }
+
+    // --- CROSS-SYSTEM: RIGHT SEGMENT ---
+ if (isEnd) {
+  const leftX = Math.min(stave.getTieStartX(), vf.getAbsoluteX());
+  const rightX = Math.max(stave.getTieStartX(), vf.getAbsoluteX());
+  const y = vf.getYs()[0];
+
+console.log("drawing end tie: ", {measure, x1: leftX,
+    y1: y,
+    x2: rightX,
+    y2: y,
+    isSelected,
+    curveLayer,
+    hitLayer,
+    tie,
+    setSelection})
+
+
+  drawTieSegment({
+    x1: leftX,
+    y1: y,
+    x2: rightX,
+    y2: y,
+    isSelected,
+    curveLayer,
+    hitLayer,
+    tie,
+    setSelection
+  });
+}
+
+
+  });
+}
+
+
+
+
+
+
+function drawTieSegment({
+  x1, y1, x2, y2,
+  curvature,
+  isSelected,
+  curveLayer,
+  hitLayer,
+  tie,
+  setSelection
+}) {
+  const c1x = x1 + curvature;
+  const c2x = x2 - curvature;
+  const c1y = y1 + curvature * 0.25;
+  const c2y = y2 + curvature * 0.25;
+
+  const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  path.setAttribute(
+    "d",
+    `M ${x1} ${y1} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${x2} ${y2}`
+  );
+  path.setAttribute("stroke", isSelected ? "dodgerblue" : "black");
+  path.setAttribute("fill", "none");
+  path.setAttribute("stroke-width", isSelected ? 2 : 1);
+
+  curveLayer.appendChild(path);
+}
+
+
+
+
 
 // add this ABOVE the drawing useLayoutEffect so it updates teh noteInputModeRef first
 // otherwise the noteInputModeRef used in the event handlers will be stale
@@ -388,7 +561,7 @@ useLayoutEffect(() => {
  
 
       if(measure.id==="m1"){
-    console.log("LEAD SHEET RENDER MEASURE LAYOUT", {"noteInputModeRef.current" : noteInputModeRef.current})
+    // console.log("LEAD SHEET RENDER MEASURE LAYOUT", {"noteInputModeRef.current" : noteInputModeRef.current})
   
         }
 
@@ -580,18 +753,20 @@ if (selection?.type === "note" && selection.id === id) {
 
 
 // 2. Remove old hitboxes
-const old = svg.querySelector(".vf-hitboxes-group");
+let old = svg.querySelector(".vf-hitboxes-group");
 if (old) old.remove();
 
 // 3. Create hitbox group (must NOT block events)
-const hitGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+let hitGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
 hitGroup.classList.add("vf-hitboxes-group");
 hitGroup.style.pointerEvents = "none"; // group ignores events
 svg.appendChild(hitGroup);
 
+
+
 // 4. Move hitGroup to TOP so it receives clicks
-svg.removeChild(hitGroup);
-svg.appendChild(hitGroup);
+// svg.removeChild(hitGroup);
+// svg.appendChild(hitGroup);
 
 let caretHitRect = null
 // 5. Build hitboxes
@@ -724,7 +899,7 @@ caretHitRect = rect
   let caretDrawInfo = null
   if (caret &&
     caret.measure === measureIndex ) {
-    console.log({caret})
+    // console.log({caret})
       // const noteId = caret.measure.melody.filter((n)=>n.id)
       // const vfNote = vfCacheRef[noteId]
 
@@ -743,10 +918,10 @@ caretHitRect = rect
         let width = bb.getW()
          if( caretHitRect){ width=   caretHitRect.getAttribute("width")}
 
-         console.log("bb.x", bb.getX(), "caretHitRect.x", caretHitRect.getAttribute("x"),
-        "bb.getW", bb.getW(), "caretHitRect.width",caretHitRect.getAttribute("width"),
-      {x, width})
-        // console.log("care draw info: ", {caret, measureRowIndex, measureRectsRef, staveInfo, x, width})
+      //    console.log("bb.x", bb.getX(), "caretHitRect.x", caretHitRect.getAttribute("x"),
+      //   "bb.getW", bb.getW(), "caretHitRect.width",caretHitRect.getAttribute("width"),
+      // {x, width})
+        // console.log("care draw info: ", {caret, measureOfRowIndex, measureRectsRef, staveInfo, x, width})
         // 4. Store everything for drawing
       caretDrawInfo = {
         x: x,
@@ -754,7 +929,7 @@ caretHitRect = rect
         yBottom: staveInfo.staveY + staveInfo.spacing * 4,
         width: width
         };
-        console.log("caretDrawInfo", caretDrawInfo)
+        // console.log("caretDrawInfo", caretDrawInfo)
         }
     }
   // console.log("caretDrawInfo", caretDrawInfo)
@@ -770,16 +945,366 @@ caretHitRect = rect
       }
 
 
+      /* TIES
+      Using the inbuilt StaveTie - it renders nice looking ties
+      Build hit boxes built similar to the hit boxes for notes
+      It is not possible to draw a smooth tie between measures, so only draw the tie from the first measure
+      unless the second measure is on a new line
+      */
+// console.log(`MEASURE ${measure.id}`)
+
+      //  { id: "slur1", startMeasure: 0, startIndex: 2, endMeasure: 0, endIndex: 3 },
+
+      // first draw ties
+
+  const vfTies = []
+  const measureTies=[]
+  leadSheet.ties.forEach((tie)=>{
+
+    if(tie.startMeasure === measureIndex || tie.endMeasure === measureIndex) {
+      const m1 = leadSheet.measures[tie.startMeasure]
+      const m2 = leadSheet.measures[tie.endMeasure]
+      // console.log("stave tie for measure id: ",measure.id,  { m1, m2, rowIndex, measureIndex, measureOfRowIndex})
+      const vfNotes = vfCacheRef.current.get(measure.id)?.vfNotes
+
+      let vfTie = null
+
+      if( tie.startMeasure === tie.endMeasure) {
+        
+          // console.log("same measure: ", {tie, m1, m2, vfNotes, vf1: vfNotes[tie.startIndex], vf2:vfNotes[tie.endIndex]})
+
+          vfTie = new VF.StaveTie({
+          first_note: vfNotes[tie.startIndex],
+          first_indices: [0],
+          last_note: vfNotes[tie.endIndex],
+          last_indices: [0],
+          } )
+          }
+
+      else {
+
+          if( m1.id === measure.id){ // start measure
+                    // console.log("start tie: ", {tie, m1, m2, vfNotes, first_note: vfNotes[tie.startIndex], })
+
+              vfTie = new VF.StaveTie({
+              first_note: vfNotes[tie.startIndex],
+              first_indices: [0],
+              } )
+          }
+          else if( m2.id === measure.id) { // end measure
+           const vf1Notes = vfCacheRef.current.get(m1.id)?.vfNotes
+
+           const vfNotes = vfCacheRef.current.get(m1.id)?.vfNotes
+
+                              // console.log("end tie: ", {tie, m1, m2, vfNotes, last_note: vfNotes[tie.endIndex], })
+
+              vfTie = new VF.StaveTie({
+              //   first_note: vf1Notes[tie.startIndex],
+              // first_indices: [0],
+              last_note: vfNotes[tie.endIndex],
+              last_indices: [0],
+              } )
+          }
+      }
+
+      
+    
+      if( !(measureOfRowIndex !== 0 && tie.endMeasure === measureIndex) ) { // the second join does not match so dont draw
+        const tieGroup  = ctx.openGroup("tie-group"); // vexflow will prefix the class name with vf, to retrie it use vf-tie-group
+        vfTie?.setContext(ctx).draw()
+        ctx.closeGroup();
+
+        tieGroup.classList.add(`${tie.id}`)
+
+      if( vfTie){
+        vfTies.push({ vfTie, group: tieGroup });
+        measureTies.push(tie)
+        }
+
+      }
+  }
+  })
+
+
+  
+   // ======================================================
+// ⭐ TIE HITBOXES + EVENT HANDLERS (per measure)
+// ======================================================
+
+
+
+// 2. Remove old hitboxes
+ old = svg.querySelector(".tie-hitboxes-group");
+if (old) old.remove();
+
+// 3. Create hitbox group (must NOT block events)
+ hitGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+hitGroup.classList.add("tie-hitboxes-group");
+hitGroup.style.pointerEvents = "none"; // group ignores events
+svg.appendChild(hitGroup);
+
+// 5. Build hitboxes
+vfTies.forEach(({vfTie, group}, idx) => {
+  const tie = measureTies[idx]
+  const tieId = tie.id
+
+  // --- REAL VexFlow <g> for this note ---
+  // const g = vfTie.attrs?.el;
+  const g = group; // ← this is the real <g>
+    // console.log("tie group", {measure, g, tie, vfTie, idx})
+
+
+
+  if (!g) return;
+
+  // Save for selection/highlighting
+  tieElements.current.set(tieId, g);
+
+
+  // --- Build hitbox from REAL <g> bbox ---
+  const bbox = g.getBBox();
+  // console.log("tie hit box", {bbox})
+  if (!bbox) return;
+
+  const padding = 2;
+  const x = bbox.x - padding;
+  const y = bbox.y - padding;
+  const w = bbox.width + padding * 2;
+  const h = bbox.height + padding * 2;
+
+  const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+  rect.setAttribute("x", x);
+  rect.setAttribute("y", y);
+  rect.setAttribute("width", w);
+  rect.setAttribute("height", h);
+
+  // Debug visibility — remove stroke later if you want
+  rect.setAttribute("fill", "transparent");
+  rect.setAttribute("stroke", "transparent");
+
+ rect.setAttribute("stroke", "red");
+ rect.setAttribute("fill", "pink");
+rect.setAttribute("opacity", "0.4");
+  // ⭐ IMPORTANT: rect must receive events
+  rect.style.pointerEvents = "none";
+  if(!noteInputModeRef.current) {
+  rect.style.pointerEvents = "all";
+  rect.style.cursor = "pointer";
+  }
+
+  rect.dataset.tieId = tieId;
+  rect.dataset.measureIndex = measureIndex;
+  rect.dataset.tieIndex = idx;
+
+  hitGroup.appendChild(rect);
+
+
+  // --- CLICK + DRAG LOGIC (your original code) ---
+  rect.addEventListener("mousedown", (e) => {
+    e.preventDefault();
+
+    const tieId = rect.dataset.tieId;
+    const measureIdx = Number(rect.dataset.measureIndex);
+    const noteIdx = Number(rect.dataset.noteIndex);
+
+
+    const onUp = () => {
+      window.removeEventListener("mouseup", onUp);
+
+  
+        onTieSelect(tieId);
+      
+    };
+
+    window.addEventListener("mouseup", onUp);
+  });
+});
+
+
+
+
+
+
+// drawTies({
+//   stave,
+//   vfNotes: notes,
+//   melody: measure.melody,
+//   measureIndex,
+//   measureLayout:  measureRectsRef.current,
+//   leadSheet,
+//   selection,
+//   setSelection,
+//   svg: svgRef.current,
+//   tieLayerRef
+// });
+
+
+
+
+
+
+
+//       // --- TIE LAYER ---
+//   if( measure?.melody?.length){
+//     // let tieLayer = tieLayerRef.current;
+
+//     // if (!tieLayer || !tieLayer.isConnected) {
+//     //   tieLayer = document.createElementNS("http://www.w3.org/2000/svg", "g");
+//     //   tieLayer.classList.add("tie-layer");
+//     //   svg.appendChild(tieLayer);
+//     //   tieLayerRef.current = tieLayer;
+//     // }
+
+//     // --- TIE LAYER (always recreate cleanly) ---
+//     let oldLayer = svg.querySelector(".tie-layer");
+//     if (oldLayer) oldLayer.remove();
+
+//     const tieLayer = document.createElementNS("http://www.w3.org/2000/svg", "g");
+//     tieLayer.classList.add("tie-layer");
+//     svg.appendChild(tieLayer);
+
+//     tieLayerRef.current = tieLayer;
+
+
+
+
+//     // clear old ties
+//     while (tieLayer.firstChild) tieLayer.removeChild(tieLayer.firstChild);
+
+//     leadSheet.ties
+//       .filter(t => t.startMeasure === measureIndex)
+//       .forEach(tie => {
+//         const startNote = noteElements.current.get(
+//           measure.melody[tie.startIndex].id
+//         );
+//         const endNote = noteElements.current.get(
+//           measure.melody[tie.endIndex].id
+//         );
+
+//         if (!startNote || !endNote) return;
+
+//         const sBox = startNote.getBBox();
+//         const eBox = endNote.getBBox();
+
+//         const x1 = sBox.x + sBox.width;
+//         const y1 = sBox.y + sBox.height / 2;
+
+//         const x2 = eBox.x;
+//         const y2 = eBox.y + eBox.height / 2;
+
+//         // control points for a nice curve
+//         const c1x = x1 + 12;
+//         const c1y = y1 + 10;
+
+//         const c2x = x2 - 12;
+//         const c2y = y2 + 10;
+//     console.log("creating a tie")
+//         const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+
+//         path.setAttribute(
+//           "d",
+//           `M ${x1} ${y1} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${x2} ${y2}`
+//         );
+
+//         path.setAttribute("fill", "none");
+//         path.setAttribute(
+//           "stroke",
+//           selection?.type === "tie" && selection.id === tie.id
+//             ? "dodgerblue"
+//             : "black"
+//         );
+//         path.setAttribute("stroke-width", selection?.id === tie.id ? 2 : 1);
+
+//         path.dataset.tieId = tie.id;
+
+//         tieLayer.appendChild(path);
+
+//     //     console.log("TIE PATH EXISTS?", tieLayer.contains(path));
+//     // console.log("TIE LAYER CHILD COUNT:", tieLayer.childNodes.length);
+
+
+//         // console.log("tie layer:  ", tieLayer, "child tie path: ", path)
+
+//       });
+
+//     // tie boxes for hit selection
+
+//       leadSheet.ties
+//       .filter(t => t.startMeasure === measureIndex)
+//       .forEach(tie => {
+//         const startNote = noteElements.current.get(
+//           measure.melody[tie.startIndex].id
+//         );
+//         const endNote = noteElements.current.get(
+//           measure.melody[tie.endIndex].id
+//         );
+
+//         if (!startNote || !endNote) return;
+
+//         const sBox = startNote.getBBox();
+//         const eBox = endNote.getBBox();
+
+//         const x1 = sBox.x + sBox.width;
+//         const y1 = sBox.y + sBox.height / 2;
+
+//         const x2 = eBox.x;
+//         const y2 = eBox.y + eBox.height / 2;
+
+//         // control points for a nice curve
+//         const c1x = x1 + 12;
+//         const c1y = y1 + 10;
+
+//         const c2x = x2 - 12;
+//         const c2y = y2 + 10;
+
+//         const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+
+//         path.setAttribute(
+//           "d",
+//           `M ${x1} ${y1} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${x2} ${y2}`
+//         );
+
+//         path.setAttribute("fill", "none");
+//         path.setAttribute(
+//           "stroke",
+//           selection?.type === "tie" && selection.id === tie.id
+//             ? "dodgerblue"
+//             : "black"
+//         );
+//         path.setAttribute("stroke-width", selection?.id === tie.id ? 2 : 1);
+
+//         // debugging
+//         path.setAttribute("fill", "yellow");
+//          path.setAttribute("opacity", "0.3");
+
+//         path.dataset.tieId = tie.id;
+
+//         tieLayer.appendChild(path);
+//       });
+//   }
+
+
+// console.log(
+//   "FINAL TIE CHILD COUNT (measure", measureIndex, "):",
+//   tieLayerRef.current?.childNodes.length
+// );
 
 
     /*
-staveWidth, rowIndex, measureRowIndex are critical here for correct measure rendering
+staveWidth, rowIndex, measureOfRowIndex are critical here for correct measure rendering
 Without these React was happily resizing the container,
 but VexFlow was still drawing the old width.
 
 */
 
-  }, [measure, staveWidth, leadSheet.slurs, leadSheet.ties, dragRef, noteInputMode]);  // useLayoutEffect
+  }, [
+  measure.id,
+  measure.melody,
+  staveWidth,
+  leadSheet.ties,
+  noteInputMode
+]
+);  // useLayoutEffect
 
 
 

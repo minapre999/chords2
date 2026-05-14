@@ -211,11 +211,11 @@ const [noteInputMode, setNoteInputMode] = useState(false);
 const noteInputModeRef = useRef(false);
     const noteElements = useRef(new Map());
   const measureElements = useRef(new Map());
-
+ const tieElements = useRef(new Map());
 
 
 useEffect(() => {
-  console.log("setting note input mode to ", noteInputModeRef.current )
+  // console.log("setting note input mode to ", noteInputModeRef.current )
   noteInputModeRef.current = noteInputMode;
 }, [noteInputMode]);
 
@@ -248,7 +248,7 @@ const [pendingInsert, _setPendingInsert] = useState(null);
 
 
   useEffect(() => {
-    console.log("setting caretRef", {caret})
+    // console.log("setting caretRef", {caret})
   caretRef.current = caret;
   window.caretRef = caretRef
   window.vfCacheRef = vfCacheRef
@@ -757,7 +757,7 @@ console.log("HANDLE TOGGLE NOTE DOTTED", "   \nnewDotted: ", newDotted)
       return next;
     });
   }
-}, [selDotted, noteInputMode, caret, selection]);
+}, [selDotted, noteInputMode, caret]);
 
 
 
@@ -808,7 +808,7 @@ return next
       return next;
     });
   }
-}, [selRest, noteInputMode, caret, selection]);
+}, [selRest, noteInputMode, caret]);
 
 
 
@@ -864,7 +864,7 @@ const handleToolbarDurationChange = useCallback((newDur) => {
       return next;
     });
   }
-}, [noteInputMode, caret, selection]);
+}, [noteInputMode, caret]);
 
 
 
@@ -1894,6 +1894,7 @@ function updateDraggedNote(noteId, semitones, durationSteps) {
             onNoteDragStart={handleNoteDragStart}
             noteElements={noteElements}
             measureElements={measureElements}
+            tieElements = {tieElements}
             selection={selection}
             setSelection={setSelection}
                selRest={selRest}

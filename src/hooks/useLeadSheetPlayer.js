@@ -58,7 +58,7 @@ export function useLeadSheetPlayer(props ) {
     const steps = buildSteps();
     if (!steps.length) return;
 
-    console.log("steps: ", steps)
+    // console.log("steps: ", steps)
   }, [leadSheet]);
 
 
@@ -233,7 +233,7 @@ console.log("effect for build steps /nisPaused: ", isPaused,
        const steps = buildSteps();
     if (!steps.length) return;
 
-    console.log("leadSheet render steps: ", )
+    // console.log("leadSheet render steps: ", )
   const rData = new RenderData(props)
      
     //   if (leadSheet?.id !== undefined) {
