@@ -6,7 +6,7 @@ import {measureRectsRef} from "./LeadSheetRenderer"
 import {cursorPosRef, cursorOverlayRef} from "/src/components/lead-sheet/cursor/cursorRefs";
 import { updateCursorOverlay } from "/src/components/lead-sheet/cursor/updateCursorOverlay";
 import { drawTies} from "./tie/draw-tie"
-
+import { drawSlurs} from "./slur/draw-slur"
 
 
 export default function MeasureRenderer(props) {
@@ -25,12 +25,14 @@ const {     caret, setCaret,
             noteInputMode,
             onNoteInput,
             onNoteSelect,
+            onSlurSelect,
             onTieSelect,
             playerRef,
             selection, setSelection,
             rowIndex,
             rendererRef,
             slurLayerRef,
+            slurElements,
             tieLayerRef,
             tieElements,
             width,
@@ -359,7 +361,7 @@ return index
   const drawCaret = (svg, drawInfo) => {  
 if(noteInputModeRef.current) {
     const {x,yTop, yBottom, width} = drawInfo
-    console.log("drawCaret", {svg, x, yTop, yBottom, width})
+    // console.log("drawCaret", {svg, x, yTop, yBottom, width})
     const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
     rect.setAttribute("x", x);
     rect.setAttribute("y", yTop );
@@ -788,9 +790,21 @@ caretHitRect = rect
               svg,
               tieElements,
               vfCacheRef,
+              voice,
+              formatter
               }  )
 
-   
+  drawSlurs( { ctx,
+              leadSheet,
+              measure,
+              measureIndex,
+              measureOfRowIndex,
+              noteInputModeRef,
+              onSlurSelect,
+              svg,
+              slurElements,
+              vfCacheRef,
+              }  )
 
 
 
@@ -807,6 +821,7 @@ but VexFlow was still drawing the old width.
   measure.melody,
   staveWidth,
   leadSheet.ties,
+  leadSheet.slurs,
   noteInputMode
 ]
 );  // useLayoutEffect

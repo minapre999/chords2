@@ -33,7 +33,7 @@ export const autumnLeaves = {
       melody: [
         { id: "m1-n1", pitches: [], duration: "q", dots: 0 },
         { id: "m1-n2", pitches: ["C4"], duration: "q", dots: 1, string: 3, fret: 5 },
-        { id: "m1-n3", pitches: ["D4", "D5"], duration: "e", dots: 0, string: 2, fret: 3 },
+        { id: "m1-n3", pitches: ["D4"], duration: "e", dots: 0, string: 2, fret: 3 },
         { id: "m1-n4", pitches: ["Eb4"], duration: "q", dots: 0, string: 2, fret: 4 }
       ]
       //   melody: [

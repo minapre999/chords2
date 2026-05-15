@@ -3,9 +3,10 @@ import LeadSheetAutoFlow from "./LeadSheetAutoFlow";
 import "./LeadSheetRenderer.css"
 import {cursorPosRef, cursorOverlayRef, cursorLedgersRef} from "/src/components/lead-sheet/cursor/cursorRefs";
 import { updateCursorOverlay, updateCursorShape } from "/src/components/lead-sheet/cursor/updateCursorOverlay";
-import {drawSlurs} from "./slur/drawSlurs"
+import {drawSlurs} from "./slur/draw-slur"
 import "/node_modules/vexflow/releases/vexflow-debug.js";
 import {selectVexflowTie, unselectVexflowTies} from "./tie/tie-select"
+import {selectVexflowSlur, unselectVexflowSlurs} from "./slur/slur-select"
 import {selectVexflowNote, unselectVexflowNotes} from "./note/note-select"
 
 export const measureRectsRef = { current: {} };
@@ -37,7 +38,25 @@ const tieLayerRef = useRef(null);
 // console.log("rendering lead sheet")
 
 
+// when the selection changes mode, ensure the selection is off for other modes
+useEffect(() => {
+if(!selection) return;
 
+  if( selection.type != "note" ) { unselectVexflowNotes(lsContainerRef.current)  }
+
+  if( selection.type != "tie" ) { unselectVexflowTies(lsContainerRef.current)  }
+
+  if( selection.type != "slur" ) { unselectVexflowSlurs(lsContainerRef.current)  }
+    
+ if( selection.type != "rest" ) {   }// todo 
+
+
+  if( selection.type != "chord" ) {   }// todo 
+
+  
+
+
+}, [selection]);
 
 // NOTE INPUT CURSOR mouse move 
 
@@ -368,6 +387,24 @@ selectVexflowTie( {tieId: id,
 
 
 
+ const handleSlurSelect = (id) => {
+console.log("handle slur select", {id})
+
+if( noteInputMode){ 
+unselectVexflowSlurs( lsContainerRef.container)
+  return
+}
+setSelection({ type: "slur", id });
+unselectVexflowSlurs( lsContainerRef.container)
+selectVexflowSlur( {slurId: id, 
+  container: lsContainerRef.current})
+
+}
+
+
+
+
+
 const handleNoteSelect = (id) => {
   // console.log("SELECTING NOTE ID:", {id,noteInputMode});
 
@@ -462,6 +499,7 @@ const handleNoteSelect = (id) => {
       {...props}
       onNoteSelect={handleNoteSelect}
       onTieSelect={handleTieSelect}
+      onSlurSelect = {handleSlurSelect}
       tieLayerRef={tieLayerRef}
       slurLayerRef={slurLayerRef}
 

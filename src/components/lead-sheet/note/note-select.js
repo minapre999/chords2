@@ -6,7 +6,7 @@
   // 1. Remove selected-note from ALL stavenotes
   const allNotes = container.querySelectorAll('g.vf-stavenote');
 
-    console.log("select vex flow note", {noteId, allNotes})
+    // console.log("select vex flow note", {noteId, allNotes})
 
 
   allNotes.forEach(g => g.classList.remove('selected-note'));

@@ -21,6 +21,8 @@ export function drawTies( { ctx,
                             svg,
                             tieElements,
                             vfCacheRef,
+                             voice,
+                            formatter,
                             }  ){
   
   
@@ -31,6 +33,7 @@ export function drawTies( { ctx,
       //  { id: "slur1", startMeasure: 0, startIndex: 2, endMeasure: 0, endIndex: 3 },
 
       // first draw ties
+      const vfNotes = vfCacheRef.current.get(measure.id)?.vfNotes
 
   const vfTies = []
   const measureTies=[]
@@ -40,7 +43,6 @@ export function drawTies( { ctx,
       const m1 = leadSheet.measures[tie.startMeasure]
       const m2 = leadSheet.measures[tie.endMeasure]
       // console.log("stave tie for measure id: ",measure.id,  { m1, m2, rowIndex, measureIndex, measureOfRowIndex})
-      const vfNotes = vfCacheRef.current.get(measure.id)?.vfNotes
 
       let vfTie = null
 
@@ -98,6 +100,38 @@ export function drawTies( { ctx,
       }
   }
   })
+
+
+  // this is testing for debbugging
+
+
+// possible workaround for slurring into the next measure
+// this is sort of working.  need to make the realNote as a new vfNote with 
+// pitch same as the last note of slur.  Or about half-way between the first and last note of the slur
+// can the x value be outside the bar? ie. the position of the last note + measure width? it appears so
+// the problem is the next measure (and vfCacheRef) has not yet been created as measures are created from index 0
+
+//   if(vfNotes.length > 1 ) {
+
+// const realNote = vfNotes[1];
+// const anchor = createTieAnchor(realNote);
+
+// const tie = new VF.StaveTie({
+//   first_note: realNote,
+//   last_note: anchor,
+//   first_indices: [0],
+//   last_indices: [0],
+// });
+
+// console.log("test slur with fake anchor: ", {realNote, anchor, tie})
+
+//         const slurGroup  = ctx.openGroup("slur-group"); // vexflow will prefix the class name with vf, to retrie it use vf-tie-group
+//         tie.setContext(ctx).draw();
+//         ctx.closeGroup();
+//    slurGroup.classList.add(`testId-${measureIndex}`)
+
+//   }
+
 
 
   
@@ -197,3 +231,22 @@ rect.setAttribute("opacity", "0.4");
 
 }
 
+
+
+
+function createTieAnchor(realNote) {
+  const stave = realNote.getStave();
+//   const ys = realNote.getYs();
+const ys = [100];
+  const x = realNote.getTieRightX() + 200; // add 12px or any spacing
+  const stemDir = realNote.getStemDirection();
+
+  return {
+    getStave: () => stave,
+    getYs: () => ys,
+    getStemDirection: () => stemDir,
+    getTieLeftX: () => x,
+    getTieRightX: () => x,
+    getModifierStartXY: () => ({ x, y: ys[0] }),
+  };
+}

@@ -212,6 +212,7 @@ const noteInputModeRef = useRef(false);
     const noteElements = useRef(new Map());
   const measureElements = useRef(new Map());
  const tieElements = useRef(new Map());
+ const slurElements = useRef(new Map());
 
 
 useEffect(() => {
@@ -396,7 +397,7 @@ function insertNote({ pitch, duration="q", measureIndex=0, noteIndex=0, dots=0})
     // 2. Build guitar mapping once per insert
     const guitarMap = pitchToGuitar();   // your function
     const gf = guitarMap[pitchName] || { string: null, fret: null };
-    console.log("insertNote: ", {measureIndex, noteIndex, dots, duration, measure, pitch, pitchName, gf, next})
+    // console.log("insertNote: ", {measureIndex, noteIndex, dots, duration, measure, pitch, pitchName, gf, next})
     const existing = measure.melody[noteIndex];
 
     // Helper: ticks
@@ -643,9 +644,9 @@ function onToolbarSlurClick() {
 
 
 function onToolbarTieClick() {
-  if (!selection) return;
+  if (!selection || !selection.type == "note" ) return;
 
-  console.log("TOOLBAR TIE CLICK", "   \nselection: ", selection)
+  console.log("TOOLBAR TIE CLICK", {selection})
   // Find the selection note's measure + index
   let startMeasure = null;
   let startIndex = null;
@@ -664,13 +665,14 @@ function onToolbarTieClick() {
   // Determine the next note
   let endMeasure = startMeasure;
   let endIndex = startIndex + 1;
-
+let endMelody = startMelody
   // If at end of measure, move to next measure
   if (endIndex >= leadSheet.measures[startMeasure].melody.length) {
     endMeasure = startMeasure + 1;
     endIndex = 0;
   }
 
+ 
   // If no next measure or no next note, abort
   if (
     endMeasure >= leadSheet.measures.length ||
@@ -678,6 +680,10 @@ function onToolbarTieClick() {
   ) {
     return;
   }
+
+  // sanity check before creating the tie.  Ties must always be the same ptich
+
+
 
   // Create the tie
   const newTie = {
@@ -737,7 +743,7 @@ console.log("HANDLE TOGGLE NOTE DOTTED", "   \nnewDotted: ", newDotted)
         
           newDotted === true ? note.dots = 1 : note.dots = 0
           
-            console.log('applying ripple edit ...')
+            // console.log('applying ripple edit ...')
           const updatedMeasures = applyRippleAcrossMeasures(
             leadSheet.measures,
             measureIndex,
@@ -753,7 +759,7 @@ console.log("HANDLE TOGGLE NOTE DOTTED", "   \nnewDotted: ", newDotted)
           }
 
 
-      console.log("NOTE TO DOTTED", "   \nnext: ", next)
+      // console.log("NOTE TO DOTTED", "   \nnext: ", next)
       return next;
     });
   }
@@ -1015,6 +1021,12 @@ useEffect(() => {
       let keys = ["a", "b", "c", "d", "e", "f", "g"]
       keys = [...keys, ...keys.map(n=>n.toUpperCase())]
       if( keys.includes(e.key)) {
+        // typing key automatically changes to note insert mode - do it here
+        // the problem is that any subsequent functions will have stale data until the state is set
+        // so update the ref here as well
+          setNoteInputMode(true)
+          noteInputModeRef.current = true
+
           HandleKeyNoteInsert(e.key)
            e.preventDefault();
         }
@@ -1024,6 +1036,13 @@ useEffect(() => {
         }
         // else handleKeyDown(e)
  
+          // Escape key
+  else if (e.key === "Escape") {
+    // exit note input mode
+    setNoteInputMode(false)
+    
+  }
+
     setSelection(null);
   }
 
@@ -1033,7 +1052,7 @@ useEffect(() => {
 
 
 function HandleDelete(c){
- console.log("DELETE KEY DOWN EFFECT", "   \nselected: ", selection)
+//  console.log("DELETE KEY DOWN EFFECT", "   \nselected: ", selection)
         if (c!== "Delete" && c !== "Backspace") return;
         if (!selection) return;
 
@@ -1090,7 +1109,7 @@ const HandleKeyNoteInsert = useCallback((c) => {
   const duration = inputDurationRef.current;
 
   const { measure, index } = caretRef.current;
-console.log("KEY DOWN NOTE INSERT", pitch, inputDurationRef, measure, index, )
+// console.log("KEY DOWN NOTE INSERT", pitch, inputDurationRef, measure, index, )
   insertNote({
     pitch: pitch,
     duration: inputDurationRef.current,
@@ -1199,7 +1218,7 @@ function moveCaretForward() {
       next.measure = lastMeasure;
       next.index = melody.length - 1;
     }
-console.log("next caret", next)
+// console.log("next caret", next)
     return next;
   });
 }
@@ -1894,6 +1913,7 @@ function updateDraggedNote(noteId, semitones, durationSteps) {
             onNoteDragStart={handleNoteDragStart}
             noteElements={noteElements}
             measureElements={measureElements}
+            slurElements={slurElements}
             tieElements = {tieElements}
             selection={selection}
             setSelection={setSelection}
