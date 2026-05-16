@@ -7,7 +7,9 @@ import {cursorPosRef, cursorOverlayRef} from "/src/components/lead-sheet/cursor/
 import { updateCursorOverlay } from "/src/components/lead-sheet/cursor/updateCursorOverlay";
 import { drawTies} from "./tie/draw-tie"
 import { drawSlurs} from "./slur/draw-slur"
-
+import {unselectVFNotes} from "/src/components/lead-sheet/note/note-select"
+import { unselectVFTies} from "/src/components/lead-sheet/tie/tie-select"
+import { unselectVFSlurs} from "/src/components/lead-sheet/slur/slur-select"
 
 export default function MeasureRenderer(props) {
 const {     caret, setCaret, 
@@ -40,6 +42,7 @@ const {     caret, setCaret,
 
 
 if(!leadSheet || !measure) return;
+
 
   const svgRef = useRef(null);
   const staveRef = useRef(null);
@@ -218,7 +221,7 @@ window.slurLayerRef = slurLayerRef
       //
       useImperativeHandle(playerRef, () => ({
         highlightNote(noteId) {
-            console.log("HIGHLIGHT NOTE")
+            // console.log("HIGHLIGHT NOTE")
           noteElements.current.forEach(el => el.classList.remove("vf-highlight-note"));
           const el = noteElements.current.get(noteId);
           if (!el) return;
@@ -479,12 +482,12 @@ staffHit.setAttribute("width", staveWidth);
 staffHit.setAttribute("height", hitPadding * 2 + 5 * spacing);
 staffHit.setAttribute("fill", "transparent");
 staffHit.setAttribute("pointer-events", "all");
-
+// console.log("staffHit", {staveX, topLineY, staveWidth, hitPadding, spacing})
 // console.log(x, topLineY, staveWidth, spacing)
 // for debugging - make the hit boxes visible
-// staffHit.setAttribute("fill", "rgba(178, 186, 30, 0.06)");
-// staffHit.setAttribute("stroke", "rgba(69, 222, 67, 0.34)");
-staffHit.setAttribute("pointer-events", "all");
+staffHit.setAttribute("fill", "rgba(178, 186, 30, 0.06)");
+staffHit.setAttribute("stroke", "rgba(69, 222, 67, 0.34)");
+
 
 /*
 no pointer events ensures:
@@ -495,7 +498,7 @@ no pointer events ensures:
   //  console.log("noteInputModeRef.current", noteInputModeRef.current)
   if(!noteInputModeRef.current){
     // console.log("removing pointer events from staffHit")
-staffHit.setAttribute("pointer-events", "none");
+// staffHit.setAttribute("pointer-events", "none");
   }
 
 
@@ -504,7 +507,19 @@ staffHit.setAttribute("pointer-events", "none");
 // console.log("adding mousedown listener", {staffHit})
 staffHit.addEventListener("mousedown", (e) => {
  console.log("staffHit event. noteInputModeRef is  ", noteInputModeRef.current)
-  if (!noteInputModeRef.current) return;
+
+
+
+  if (!noteInputModeRef.current) {
+     unselectVFNotes(lsContainerRef.current)
+      unselectVFTies(lsContainerRef.current)
+      unselectVFSlurs(lsContainerRef.current)
+    return;
+  }
+
+
+  // hit the staff - no notes, slurs or ties clicked.  Unselect any existing notes, ties or slures
+
 
   const svgP = clientToSvgPoint(e, svg);
 
@@ -520,6 +535,8 @@ staffHit.addEventListener("mousedown", (e) => {
 
 console.log("before onNoteInput ", "\n.  svgP.y,: ", svgP.y, "\n.  pitch: ", pitch)
   onNoteInput(pitch, measureIndex, noteIndex);
+
+
 
 });
 
@@ -642,6 +659,9 @@ notes.forEach((vfNote, idx) => {
   rect.setAttribute("stroke", "transparent");
 
  rect.setAttribute("stroke", "red");
+ rect.setAttribute("id", `hitbox-${id}`);
+  rect.classList.add("note-hitbox")
+  
 
   // ⭐ IMPORTANT: rect must receive events
   rect.style.pointerEvents = "none";

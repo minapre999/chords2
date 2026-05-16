@@ -15,23 +15,27 @@
 
 
 
-.vf-highlight-note {
+.vf-highlight-note,
+.highlight-note {
   fill: #ff4444 !important;
   stroke: #ff4444 !important;
 }
-.vf-highlight-note path {
+.vf-highlight-note path,
+.highlight-note path {
   stroke: red !important;
   fill: red !important;
 }
 
-.vf-highlight-measure {
+.vf-highlight-measure,
+.highlight-measure {
   stroke: #ffaa00 !important;
   stroke-width: 3px !important;
 }
 
 
 
-.vf-highlight-measure rect {
+.vf-highlight-measure rect,
+.highlight-measure rect {
   stroke: orange !important;
   stroke-width: 3px !important;
 }

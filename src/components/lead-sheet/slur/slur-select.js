@@ -25,11 +25,11 @@ export function selectVexflowSlur( {slurId, container} ) {
 
 
 
-export function unselectVexflowSlurs(container) {
+export function unselectVFSlurs(container) {
   if (!container) return;
 
   // Remove selected-slur from ALL slurs
-  console.log("unselectVexflowSlurs", container)
+  console.log("unselectVFSlurs", container)
   const allSlurs = container.querySelectorAll('g.vf-slur-group');
   allSlurs.forEach(g => g.classList.remove('selected-slur'));
 }

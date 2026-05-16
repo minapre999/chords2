@@ -2,11 +2,15 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import RenderData, {RenderNote} from "/src/render-notes.js"
 import * as Tone from "tone";
 import { useToneEngine } from "/src/context/ToneEngineContext";
-
+import { highlightVFNote, unhighlightVFNotes } from "/src/components/lead-sheet/note/note-highlight";
 
 export function useLeadSheetPlayer(props ) {
-   const {leadSheet, rendererRef, renderDataUI, setRenderDataUI,
-    isPlaying, setIsPlaying,isPaused}  =props
+   const {leadSheet, 
+    lsContainerRef, 
+    rendererRef, 
+    renderDataUI, setRenderDataUI,
+    isPlaying, setIsPlaying,
+    isPaused}  =props
  
   const seqRef = useRef(null);
 
@@ -183,8 +187,9 @@ console.log("effect for build steps /nisPaused: ", isPaused,
 
       Tone.Draw.schedule(() => {
      
-        rendererRef.current?.highlightNote(ev.id);
-        rendererRef.current?.highlightMeasure(ev.measureId);
+        highlightNote({noteId: ev.id, container: lsContainerRef.current})
+        // rendererRef.current?.highlightNote(ev.id);
+        // rendererRef.current?.highlightMeasure(ev.measureId);
       }, time);
     }, events);
   }
@@ -221,7 +226,17 @@ console.log("effect for build steps /nisPaused: ", isPaused,
 }, [scaleSampler, buildSteps, rendererRef, isPlaying, samplerReady]);
 
 
+ function highlightNote({container, noteId}) {
+            // console.log("HIGHLIGHT NOTE", {container, noteId})
+              unhighlightVFNotes(container)
+            highlightVFNote({container, noteId})
+          
 
+          // noteElements.current.forEach(el => el.classList.remove("vf-highlight-note"));
+          // const el = noteElements.current.get(noteId);
+          // if (!el) return;
+          // el.classList.add("vf-highlight-note");
+ }
 
 
 /**** FRETBOARD RENDER DATA *****/

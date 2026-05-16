@@ -23,11 +23,11 @@ export function selectVexflowTie( {tieId, container} ) {
 
 
 
-export function unselectVexflowTies(container) {
+export function unselectVFTies(container) {
   if (!container) return;
 
   // Remove selected-tie from ALL ties
-  console.log("unselectVexflowTies", container)
+  console.log("unselectVFTies", container)
   const allTies = container.querySelectorAll('g.vf-tie-group');
   allTies.forEach(g => g.classList.remove('selected-tie'));
 }

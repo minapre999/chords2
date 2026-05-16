@@ -3,6 +3,7 @@ import * as Tone from "tone";
 import { useToneEngine } from "/src/context/ToneEngineContext";
 import  DurationControls  from "/src/components/toolbar/ls-tools/DurationControls.jsx";
 import "/src/components/toolbar/toolbar.css"
+import { unhighlightVFNotes } from "/src/components/lead-sheet/note/note-highlight";
 
 // import ScalePicker from "/src/components/toolbar/scale-tools/ScalePicker.jsx";
 
@@ -42,21 +43,20 @@ export default function LeadSheetTools(props) {
 
 const{  isPlaying, setIsPlaying, 
             isPaused, setIsPaused,
-            showPalette, setShowPalette,
             noteInputMode, setNoteInputMode,
             noteInputModeRef,
             handleAccidentalClick,
             onToolbarTieClick,
             onToolbarSlurClick,
-            inputDuration,
-            setInputDuration,
+            inputDuration,  setInputDuration,
             selRest, 
             setSelRest,
-            selDotted,
-            setSelDotted,
+            selDotted,   setSelDotted,
+           showPalette, setShowPalette,
             noteToDotted,
             noteToRest,
-            selection
+            selection,
+            lsContainerRef,
            }=props
 
 const { startAudio, samplerReady, scaleSampler } = useToneEngine();
@@ -144,7 +144,8 @@ const transport = Tone.getTransport()
     // seqRef.current.stop();   // ⭐ Only here
     setIsPaused(false);
   setIsPlaying(false);
-
+  // console.log("handle stop ")
+unhighlightVFNotes(lsContainerRef.current)
 };
 
 

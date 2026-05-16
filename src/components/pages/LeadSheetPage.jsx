@@ -150,6 +150,7 @@ export default function LeadSheetPage(props) {
 
 
     // 1. All useRef FIRST
+  const lsContainerRef = useRef(null);
 const rendererRef = useRef(null);
 const applyRippleEditRef = useRef(null);
 const onMouseUpRef = useRef(() => {});
@@ -1271,7 +1272,7 @@ const player = useLeadSheetPlayer({
   isPlaying,
   setIsPlaying,
   isPaused,
-
+  lsContainerRef,
 });
 
 
@@ -1808,33 +1809,25 @@ function updateDraggedNote(noteId, semitones, durationSteps) {
 
   <Toolbar
     {...props}
-    page="lead-sheet"
-    zoom={zoom}
-    setZoom={setZoom}
-    isPlaying={isPlaying}
-    setIsPlaying={setIsPlaying}
-    isPaused={isPaused}
-    setIsPaused={setIsPaused}
-    showPalette={showPalette}
-    setShowPalette={setShowPalette}
-    pos={lsPalettePos}
-    setPos={setLsPalettePos}
-    noteInputMode={noteInputMode}
-    setNoteInputMode={setNoteInputMode}
-    noteInputModeRef={noteInputModeRef}
-    handleToolbarDurationChange={handleToolbarDurationChange}
-    noteToRest={noteToRest}
     handleAccidentalClick={handleAccidentalClick}
-    onToolbarTieClick={onToolbarTieClick}
-    onToolbarSlurClick={onToolbarSlurClick}
-    inputDuration={inputDuration}
-    setInputDuration={setInputDuration}
-    selection={selection}
-    selRest={selRest}
-    setSelRest={setSelRest}
-    selDotted={selDotted}
-    setSelDotted={setSelDotted}
+    handleToolbarDurationChange={handleToolbarDurationChange}
+    inputDuration={inputDuration} setInputDuration={setInputDuration}
+    isPaused={isPaused}           setIsPaused={setIsPaused}
+    isPlaying={isPlaying}         setIsPlaying={setIsPlaying}
+    lsContainerRef={lsContainerRef}
+    noteInputMode={noteInputMode} setNoteInputMode={setNoteInputMode}
+    noteInputModeRef={noteInputModeRef}
     noteToDotted={noteToDotted}
+    noteToRest={noteToRest}
+    onToolbarSlurClick={onToolbarSlurClick}
+    onToolbarTieClick={onToolbarTieClick}
+    page="lead-sheet"
+    pos={lsPalettePos}            setPos={setLsPalettePos}
+    selection={selection}
+    selDotted={selDotted}         setSelDotted={setSelDotted}
+    selRest={selRest}             setSelRest={setSelRest}
+    showPalette={showPalette}     setShowPalette={setShowPalette}
+    zoom={zoom} setZoom={setZoom}
   />
 
   <div className="page-content">
@@ -1908,6 +1901,7 @@ function updateDraggedNote(noteId, semitones, durationSteps) {
             setCursorVisible={setCursorVisible}
             vfCacheRef={vfCacheRef}
             lastMeasureLayoutRef={lastMeasureLayoutRef}
+            lsContainerRef={lsContainerRef}
             noteInputMode={noteInputMode}
             onNoteInput={onNoteInput}
             onNoteDragStart={handleNoteDragStart}

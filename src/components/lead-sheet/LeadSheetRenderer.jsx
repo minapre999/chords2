@@ -5,9 +5,9 @@ import {cursorPosRef, cursorOverlayRef, cursorLedgersRef} from "/src/components/
 import { updateCursorOverlay, updateCursorShape } from "/src/components/lead-sheet/cursor/updateCursorOverlay";
 import {drawSlurs} from "./slur/draw-slur"
 import "/node_modules/vexflow/releases/vexflow-debug.js";
-import {selectVexflowTie, unselectVexflowTies} from "./tie/tie-select"
-import {selectVexflowSlur, unselectVexflowSlurs} from "./slur/slur-select"
-import {selectVexflowNote, unselectVexflowNotes} from "./note/note-select"
+import {selectVexflowTie, unselectVFTies} from "./tie/tie-select"
+import {selectVexflowSlur, unselectVFSlurs} from "./slur/slur-select"
+import {selectVFNote, unselectVFNotes} from "./note/note-select"
 
 export const measureRectsRef = { current: {} };
 
@@ -20,6 +20,7 @@ export default function LeadSheetRenderer(props) {
   dragRef,
    inputDuration,  setInputDuration,
    leadSheet,
+   lsContainerRef,
   noteInputMode,
   noteInputModeRef,
   selDotted, setSelDotted,
@@ -29,8 +30,8 @@ export default function LeadSheetRenderer(props) {
           } = props
 
  
+          console.log("rendering lead sheet")
 const [rowWidth, setRowWidth] = useState(800); // default
-const lsContainerRef = useRef(null);
 const slurLayerRef = useRef(null);
 const tieLayerRef = useRef(null);
 
@@ -42,11 +43,11 @@ const tieLayerRef = useRef(null);
 useEffect(() => {
 if(!selection) return;
 
-  if( selection.type != "note" ) { unselectVexflowNotes(lsContainerRef.current)  }
+  if( selection.type != "note" ) { unselectVFNotes(lsContainerRef.current)  }
 
-  if( selection.type != "tie" ) { unselectVexflowTies(lsContainerRef.current)  }
+  if( selection.type != "tie" ) { unselectVFTies(lsContainerRef.current)  }
 
-  if( selection.type != "slur" ) { unselectVexflowSlurs(lsContainerRef.current)  }
+  if( selection.type != "slur" ) { unselectVFSlurs(lsContainerRef.current)  }
     
  if( selection.type != "rest" ) {   }// todo 
 
@@ -317,7 +318,7 @@ useEffect(() => {
 
 useEffect(() => {
  if( noteInputMode ){
-unselectVexflowNotes(lsContainerRef.current)
+unselectVFNotes(lsContainerRef.current)
  }
   
 }, [noteInputMode]);
@@ -375,11 +376,11 @@ useLayoutEffect(() => {
 // console.log("handle tie select", {id})
 
 if( noteInputMode){ 
-unselectVexflowTies( lsContainerRef.container)
+unselectVFTies( lsContainerRef.container)
   return
 }
 setSelection({ type: "tie", id });
-unselectVexflowTies( lsContainerRef.container)
+unselectVFTies( lsContainerRef.container)
 selectVexflowTie( {tieId: id, 
   container: lsContainerRef.current})
 
@@ -391,11 +392,11 @@ selectVexflowTie( {tieId: id,
 console.log("handle slur select", {id})
 
 if( noteInputMode){ 
-unselectVexflowSlurs( lsContainerRef.container)
+unselectVFSlurs( lsContainerRef.container)
   return
 }
 setSelection({ type: "slur", id });
-unselectVexflowSlurs( lsContainerRef.container)
+unselectVFSlurs( lsContainerRef.container)
 selectVexflowSlur( {slurId: id, 
   container: lsContainerRef.current})
 
@@ -409,7 +410,7 @@ const handleNoteSelect = (id) => {
   // console.log("SELECTING NOTE ID:", {id,noteInputMode});
 
   if( noteInputMode){ 
-    unselectVexflowNotes(lsContainerRef.current)
+    unselectVFNotes(lsContainerRef.current)
     return
   }
   
@@ -445,7 +446,8 @@ const handleNoteSelect = (id) => {
     // console.log("SETTING SELECTED DURATION:", duration);
     setInputDuration(duration);
 
-    selectVexflowNote({container: lsContainerRef.current, noteId: id})
+    unselectVFNotes(lsContainerRef.current)
+    selectVFNote({container: lsContainerRef.current, noteId: id})
     // If you want to update dots in the UI, do it here:
     // setInputDots(dots);
 
