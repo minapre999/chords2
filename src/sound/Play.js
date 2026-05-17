@@ -21,14 +21,14 @@ import { useToneEngine } from "/src/context/ToneEngineContext";
 
    export function PlayNote(props) {
 
-  const {sampler, noteName, duration="2n", time="+0.1"} = props
+  const {sampler, noteName, duration="2n", time=Tone.Transport.now()} = props
 
    if (!sampler || !sampler.loaded) {
     console.log("Sampler not ready — skipping note", noteName);
     return;
   }
 
-  
+
   console.log("PlayNote: ",  {noteName, duration: duration, sampler: sampler, time})
 
         // sampler.triggerAttackRelease("A4", "2n", time);

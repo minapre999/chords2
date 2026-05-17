@@ -1733,7 +1733,7 @@ function updateDraggedNote(noteId, semitones, durationSteps) {
       //
       if (note.pitches && note.pitches.length > 0) {
         const oldPitch = note.pitches[0];
-        const newPitch = transposePitch(oldPitch, semitones);
+        const newPitch = {...oldPitch, pitch:  transposePitch(oldPitch.pitch, semitones)}
 
         note.pitches = [newPitch];
 

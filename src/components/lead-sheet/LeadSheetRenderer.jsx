@@ -44,7 +44,7 @@ const [rowWidth, setRowWidth] = useState(800); // default
 const slurLayerRef = useRef(null);
 const tieLayerRef = useRef(null);
 
-const { scaleSampler, samplerReady, startAudio } = useToneEngine();
+const { audioStarted, scaleSampler, samplerReady, startAudio } = useToneEngine();
 
 
 
@@ -477,6 +477,26 @@ const handleNoteSelect = (id) => {
       // play the note
         
 
+          // for (const pitch of selNote.pitches) {
+          //     const noteName = pitch.pitch;
+
+          //     // 1. Audio must already be started
+          //     if (!audioStarted) return;
+
+          //     // 2. Sampler must already be loaded
+          //     const sampler = samplerRef.current;
+          //     if (!sampler || !sampler.loaded) return;
+
+          //     // 3. Play immediately (no async, no await, no rerender)
+          //     PlayNote({
+          //       sampler,
+          //       noteName,
+          //       duration: "2n"
+          //       });
+          //       }
+
+
+
         for(const pitch of selNote.pitches)  {
         
 
@@ -508,32 +528,6 @@ const handleNoteSelect = (id) => {
       
 
 
-
-  // async function play() {
-  //   // console.log("lead sheet note PLAY")
-  //   try {
-
-  //     await startAudio();
-
-  //     console.log("play lead sheet note ", { samplerReady, scaleSampler, startAudio})
-
-  //     if (!samplerReady || !scaleSampler) return;
-  //     PlayNote({
-  //       sampler: scaleSampler,
-  //       noteNames: pitches,
-  //     });
-  //   } catch (e) {
-  //     console.error("play lead sheet note error:", e);
-  //   }
-  // }
-
-  // play();
-
-
-
-
-    // If you want to update dots in the UI, do it here:
-    // setInputDots(dots);
 
 };
 
