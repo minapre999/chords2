@@ -106,6 +106,9 @@ const [noteMode, setNoteMode] = useState("note");
   }, []); // runs once only
 
 
+
+
+  
   const {startAudio, scaleSampler, samplerReady} = useToneEngine();
 
  useEffect(() => {

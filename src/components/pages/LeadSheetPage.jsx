@@ -1858,6 +1858,7 @@ function updateDraggedNote(noteId, semitones, durationSteps) {
 
           {/* ⭐ NEW AUTO-FLOW MEASURE SYSTEM */}
           <LeadSheetRenderer
+          {...props}
             measures={leadSheet.measures}
             leadSheet={leadSheet}
             caret={caret}
@@ -1879,6 +1880,7 @@ function updateDraggedNote(noteId, semitones, durationSteps) {
             measureElements={measureElements}
             slurElements={slurElements}
             tieElements = {tieElements}
+            renderDataUI={renderDataUI} setRenderDataUI={setRenderDataUI}
             selection={selection}
             setSelection={setSelection}
                selRest={selRest}

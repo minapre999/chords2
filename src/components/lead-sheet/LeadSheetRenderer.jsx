@@ -8,6 +8,13 @@ import "/node_modules/vexflow/releases/vexflow-debug.js";
 import {selectVexflowTie, unselectVFTies} from "./tie/tie-select"
 import {selectVexflowSlur, unselectVFSlurs} from "./slur/slur-select"
 import {selectVFNote, unselectVFNotes} from "./note/note-select"
+import  {RenderNote, RenderData} from "/src/render-notes.js"
+import Note from "/src/harmony/note"
+import { useToneEngine } from "/src/context/ToneEngineContext";
+import {PlayNote} from "/src/sound/Play"
+
+
+
 
 export const measureRectsRef = { current: {} };
 
@@ -23,6 +30,8 @@ export default function LeadSheetRenderer(props) {
    lsContainerRef,
   noteInputMode,
   noteInputModeRef,
+  samplerRef,
+  setRenderDataUI,
   selDotted, setSelDotted,
   selrest, setSelRest,
   selection, setSelection,
@@ -34,6 +43,10 @@ export default function LeadSheetRenderer(props) {
 const [rowWidth, setRowWidth] = useState(800); // default
 const slurLayerRef = useRef(null);
 const tieLayerRef = useRef(null);
+
+const { scaleSampler, samplerReady, startAudio } = useToneEngine();
+
+
 
 
 // console.log("rendering lead sheet")
@@ -416,38 +429,109 @@ const handleNoteSelect = (id) => {
   
   setSelection({ type: "note", id });
 
-    // Find the selected note
-    let selected = null;
+    // Find the selNote note
+    let selNote = null;
     for (const m of leadSheet.measures) {
       for (const n of m.melody) {
         if (n.id === id) {
-          selected = n;
+          selNote = n;
           break;
         }
       }
-      if (selected) break;
+      if (selNote) break;
     }
 
-    if (!selected) return;
+    if (!selNote) return;
 
     
     // New-format fields
-    const pitches = selected.pitches.map((n=>n.pitch)) || [];
-    const duration = selected.duration || "q";
-    const dots = selected.dots || 0;
+    const pitches = selNote.pitches.map((n=>n.pitch)) || [];
+    const duration = selNote.duration || "q";
+    const dots = selNote.dots || 0;
 
     // REST?
     const isRest = pitches.length === 0;
     setSelRest(isRest);
 
     // dotted note
-    selected.dots > 0 ?  setSelDotted(true) : setSelDotted( false)
+    selNote.dots > 0 ?  setSelDotted(true) : setSelDotted( false)
     // Update toolbar duration
-    // console.log("SETTING SELECTED DURATION:", duration);
+    // console.log("SETTING selNote DURATION:", duration);
     setInputDuration(duration);
 
     unselectVFNotes(lsContainerRef.current)
     selectVFNote({container: lsContainerRef.current, noteId: id})
+
+    // update the fretboard
+
+    const rData = new RenderData()
+   
+    for(const pitch of selNote.pitches)  {
+       console.log({selNote, pitch, setRenderDataUI})
+      const n = new Note({name: pitch.pitch, fret: pitch.fret, stringNumber: pitch.string })
+      const rn = new RenderNote({note: n, text: n.letter ,})
+    rData.add(rn, selNote.string)
+      }
+    setRenderDataUI(rData)
+      
+      // play the note
+        
+
+        for(const pitch of selNote.pitches)  {
+        
+
+           async function play()  {
+
+                await startAudio()
+                
+                const sampler = samplerRef.current;   // ⭐ always up-to-date
+                const ready = sampler?.loaded;        // ⭐ always up-to-date
+
+                if (!ready) {
+                  console.log("Sampler not ready in lead sheet renderer", {
+                    samplerReady,
+                    scaleSampler,
+                    noteName: pitch.pitch
+                  });
+                  return;
+                }
+
+                PlayNote({ sampler, noteName: pitch.pitch, duration: "2n" });
+                }
+              
+           play()
+
+           
+          }
+
+
+      
+
+
+
+  // async function play() {
+  //   // console.log("lead sheet note PLAY")
+  //   try {
+
+  //     await startAudio();
+
+  //     console.log("play lead sheet note ", { samplerReady, scaleSampler, startAudio})
+
+  //     if (!samplerReady || !scaleSampler) return;
+  //     PlayNote({
+  //       sampler: scaleSampler,
+  //       noteNames: pitches,
+  //     });
+  //   } catch (e) {
+  //     console.error("play lead sheet note error:", e);
+  //   }
+  // }
+
+  // play();
+
+
+
+
     // If you want to update dots in the UI, do it here:
     // setInputDots(dots);
 

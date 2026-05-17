@@ -110,11 +110,6 @@ setSelDotted(newSelDotted)
 
 
 
-
-
-
-
-
 const handlePlay = async () => {
   await startAudio();     // unlock audio + begin sampler loading
   setIsPlaying(true);     // sequencing effect will handle the rest

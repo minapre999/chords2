@@ -22,14 +22,52 @@ import { useToneEngine } from "/src/context/ToneEngineContext";
    export function PlayNote(props) {
 
   const {sampler, noteName, duration="2n", time="+0.1"} = props
-  console.log("PlayNote: ",  noteName, duration)
 
+   if (!sampler || !sampler.loaded) {
+    console.log("Sampler not ready — skipping note", noteName);
+    return;
+  }
+
+  
+  console.log("PlayNote: ",  {noteName, duration: duration, sampler: sampler, time})
+
+        // sampler.triggerAttackRelease("A4", "2n", time);
 
         sampler.triggerAttackRelease(noteName, duration, time);
 
 
   // const closest = getClosestSample(midi);
 
+}
+
+
+
+
+/**
+PlayNotes - takes either notes (Note objects) or noteNames object
+ */
+
+export function PlayNotes(props) {
+  
+  const {sampler, chordform: cf, duration} = props
+    //  console.log("PlayChord: ", cf, sampler)
+if(!notes && !nn) return;
+let noteNames = nn
+  if( !noteNames ) {
+    noteNames = notes.map((n)=>n.noteNameWithBias("b"))
+  }
+
+    
+    console.log("note names", {noteNames, samplerLoaded: sampler.loaded},)
+    noteNames.forEach((noteName, i)=>{
+          const time = `+${0.5 * i}`; // tiny stagger
+                      const now = Tone.now()
+
+          console.log("play note of chord: ", { noteName,duration, now })
+         PlayNote({sampler, noteName, duration, time: now})
+         Tone.Transport.start()
+    })
+    
 }
 
 

@@ -54,6 +54,7 @@ export default function FretboardSVG(
   preferSharps = true,
   interactive = true,
   onNoteClick,
+  samplerRef,
   // width = 1400,
   // height = 180,
  zoom = 1,

@@ -40,13 +40,13 @@ export function useLeadSheetPlayer(props ) {
 
 
   // Wait for sampler to load
-  useEffect(() => {
-    // console.log("useEffect for sampler")
-    if (!scaleSampler) return;
-    if (scaleSampler.loaded) setSamplerReady(true);
-    else scaleSampler.onload = () => setSamplerReady(true);
+  // useEffect(() => {
+  //   // console.log("useEffect for sampler")
+  //   if (!scaleSampler) return;
+  //   if (scaleSampler.loaded) setSamplerReady(true);
+  //   else scaleSampler.onload = () => setSamplerReady(true);
   
-  }, [scaleSampler]);
+  // }, [scaleSampler]);
 
 
   useEffect(() => {
@@ -195,7 +195,7 @@ export function useLeadSheetPlayer(props ) {
                     const n = new Note({name: pitch.pitch, fret: pitch.fret, stringNumber: pitch.string })
                     const rn = new RenderNote({note: n, text: n.letter ,})
                     rData.add(rn, pitch.string)
-                    // setRenderDataUI(rData)
+                    setRenderDataUI(rData)
                   }
               }
           }

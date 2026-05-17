@@ -1,4 +1,4 @@
-import { useState, useEffect,  } from "react"
+import { useState, useEffect, useRef } from "react"
 import { BrowserRouter, Routes, Route, Outlet, useLocation } from "react-router-dom";
 import * as Tone from "tone";
 import HomePage from "/src/components/pages/HomePage.jsx";
@@ -75,65 +75,13 @@ function App() {
   
 // const [scaleSampler, setScaleSampler] = useState(null);
 const [showHarmonyNotesUI, setShowHarmonyNotesUI] = useState( true) // show root, third, etc in different colours
+  const samplerRef = useRef(null)
+  
 
-    /*                                        
-    arrFillColorUI - five element array of fill colors for default, root, third, fifth, seventh notes
-  arrFontColorUI - five element array of text colors for default, root, third, fifth, seventh notes
-  arrstrokeolorUI - five element array of stroke colors for default, root, third, fifth, seventh notes
-  arrWidthUI - five element array of note circle widths for default, root, third, fifth, seventh notes
-*/
-
-
-// useEffect(() => {
-
-// const loadSampler = async () => {
-//     await Tone.start();
-
-//     const s = new Tone.Sampler(
-//       {
-//         E2: "/samples/guitar-acoustic/E2.ogg",
-//         A2: "/samples/guitar-acoustic/A2.ogg",
-//         D3: "/samples/guitar-acoustic/D3.ogg",
-//         G3: "/samples/guitar-acoustic/G3.ogg",
-//         B3: "/samples/guitar-acoustic/B3.ogg",
-//         E4: "/samples/guitar-acoustic/E4.ogg",
-//         A4: "/samples/guitar-acoustic/A4.ogg",
-//         D5: "/samples/guitar-acoustic/D5.ogg",
-
-//       },
-//       () => console.log("Sampler loaded")
-//     ).toDestination();
-
-//     s.volume.value = +6;
-
-//     setScaleSampler(s);
-//   };
-
-//  loadSampler()
-
-// }, []);
+  
 
 
 
-//     const [page, setPage] = useState("chords");
-// /*
-// Lazy initialization
-
-// useState(() => { ... }) means:
-//   React calls the function only on the first render
-//   The returned value becomes the initial state
-//   On later renders, React does not call the function again  
-// This is more efficient than: useState(localStorage.getItem("showOpenStringsUI")) 
-// because that version reads from localStorage every render.
-// const saved = localStorage.getItem("showOpenStringsUI");
-// This returns:
-//     "true"
-//     "false"
-//     or null (if nothing saved yet)
-// localStorage always stores strings, never booleans.
-// return saved === null ? true : saved === "true";
-// Converts the stored string into a real boolean, with a default of true
-// */ 
 
 const [showOpenStringsUI, setShowOpenStringsUI] = useState(() => {
               const saved = localStorage.getItem("showOpenStringsUI");
@@ -365,7 +313,6 @@ const [currentNote, setCurrentNote] = useState(null)
 
 
 
-
 //   /*
 //   setRenderNotes: eact requires you to create a new array when updating state. Never mutate the existing one.
 // adding an item: setRenderNotes(prev => [...prev, newRN]);
@@ -438,7 +385,9 @@ currentNote: currentNote, setCurrentNote: setCurrentNote,
 
 
   return (
-  <ToneEngineProvider>
+  <ToneEngineProvider
+      samplerRef={samplerRef}>
+
     <BrowserRouter>
        {/* This will listen for route changes globally */}
       {/* <RouteChangeListener 
@@ -455,6 +404,7 @@ currentNote: currentNote, setCurrentNote: setCurrentNote,
             element={
               <ChordPage
               {...fbProps}
+              samplerRef={samplerRef}
               //  {...audioProps}
                 />
             }
@@ -465,6 +415,7 @@ currentNote: currentNote, setCurrentNote: setCurrentNote,
             element={
               <ScalePage
                 {...fbProps} 
+               samplerRef={samplerRef}
                 // {...audioProps}
                   />
             }
@@ -474,6 +425,7 @@ currentNote: currentNote, setCurrentNote: setCurrentNote,
             element={
               <LeadSheetPage 
                {...fbProps} 
+                samplerRef={samplerRef}
               />} />
 
           <Route
@@ -481,6 +433,7 @@ currentNote: currentNote, setCurrentNote: setCurrentNote,
             element={
               <SettingsPage
               {...fbProps} 
+              samplerRef={samplerRef}
               // {...audioProps}
                
               />
