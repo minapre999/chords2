@@ -3,6 +3,8 @@ import "/src/globals.js"
 import TuningManager from "/src/harmony/tuning-manager.js"
 import  Note  from "/src/harmony/note.js";
 
+
+
 export default function StringLane({
    renderDataUI,
   stringIndex,

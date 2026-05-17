@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext } from "react";
 import * as Tone from "tone";
 import { useToneEngine } from "/src/context/ToneEngineContext";
-import  DurationControls  from "/src/components/toolbar/ls-tools/DurationControls.jsx";
+import  DurationControls  from "/src/components/toolbar/lead-sheet-tools/DurationControls.jsx";
 import "/src/components/toolbar/toolbar.css"
 import { unhighlightVFNotes } from "/src/components/lead-sheet/note/note-highlight";
 

@@ -1,11 +1,9 @@
 import React, { useState, useCallback, useEffect, useRef } from "react";
 import Toolbar from "/src/components/toolbar/toolbar.jsx";
 
-import { TransportBar } from "../lead-sheet/TransportBar";
 import  LeadSheetRenderer  from "../lead-sheet/LeadSheetRenderer";
 import  LeadSheetAutoFlow from "../lead-sheet/LeadSheetAutoFlow";
 
-// import { FretboardPreview } from "../lead-sheet/FretboardPreview";
 import FretboardSVG from "/src/components/fretboard/FretboardSVG.jsx";
 import * as Tone from "tone";
 import { useToneEngine } from "/src/context/ToneEngineContext";
@@ -17,7 +15,7 @@ import FloatingPalette from "/src/components/panels/FloatingPalette.jsx"
 
 import { autumnLeaves } from "/src/data/autumnLeaves";
 import { cursorOverlayRef } from "/src/components/lead-sheet/cursor/cursorRefs";
-
+import { midiToNoteName, ENHARMONIC_EQUIV} from "/src/sound/midi"
 
 const initialLeadSheet = autumnLeaves 
 // console.log("initialLeadSheet: ",initialLeadSheet )
@@ -68,15 +66,6 @@ The new duration is saved into your lead sheet model.
 
 
 
-// Helpers
-const NOTE_NAMES_SHARP = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-const ENHARMONIC_EQUIV = {
-  "C#": "Db",
-  "D#": "Eb",
-  "F#": "Gb",
-  "G#": "Ab",
-  "A#": "Bb"
-};
 
 
 
@@ -93,18 +82,7 @@ const TUNING = [
 ];
 
 // Convert MIDI -> { name: "C#4", base: "C#", octave: 4 }
-function midiToNote(midi, preferFlats = false) {
-  const noteIndex = midi % 12;              // 60 -> 0 (C), 61 -> 1 (C#), ...
-  const octave = Math.floor(midi / 12) - 1; // 60 -> 4, 69 -> 4, etc.
 
-  let base = NOTE_NAMES_SHARP[noteIndex];
-
-  if (preferFlats && ENHARMONIC_EQUIV[base]) {
-    base = ENHARMONIC_EQUIV[base];
-  }
-
-  return { name: `${base}${octave}`, base, octave };
-}
 function pitchToGuitar({
   minMidi = 52,  // E2
   maxMidi = 83,  // E6.  // D2=47, D3=59, D4=71, D5=83
@@ -118,7 +96,7 @@ function pitchToGuitar({
       const noteMidi = openMidi + fret;
       if (noteMidi < minMidi || noteMidi > maxMidi) continue;
 
-      const { name, base, octave } = midiToNote(noteMidi);
+      const { name, base, octave } = midiToNoteName(noteMidi);
 
       // Prefer lowest-fret occurrence: only set if not already mapped
       if (!map[name]) {
@@ -151,7 +129,6 @@ export default function LeadSheetPage(props) {
 
     // 1. All useRef FIRST
   const lsContainerRef = useRef(null);
-const rendererRef = useRef(null);
 const applyRippleEditRef = useRef(null);
 const onMouseUpRef = useRef(() => {});
 const dragRef = useRef(null);
@@ -1924,7 +1901,6 @@ function updateDraggedNote(noteId, semitones, durationSteps) {
             setDragPreview={setDragPreview}
             dragRef={dragRef}
             playerRef={playerRef}
-            rendererRef={rendererRef}
        
           />
 

@@ -3,11 +3,11 @@ import RenderData, {RenderNote} from "/src/render-notes.js"
 import * as Tone from "tone";
 import { useToneEngine } from "/src/context/ToneEngineContext";
 import { highlightVFNote, unhighlightVFNotes } from "/src/components/lead-sheet/note/note-highlight";
+import { highlightVFMeasure, unhighlightAllVFMeasures } from "/src/components/lead-sheet/measure/measure-highlight";
 
 export function useLeadSheetPlayer(props ) {
    const {leadSheet, 
     lsContainerRef, 
-    rendererRef, 
     renderDataUI, setRenderDataUI,
     isPlaying, setIsPlaying,
     isPaused}  =props
@@ -150,10 +150,6 @@ export function useLeadSheetPlayer(props ) {
 
 
 
-
-
-
-
   // Main sequencing effect (mirrors your scale player)
 
   useEffect(() => {
@@ -163,13 +159,12 @@ export function useLeadSheetPlayer(props ) {
   
 
 
-console.log("effect for build steps /nisPaused: ", isPaused, 
-    " \nisPlaying", isPlaying, 
+// console.log("effect for build steps /nisPaused: ", isPaused, 
+//     " \nisPlaying", isPlaying, 
 
-    " \nsamplerReady", samplerReady, 
-    " \nrendererRef", rendererRef, 
-    " \nscaleSampler", scaleSampler, 
-     " \nbuildSteps", buildSteps,)
+//     " \nsamplerReady", samplerReady, 
+//     " \nscaleSampler", scaleSampler, 
+//      " \nbuildSteps", buildSteps,)
 
 
   const events = buildSteps();
@@ -187,9 +182,10 @@ console.log("effect for build steps /nisPaused: ", isPaused,
 
       Tone.Draw.schedule(() => {
      
+        highlightMeasure({measureId: ev.measureId, container: lsContainerRef.current})
         highlightNote({noteId: ev.id, container: lsContainerRef.current})
-        // rendererRef.current?.highlightNote(ev.id);
-        // rendererRef.current?.highlightMeasure(ev.measureId);
+        
+        
       }, time);
     }, events);
   }
@@ -222,22 +218,24 @@ console.log("effect for build steps /nisPaused: ", isPaused,
 //  const prevBuildSteps= buildSteps
 }
 
+// key dependency isPlaying - clicking the play button changes this
 
-}, [scaleSampler, buildSteps, rendererRef, isPlaying, samplerReady]);
+}, [scaleSampler, buildSteps, isPlaying, samplerReady]);
 
 
  function highlightNote({container, noteId}) {
             // console.log("HIGHLIGHT NOTE", {container, noteId})
+           
               unhighlightVFNotes(container)
             highlightVFNote({container, noteId})
+            
           
-
-          // noteElements.current.forEach(el => el.classList.remove("vf-highlight-note"));
-          // const el = noteElements.current.get(noteId);
-          // if (!el) return;
-          // el.classList.add("vf-highlight-note");
  }
 
+ function highlightMeasure({container, measureId}) {
+ unhighlightAllVFMeasures(container)
+      highlightVFMeasure({container,measureId })
+ }
 
 /**** FRETBOARD RENDER DATA *****/
 

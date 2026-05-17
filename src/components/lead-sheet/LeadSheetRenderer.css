@@ -25,7 +25,7 @@
   stroke: red !important;
   fill: red !important;
 }
-
+/* 
 .vf-highlight-measure,
 .highlight-measure {
   stroke: #ffaa00 !important;
@@ -38,9 +38,13 @@
 .highlight-measure rect {
   stroke: orange !important;
   stroke-width: 3px !important;
+} */
+
+.highlight-measure {
+stroke: #00aaff !important;
+  fill: #00aaff !important;
+  opacity: 0.2
 }
-
-
 
 
 svg .voice-note path,

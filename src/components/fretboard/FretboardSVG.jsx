@@ -9,8 +9,9 @@ import StringLane from "./StringLane.jsx"
 import FretboardSurface from "./FretboardSurface.jsx"
 import VibrationOverlay from "./VibrationOverlay.jsx"
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
-import  PlayNote  from "../../sound/Play.js";
-
+import  {PlayNote}  from "/src/sound/Play.js";
+import { useToneEngine } from "/src/context/ToneEngineContext";
+import { midiToNoteName} from "/src/sound/midi"
 
 // import "../../css/Fretboard.css";
 
@@ -66,6 +67,8 @@ export default function FretboardSVG(
 const [selected, setSelected] = useState(null);
 const [vibratingString, setVibratingString] = useState(null);
 const [vibeTick, setVibeTick] = useState(0);
+const { scaleSampler, samplerReady, startAudio } = useToneEngine();
+
 
 const clearVibration = () => {
   setVibratingString(null);
@@ -107,12 +110,25 @@ const scaledHeight = height * zoom;
 
 
   const handleNoteClick = (stringIndex, fretIndex) => {
-   
-    const midi = getMidiNumber(stringIndex, fretIndex);
-    PlayNote(midi);
+    console.log("HANDLE NOTE CLICK")
+        const midi = getMidiNumber(stringIndex, fretIndex);
 
-    const noteName = noteNameFromMidi(midi, { preferSharps });
+       const note = midiToNoteName(midi);
+       const noteName = note.name
     const info = { stringIndex, fretIndex, midi, noteName };
+
+    console.log("click note on fretboard: ", {scaleSampler, note, noteName})
+
+    async function play()  {
+      await startAudio()
+          console.log({samplerReady,scaleSampler, noteName})
+
+      if(!samplerReady) return;
+      PlayNote({sampler: scaleSampler, noteName, duration: "2n"});
+    }
+    
+     play()
+
 
     setSelected(info);
     setVibratingString(stringIndex);
@@ -121,7 +137,7 @@ const scaledHeight = height * zoom;
 
 
     if (onNoteClick) onNoteClick(info);
-  };
+  }; //handleNoteClick
 
 
 

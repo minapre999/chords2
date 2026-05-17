@@ -11,6 +11,9 @@ import ReactDOM from "react-dom/client";
 import {PlayChord} from "/src/sound/Play.js"
 import RenderData, {RenderNote} from "/src/render-notes.js"
 import ChordControlTab from "/src/components/ControlPanel/chord-panels/ChordControlTab.jsx"
+import { useToneEngine } from "/src/context/ToneEngineContext";
+
+
 
 import "./ChordPage.css"
 
@@ -103,17 +106,32 @@ const [noteMode, setNoteMode] = useState("note");
   }, []); // runs once only
 
 
+  const {startAudio, scaleSampler, samplerReady} = useToneEngine();
 
  useEffect(() => {
-  // console.log("Effect triggered: chordRootUI =", chordRootUI);
+  async function play() {
+    console.log("CHORD PLAY")
+    try {
 
-  try {
- 
-    PlayChord(cfUI);
-  } catch (e) {
-    // console.error("Effect error:", e);
+      await startAudio();
+
+            console.log("play chord effect ", {cfUI, samplerReady, scaleSampler, startAudio})
+
+
+      if (!samplerReady || !scaleSampler) return;
+      PlayChord({
+        sampler: scaleSampler,
+        chordform: cfUI,
+        duration: "2n"
+      });
+    } catch (e) {
+      console.error("play chord error:", e);
+    }
   }
+
+  play();
 }, [chordRootUI, cfUI]);
+
 
 
 

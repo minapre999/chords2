@@ -32,7 +32,6 @@ const {     caret, setCaret,
             playerRef,
             selection, setSelection,
             rowIndex,
-            rendererRef,
             slurLayerRef,
             slurElements,
             tieLayerRef,
@@ -220,13 +219,13 @@ window.slurLayerRef = slurLayerRef
       // Imperative API
       //
       useImperativeHandle(playerRef, () => ({
-        highlightNote(noteId) {
-            // console.log("HIGHLIGHT NOTE")
-          noteElements.current.forEach(el => el.classList.remove("vf-highlight-note"));
-          const el = noteElements.current.get(noteId);
-          if (!el) return;
-          el.classList.add("vf-highlight-note");
-        },
+        // highlightNote(noteId) {
+        //     // console.log("HIGHLIGHT NOTE")
+        //   noteElements.current.forEach(el => el.classList.remove("vf-highlight-note"));
+        //   const el = noteElements.current.get(noteId);
+        //   if (!el) return;
+        //   el.classList.add("vf-highlight-note");
+        // },
     
         highlightMeasure(measureId) {
           measureElements.current.forEach(el => el.classList.remove("vf-highlight-measure"));
@@ -395,7 +394,7 @@ useLayoutEffect(() => {
 
 
 useLayoutEffect(() => {
- 
+//  console.log("LEAD SHEET RENDER MEASURE LAYOUT", {"noteInputModeRef.current" : noteInputModeRef.current})
 
       if(measure.id==="m1"){
     // console.log("LEAD SHEET RENDER MEASURE LAYOUT", {"noteInputModeRef.current" : noteInputModeRef.current})
@@ -416,7 +415,6 @@ useLayoutEffect(() => {
 
 
 
-  rendererRef.current = renderer
 
   const staveY = 25
   const staveX = 0
@@ -466,14 +464,42 @@ useLayoutEffect(() => {
 const svg = container.querySelector("svg");
 if (!svg) return;
 
-// Transparent staff hit area for note input
-const staffHit = document.createElementNS("http://www.w3.org/2000/svg", "rect");
 
 const topLineY = stave.getYForLine(0);
 const spacing = stave.getSpacingBetweenLines();
-
-// Enough vertical range for full guitar pitch range
 const hitPadding = 12 * (spacing / 2); // 12 diatonic steps above/below
+
+// minStaffRect - Transparent  hit area for staff selection - only covers the stave line area
+// no hit testing at moment
+// selection will be via dom only using the min-staff class
+const minStaffRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+minStaffRect.classList.add("min-staff");
+minStaffRect.setAttribute("x", staveX);
+minStaffRect.setAttribute("y", topLineY );
+minStaffRect.setAttribute("width", staveWidth);
+minStaffRect.setAttribute("height",  4 * spacing);
+minStaffRect.setAttribute("fill", "transparent");
+minStaffRect.setAttribute("pointer-events", "all");
+// console.log("minStaffRect", {staveX, topLineY, staveWidth, hitPadding, spacing})
+// for debugging - make the hit boxes visible
+// minStaffRect.setAttribute("fill", "rgba(168, 30, 186, 0.6)");
+// minStaffRect.setAttribute("stroke", "rgba(175, 36, 180, 0.34)");
+  //  console.log("noteInputModeRef.current", noteInputModeRef.current)
+  if(!noteInputModeRef.current){
+    // console.log("removing pointer events from minStaffRect")
+// minStaffRect.setAttribute("pointer-events", "none");
+  }
+
+// console.log("minStaffRect", minStaffRect)
+svg.appendChild(minStaffRect);
+
+
+// Transparent staff hit area for note input
+const staffHit = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+
+
+
+// staffHit - Enough vertical range for full guitar pitch range
 
 staffHit.classList.add("staff-hit");
 staffHit.setAttribute("x", staveX);
@@ -511,14 +537,14 @@ staffHit.addEventListener("mousedown", (e) => {
 
 
   if (!noteInputModeRef.current) {
+      // hit the staff - no notes, slurs or ties clicked.  Unselect any existing notes, ties or slures
+
      unselectVFNotes(lsContainerRef.current)
       unselectVFTies(lsContainerRef.current)
       unselectVFSlurs(lsContainerRef.current)
     return;
   }
 
-
-  // hit the staff - no notes, slurs or ties clicked.  Unselect any existing notes, ties or slures
 
 
   const svgP = clientToSvgPoint(e, svg);
@@ -538,9 +564,13 @@ console.log("before onNoteInput ", "\n.  svgP.y,: ", svgP.y, "\n.  pitch: ", pit
 
 
 
-});
+});  // staff hit add listener
 
 svg.appendChild(staffHit);
+
+
+
+
 
 
 
@@ -853,7 +883,7 @@ but VexFlow was still drawing the old width.
   return (
     <svg
       ref={svgRef}
-      className="measure-svg"
+      className={`measure-svg ${measure.id}`}
       width={staveWidth}
       height={staveHeight}
       data-measure={measureIndex}

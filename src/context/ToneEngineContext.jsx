@@ -35,6 +35,22 @@ export function ToneEngineProvider({ children }) {
       }
     ).toDestination();
 
+//     const poly = new Tone.PolySynth(Tone.Sampler, {
+//   urls: {
+//     E2: "/samples/guitar-acoustic/E2.ogg",
+//     A2: "/samples/guitar-acoustic/A2.ogg",
+//     D3: "/samples/guitar-acoustic/D3.ogg",
+//     G3: "/samples/guitar-acoustic/G3.ogg",
+//     B3: "/samples/guitar-acoustic/B3.ogg",
+//     E4: "/samples/guitar-acoustic/E4.ogg",
+//     A4: "/samples/guitar-acoustic/A4.ogg",
+//     D5: "/samples/guitar-acoustic/D5.ogg",
+//   },
+//   volume: +6,
+// }).toDestination();
+
+
+
     // console.log("DIAG D — Sampler instance created:", s);
 
     samplerRef.current = s;

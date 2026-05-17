@@ -30,7 +30,7 @@ export default function LeadSheetRenderer(props) {
           } = props
 
  
-          console.log("rendering lead sheet")
+          // console.log("rendering lead sheet")
 const [rowWidth, setRowWidth] = useState(800); // default
 const slurLayerRef = useRef(null);
 const tieLayerRef = useRef(null);

@@ -49,6 +49,7 @@ export function getClosestSample(midi) {
   const available = [...sampleBuffers.keys()].sort(
     (a, b) => Math.abs(a - midi) - Math.abs(b - midi)
   );
+  console.log("getClosestSample", {available, sampleBuffers})
   return available[0];
 }
 
