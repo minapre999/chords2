@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef, useMemo } from "react"
 import FretboardSVG from "/src/components/fretboard/FretboardSVG.jsx"
 import Scale, {ScaleManager, ScaleDictionary} from "/src/harmony/scale-manager.js"
 import "/src/globals.js"
-import RenderData, {RenderNote} from "/src/render-notes.js"
+import  {RenderNote, RenderData} from "/src/render-notes.js"
 import "./FretboardSettings.css"
 
 export default function FretboardSettings(props){

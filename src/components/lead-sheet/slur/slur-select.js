@@ -29,7 +29,7 @@ export function unselectVFSlurs(container) {
   if (!container) return;
 
   // Remove selected-slur from ALL slurs
-  console.log("unselectVFSlurs", container)
+  // console.log("unselectVFSlurs", container)
   const allSlurs = container.querySelectorAll('g.vf-slur-group');
   allSlurs.forEach(g => g.classList.remove('selected-slur'));
 }

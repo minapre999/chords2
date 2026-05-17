@@ -10,6 +10,8 @@ import { drawSlurs} from "./slur/draw-slur"
 import {unselectVFNotes} from "/src/components/lead-sheet/note/note-select"
 import { unselectVFTies} from "/src/components/lead-sheet/tie/tie-select"
 import { unselectVFSlurs} from "/src/components/lead-sheet/slur/slur-select"
+import { RenderData, RenderNote} from "/src/render-notes"
+
 
 export default function MeasureRenderer(props) {
 const {     caret, setCaret, 
@@ -71,122 +73,6 @@ window.slurLayerRef = slurLayerRef
 
 
 
-
-
-// listener for mouse move events for note input etc.
-// these will all be in measure coordinates
-// only concerned with the current measure
-
-
-
-// const onMouseMove = (x, y) => {
-   
-// // console.log("ON MOUSE MOVE ", {x, y, staveInfo})
-//   //  console.log("ON MOUSE MOVE")
-//   // Convert raw Y → pitch → snapped Y
-//   const midi = pitchFromY(y, staveInfo);
-//   // const snappedY = cursorYFromPitch(midi, staveInfo);
-
-
-
-
-//    const snappedY = snapToStaveLine(y, staveInfo)
-// let snappedX = x
-
-// //   console.log("ON MOVE", {
-// //   rawY: y,
-// //   snappedY,
-// //   staveTopLineY: staveInfo.topLineY,
-// //   spacing: staveInfo.spacing,
-// // });
-
-// // console.log( {staveInfo, vfCacheRef} )
-// const { vfNotes } = vfCacheRef.current.get(staveInfo.measureId);
-
-// const rect = getNoteRectFromX(x, vfNotes);
-// if (rect) {
-//   // console.log("Note:", rect.note);
-//   // console.log("Rect:", rect.x1, rect.y1, rect.width, rect.height);
-//   snappedX=rect.x1 + rect.width
-// }
-
-// cursorPosRef.current.x = snappedX
-// cursorPosRef.current.y = snappedY
-
-// // console.log({cursorPosRef})
-//   if (!rafRef.current) {
-//     rafRef.current = requestAnimationFrame(() => {
-//       rafRef.current = null;
-//       updateCursorOverlay({cursorPosRef, staveInfo, inputDurationRef, vfCacheRef});
-//     });
-//   }
-
-
-// };
-
-
-
-
-// useEffect(() => {
-
-//   const container = lsContainerRef.current
-//   if (!container || !measureRectsRef?.current || !cursorPosRef) return;
-  
-//   const measureRect = measureRectsRef.current[measure.id]
-//   // console.log({measureRect, measureRectsRef})
-//   if(!measureRect) return;
-
-//   function onMove(e) {
-    
-    
-//     const x = e.clientX;
-//     const y = e.clientY;
-
-//     console.log("ON MOVE", {x, y, measureRect})
-
-//     // find measure under cursor
-//     let found = null;
-//     for (const [id, rect] of Object.entries(measureRect)) {
-//       console.log({id, rect})
-//       if (x >= rect.left && x <= rect.right &&
-//           y >= rect.top && y <= rect.bottom) {
-//         found = { id, rect };
-//         break;
-//       }
-//     }
-
-//     if (!found) {
-//       cursorPosRef.current.visible = false
-//       cursorPosRef.measure = measure
-//     updateCursorOverlay({measure, measureRectsRef, cursorPosRef,  inputDurationRef, vfCacheRef});
-//       return;
-//     }
-
-//     cursorPosRef.current = {
-//       visible: true,
-//       x: x - found.rect.left,
-//       y: found.rect.staveY,
-//       measure: measure,
-
-//     };
-//     updateCursorOverlay({cursorPosRef, measureRectsRef, inputDurationRef, vfCacheRef});
-//   }
-
-//   container.addEventListener("mousemove", onMove);
-//   container.addEventListener("mouseleave", () => {
-//     cursorPosRef.current.visible = false;
-//     updateCursorOverlay({cursorPosRef, measureRectsRef, inputDurationRef, vfCacheRef});
-//   });
-
-//   return () => {
-//     container.removeEventListener("mousemove", onMove);
-//   };
-// }, []);
-
-
-
-
-
 // measure rects for note input cursor, etc.
 
   useLayoutEffect(() => {
@@ -211,38 +97,6 @@ window.slurLayerRef = slurLayerRef
 
   };
 }, [staveWidth, measureOfRowIndex, rowIndex]);
-
-
-
-
-      //
-      // Imperative API
-      //
-      useImperativeHandle(playerRef, () => ({
-        // highlightNote(noteId) {
-        //     // console.log("HIGHLIGHT NOTE")
-        //   noteElements.current.forEach(el => el.classList.remove("vf-highlight-note"));
-        //   const el = noteElements.current.get(noteId);
-        //   if (!el) return;
-        //   el.classList.add("vf-highlight-note");
-        // },
-    
-        highlightMeasure(measureId) {
-          measureElements.current.forEach(el => el.classList.remove("vf-highlight-measure"));
-          const el = measureElements.current.get(measureId);
-          if (!el) return;
-          el.classList.add("vf-highlight-measure");
-        },
-    
-        setPlayheadBeat(x, y1, y2) {
-          if (!playheadRef.current) return;
-          playheadRef.current.setAttribute("x1", x);
-          playheadRef.current.setAttribute("x2", x);
-          playheadRef.current.setAttribute("y1", y1);
-          playheadRef.current.setAttribute("y2", y2);
-        }
-      }));
-    
 
 
 
@@ -511,8 +365,8 @@ staffHit.setAttribute("pointer-events", "all");
 // console.log("staffHit", {staveX, topLineY, staveWidth, hitPadding, spacing})
 // console.log(x, topLineY, staveWidth, spacing)
 // for debugging - make the hit boxes visible
-staffHit.setAttribute("fill", "rgba(178, 186, 30, 0.06)");
-staffHit.setAttribute("stroke", "rgba(69, 222, 67, 0.34)");
+// staffHit.setAttribute("fill", "rgba(178, 186, 30, 0.06)");
+// staffHit.setAttribute("stroke", "rgba(69, 222, 67, 0.34)");
 
 
 /*

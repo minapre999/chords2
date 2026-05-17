@@ -50,7 +50,8 @@ activeStrokeWidthUI,
 }) {
 
   // console.log("string lane renderDataUI: ", renderDataUI)
-    if(renderDataUI == null || renderDataUI == undefined) return null
+    if(!renderDataUI ) return null
+    console.log("STRING LANE RENDER")
   const stringData = renderDataUI.string(stringIndex+1)
 
     if(stringData == null || stringData == undefined) return null

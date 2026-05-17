@@ -1,16 +1,17 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import RenderData, {RenderNote} from "/src/render-notes.js"
+import  {RenderNote, RenderData} from "/src/render-notes.js"
 import * as Tone from "tone";
 import { useToneEngine } from "/src/context/ToneEngineContext";
 import { highlightVFNote, unhighlightVFNotes } from "/src/components/lead-sheet/note/note-highlight";
 import { highlightVFMeasure, unhighlightAllVFMeasures } from "/src/components/lead-sheet/measure/measure-highlight";
+import Note from "/src/harmony/note"
 
 export function useLeadSheetPlayer(props ) {
-   const {leadSheet, 
-    lsContainerRef, 
-    renderDataUI, setRenderDataUI,
-    isPlaying, setIsPlaying,
-    isPaused}  =props
+   const {  leadSheet, 
+            lsContainerRef, 
+            renderDataUI, setRenderDataUI,
+            isPlaying, setIsPlaying,
+            isPaused}  =props
  
   const seqRef = useRef(null);
 
@@ -124,8 +125,8 @@ export function useLeadSheetPlayer(props ) {
         isRest
           ? null
           : pitches.length === 1
-            ? pitches[0]
-            : pitches; // Tone.js supports arrays for chords
+            ? pitches[0].pitch
+            : pitches.map((p)=>p.pitch); // Tone.js supports arrays for chords
 
       events.push({
         time: cursor,
@@ -176,16 +177,28 @@ export function useLeadSheetPlayer(props ) {
     seqRef.current.clear();
   } else {
     seqRef.current = new Tone.Part((time, ev) => {
+      // console.log({ev})
       if (!ev.isRest) {
         scaleSampler.triggerAttackRelease(ev.note, ev.duration, time);
       }
 
       Tone.Draw.schedule(() => {
-     
+    //  console.log({measureId: ev.measureId, noteId: ev.id, container: lsContainerRef.current})
         highlightMeasure({measureId: ev.measureId, container: lsContainerRef.current})
         highlightNote({noteId: ev.id, container: lsContainerRef.current})
-        
-        
+        const rData = new RenderData()
+        const measure = leadSheet?.measures?.find(m => m.id === ev.measureId) || null
+        // console.log({measure})
+        for(const lsNote of measure?.melody) {
+              if( lsNote.id === ev.id ) {
+                  for(const pitch of lsNote.pitches) {
+                    const n = new Note({name: pitch.pitch, fret: pitch.fret, stringNumber: pitch.string })
+                    const rn = new RenderNote({note: n, text: n.letter ,})
+                    rData.add(rn, pitch.string)
+                    // setRenderDataUI(rData)
+                  }
+              }
+          }
       }, time);
     }, events);
   }

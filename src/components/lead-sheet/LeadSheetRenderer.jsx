@@ -432,7 +432,7 @@ const handleNoteSelect = (id) => {
 
     
     // New-format fields
-    const pitches = selected.pitches || [];
+    const pitches = selected.pitches.map((n=>n.pitch)) || [];
     const duration = selected.duration || "q";
     const dots = selected.dots || 0;
 

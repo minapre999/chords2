@@ -4,7 +4,7 @@ import dc from '/src/globals.js' // need to import first as it sets up database
 import Scale, {ScaleManager, ScaleDictionary} from "/src/harmony/scale-manager.js"
 import Toolbar from "/src/components/toolbar/toolbar.jsx";
 import FretboardSVG from "/src/components/fretboard/FretboardSVG.jsx";
-import RenderData, {RenderNote} from "/src/render-notes.js"
+import {RenderNote, RenderData} from "/src/render-notes.js"
 import ScaleInfo from "/src/components/scale/ScaleInfo.jsx"
 import "/src/harmony/scale-manager.js"
 import "/src/components/pages/ScalePage.css"

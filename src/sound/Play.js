@@ -5,7 +5,7 @@ import ChordForm from "../harmony/harmony-manager.js"
 import Note from "/src/harmony/note.js"
  import dc from "../globals.js"
 import {midiLookup} from "/src/harmony/core.js"
-import RenderData, {RenderNote} from "/src/render-notes.js"
+import  {RenderNote, RenderData} from "/src/render-notes.js"
 import * as Tone from "tone";
 import { useToneEngine } from "/src/context/ToneEngineContext";
 

@@ -43,7 +43,7 @@ export const durationMap = {
             
                 const keys = isRest
                     ? ["b/4"]
-                    : n.pitches.map(p => pitchToVexflowKey(p));
+                    : n.pitches.map(p => pitchToVexflowKey(p.pitch));
             
                 const vfNote = new VF.StaveNote({
                     keys,

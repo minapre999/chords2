@@ -8,7 +8,7 @@ import FretboardSVG from "/src/components/fretboard/FretboardSVG.jsx";
 import * as Tone from "tone";
 import { useToneEngine } from "/src/context/ToneEngineContext";
 import { useLeadSheetPlayer } from "/src/hooks/useLeadSheetPlayer";
-import RenderData, {RenderNote} from "/src/render-notes.js"
+import  {RenderNote, RenderData} from "/src/render-notes.js"
 // import NoteInputCursor  from "/src/components/lead-sheet/NoteInputCursor.jsx"
 import {staveRef} from "/src/components/lead-sheet/cursor/staveRef"
 import FloatingPalette from "/src/components/panels/FloatingPalette.jsx"
@@ -375,6 +375,7 @@ function insertNote({ pitch, duration="q", measureIndex=0, noteIndex=0, dots=0})
     // 2. Build guitar mapping once per insert
     const guitarMap = pitchToGuitar();   // your function
     const gf = guitarMap[pitchName] || { string: null, fret: null };
+    const newPitch = {pitch: pitchName, fret: gf.fret, string: gf.string}
     // console.log("insertNote: ", {measureIndex, noteIndex, dots, duration, measure, pitch, pitchName, gf, next})
     const existing = measure.melody[noteIndex];
 
@@ -390,8 +391,9 @@ function insertNote({ pitch, duration="q", measureIndex=0, noteIndex=0, dots=0})
         (existing.dots || 0) === 0) {
 
       // Append pitch if not already present
-      if (!existing.pitches.includes(pitchName)) {
-        existing.pitches.push(pitchName);
+      const pitchNames = existing.pitches.map((p)=> p.pitch)
+      if (!pitchNames.includes(pitchName)) {
+        existing.pitches.push(newPitch);
       }
 
       // Append string/fret arrays (parallel to pitches)
@@ -414,7 +416,7 @@ function insertNote({ pitch, duration="q", measureIndex=0, noteIndex=0, dots=0})
       // Insert new note at noteIndex
       measure.melody.splice(noteIndex, 0, {
         id: crypto.randomUUID(),
-        pitches: [pitchName],
+        pitches: [newPitch],
         duration,
         dots: dots,
         string: gf.string,
@@ -447,7 +449,7 @@ function insertNote({ pitch, duration="q", measureIndex=0, noteIndex=0, dots=0})
       
       let newPitches = [pitchName]
       if( existing.duration === duration && existing.dots == dots) {
-        newPitches = [...existing.pitches, pitchName]
+        newPitches = [...existing.pitches, newPitch]
       }
       applyRippleAcrossMeasures(next.measures, 
                           measureIndex, 
@@ -472,7 +474,7 @@ function insertNote({ pitch, duration="q", measureIndex=0, noteIndex=0, dots=0})
     // ------------------------------------------------------------
     measure.melody.splice(noteIndex, 0, {
       id: crypto.randomUUID(),
-      pitches: [pitchName],
+      pitches: [newPitch],
       duration,
       dots: dots,
       string: gf.string,
@@ -810,7 +812,7 @@ const handleToolbarDurationChange = useCallback((newDur) => {
         const { measure, index } = caret;
 
         setPendingInsert({
-          pitches: ["C4"],   // default pitch
+          pitches: [{pitch: "C4", fret: 1, string: 3}],   // default pitch
           duration,
           dots: selDotted===true ? 1 : 0,
           measureIndex: measure,
@@ -878,15 +880,15 @@ function handleAccidentalClick(acc) {
         const octave = oldPitch[oldPitch.length - 1];
 
         // Build new pitch
-        const newPitch = `${letter}${acc}${octave}`;
+        const pitchName = `${letter}${acc}${octave}`
+          const gf = pitchToGuitar(pitchName);
+      
+
+        const newPitch = {pitch: pitchName, string: gf.string, fret: gf.fret };
         note.pitches = [newPitch];
 
         // Update guitar mapping
-        const gf = pitchToGuitar(newPitch);
-        if (gf) {
-          note.string = gf.string;
-          note.fret = gf.fret;
-        }
+      
       }
 
       next.measures[measureIndex] = measure;
@@ -1679,15 +1681,6 @@ function applyRippleAcrossMeasures(measures, measureIdx, editedNoteId, newNoteDa
   return measures;
 }
 
-
-
-
-
-
-function extractPitchFromNote(note) {
-  if (!note || !note.pitches || note.pitches.length === 0) return null;
-  return note.pitches[0]; // single‑note melody
-}
 
 
 

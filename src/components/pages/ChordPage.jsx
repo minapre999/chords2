@@ -9,7 +9,7 @@ import ChordInfo from "/src/components/chord/ChordInfo.jsx"
 
 import ReactDOM from "react-dom/client";
 import {PlayChord} from "/src/sound/Play.js"
-import RenderData, {RenderNote} from "/src/render-notes.js"
+import  {RenderNote, RenderData} from "/src/render-notes.js"
 import ChordControlTab from "/src/components/ControlPanel/chord-panels/ChordControlTab.jsx"
 import { useToneEngine } from "/src/context/ToneEngineContext";
 

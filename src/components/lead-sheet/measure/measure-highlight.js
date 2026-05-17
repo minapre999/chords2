@@ -46,8 +46,8 @@ if (!target) return;
     // console.log("unhighlightAllVFMeasures", {container})
 
   if (!container) return;
-  const allNotes = container.querySelectorAll('rect.min-staff.highlight-measure');
-  allNotes.forEach(g => g.classList.remove("highlight-measure"));
+  const measureEls = container.querySelectorAll('rect.min-staff.highlight-measure');
+  measureEls.forEach(g => g.classList.remove("highlight-measure"));
 }
 
 

@@ -48,7 +48,7 @@ export  class RenderNote {
 
 // rendernotes comprise an array always the size of number of frerboard strings
 // each member of the 
-export default class RenderData {
+export  class RenderData {
     constructor(props ) {
         // console.log(`initialising with ${dc.TUNING_MANAGER.numberOfStrings} strings`)
         this.props = props

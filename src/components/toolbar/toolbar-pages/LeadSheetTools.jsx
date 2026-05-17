@@ -4,6 +4,7 @@ import { useToneEngine } from "/src/context/ToneEngineContext";
 import  DurationControls  from "/src/components/toolbar/lead-sheet-tools/DurationControls.jsx";
 import "/src/components/toolbar/toolbar.css"
 import { unhighlightVFNotes } from "/src/components/lead-sheet/note/note-highlight";
+import { unhighlightAllVFMeasures } from "/src/components/lead-sheet/measure/measure-highlight";
 
 // import ScalePicker from "/src/components/toolbar/scale-tools/ScalePicker.jsx";
 
@@ -146,6 +147,7 @@ const transport = Tone.getTransport()
   setIsPlaying(false);
   // console.log("handle stop ")
 unhighlightVFNotes(lsContainerRef.current)
+unhighlightAllVFMeasures(lsContainerRef.current)
 };
 
 
